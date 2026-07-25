@@ -7,8 +7,9 @@ export type MachineEvent =
 type Listener = (event: MachineEvent) => void;
 
 export interface MachineOptions {
-  /** How long the machine waits before flipping the switch back off. */
-  armDelayMs?: number;
+  /** How long the machine waits before flipping the switch back off. Called
+   * fresh on each flip so the delay can change over time. */
+  armDelayMs?: number | (() => number);
 }
 
 export interface Machine {
@@ -51,7 +52,9 @@ export function createMachine({
       }
       state = "on";
       emit({ type: "switched-on" });
-      armTimer = setTimeout(() => switchOff("machine"), armDelayMs);
+      const delay =
+        typeof armDelayMs === "function" ? armDelayMs() : armDelayMs;
+      armTimer = setTimeout(() => switchOff("machine"), delay);
     },
   };
 }

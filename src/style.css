@@ -187,12 +187,13 @@ body {
   width: 46rem;
   height: 1.6rem;
   visibility: hidden;
+  --dur: 1.8s; /* fallback; ui.ts sets this per move, halving each time */
   /* start just past the stage's right edge — no dead travel off in empty
      space before the knob is visible. */
   transform: translateX(calc(min(100vw, 64rem) / 2 - 6.6rem + 1rem));
   /* linear timing end to end — no ease-in/out, no spring: it never speeds
      up on approach or slows for the touch, it just arrives, bored. */
-  transition: transform 1.8s linear;
+  transition: transform var(--dur) linear;
   pointer-events: none;
   z-index: 3;
 }
@@ -209,7 +210,6 @@ body {
 
 .antenna.retreat {
   transform: translateX(calc(min(100vw, 64rem) / 2 - 6.6rem + 1rem));
-  transition: transform 1.8s linear;
 }
 
 .antenna span {
