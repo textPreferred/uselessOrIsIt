@@ -18,6 +18,14 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).toBeChecked();
   });
 
+  test("shows its arm only while switched on", async ({ page }) => {
+    const arm = page.getByTestId("arm");
+    await expect(arm).toBeHidden();
+    await page.getByRole("switch").click();
+    await expect(arm).toBeVisible();
+    await expect(arm).toBeHidden({ timeout: 5000 });
+  });
+
   test("flips its own switch back off @smoke", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await machineSwitch.click();
