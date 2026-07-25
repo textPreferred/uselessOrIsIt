@@ -1,7 +1,7 @@
 import type { Machine } from "./machine";
 
-/** Milliseconds after switch-on at which the antenna's jab lands. */
-export const CONTACT_DELAY_MS = 2500;
+/** Milliseconds after switch-on at which the antenna's glide reaches contact. */
+export const CONTACT_DELAY_MS = 1800;
 
 export function renderMachine(root: HTMLElement, machine: Machine): void {
   root.innerHTML = `
@@ -36,23 +36,15 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   }
 
   function retreat(): void {
-    antenna.classList.remove("poised", "jab", "in");
+    antenna.classList.remove("reach");
     antenna.classList.add("retreat");
-    schedule(() => antenna.classList.remove("retreat"), 600);
+    schedule(() => antenna.classList.remove("retreat"), CONTACT_DELAY_MS);
   }
 
   function startSequence(): void {
-    schedule(() => {
-      antenna.classList.remove("retreat");
-      antenna.classList.add("in");
-    }, 500);
-    schedule(() => antenna.classList.add("poised"), 1250);
-    schedule(() => {
-      antenna.classList.remove("poised");
-      antenna.classList.add("jab");
-    }, CONTACT_DELAY_MS - 150);
-    schedule(() => antenna.classList.remove("jab"), CONTACT_DELAY_MS + 200);
-    schedule(retreat, CONTACT_DELAY_MS + 600);
+    antenna.classList.remove("retreat");
+    requestAnimationFrame(() => antenna.classList.add("reach"));
+    schedule(retreat, CONTACT_DELAY_MS + 100);
   }
 
   rocker.addEventListener("click", () => machine.flip());
@@ -61,10 +53,11 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     rocker.setAttribute("aria-checked", String(machine.state === "on"));
     snap(machine.state === "on");
     if (event.type === "switched-on") {
+      cancelSequence();
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
-      if (antenna.classList.contains("in")) retreat();
+      if (antenna.classList.contains("reach")) retreat();
     }
   });
 }
