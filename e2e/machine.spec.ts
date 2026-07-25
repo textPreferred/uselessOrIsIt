@@ -49,7 +49,7 @@ test.describe("useless machine", () => {
     await expect(arm).toBeHidden({ timeout: 5000 });
   });
 
-  test("flips its own switch back off @smoke", async ({ page }) => {
+  test("flips its own switch back off", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await expect(machineSwitch).toBeChecked();
