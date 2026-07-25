@@ -9,3 +9,14 @@ body {
   display: grid;
   place-items: center;
 }
+
+.machine .arm {
+  width: 1rem;
+  height: 4rem;
+  background: currentcolor;
+  visibility: hidden;
+}
+
+.machine[data-state="on"] .arm {
+  visibility: visible;
+}

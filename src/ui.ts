@@ -3,6 +3,7 @@ import type { Machine } from "./machine";
 export function renderMachine(root: HTMLElement, machine: Machine): void {
   root.innerHTML = `
     <div class="machine" data-state="off">
+      <div class="arm" data-testid="arm"></div>
       <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Switch">
         Switch
       </button>
