@@ -10,6 +10,8 @@
   --red-hi: #e05560;
   --red-lo: #8f1d26;
   --mark: #e6dfda;
+  --card: light-dark(#fdfcfa, #26272b);
+  --card-ink: light-dark(#1c1c1e, #f1f0ed);
 }
 
 html,
@@ -260,5 +262,88 @@ body {
   .paddle,
   .antenna {
     transition: none;
+  }
+}
+
+/* ---- achievement unlock toast ---- */
+
+.achievement-toast {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  display: grid;
+  place-items: center;
+  z-index: 20;
+  cursor: pointer;
+  animation: achievement-fade-in 0.2s ease;
+}
+
+@keyframes achievement-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.achievement-card {
+  background: var(--card);
+  color: var(--card-ink);
+  border-radius: 1rem;
+  padding: 1.5rem 1.8rem;
+  max-width: 22rem;
+  width: calc(100vw - 3rem);
+  box-sizing: border-box;
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 40%);
+  text-align: center;
+  animation: achievement-pop-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes achievement-pop-in {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.achievement-eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 650;
+  margin: 0 0 0.5rem;
+}
+
+.achievement-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem;
+  text-wrap: balance;
+}
+
+.achievement-desc {
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--card-ink) 70%, transparent);
+  margin: 0 0 0.9rem;
+}
+
+.achievement-hint {
+  font-size: 0.7rem;
+  color: color-mix(in srgb, var(--card-ink) 45%, transparent);
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .achievement-toast,
+  .achievement-card {
+    animation: none;
   }
 }
