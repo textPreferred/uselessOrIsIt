@@ -1,6 +1,11 @@
 :root {
   color-scheme: light dark;
   font-family: system-ui, sans-serif;
+  --box: #7a4f2b;
+  --box-dark: #5c3a1e;
+  --lid: #8f5e35;
+  --arm: #2f2f33;
+  --lever: #d8433b;
 }
 
 body {
@@ -8,15 +13,122 @@ body {
   min-height: 100dvh;
   display: grid;
   place-items: center;
+  background: light-dark(#f3ede4, #1c1a17);
 }
 
-.machine .arm {
+.machine {
+  position: relative;
+  width: 16rem;
+  height: 9rem;
+}
+
+.box {
+  position: absolute;
+  inset: 3rem 0 0 0;
+  background: linear-gradient(180deg, var(--box), var(--box-dark));
+  border-radius: 0.75rem;
+  box-shadow: 0 0.75rem 1.5rem rgb(0 0 0 / 35%);
+  display: grid;
+  place-items: center;
+}
+
+.lid {
+  position: absolute;
+  top: 2.4rem;
+  right: 0.5rem;
+  width: 7rem;
+  height: 0.7rem;
+  background: var(--lid);
+  border-radius: 0.35rem 0.35rem 0 0;
+  transform-origin: right bottom;
+  transition: transform 0.25s ease-out;
+  z-index: 2;
+}
+
+.machine[data-state="on"] .lid {
+  transform: rotate(28deg);
+}
+
+.arm {
+  position: absolute;
+  left: 11.6rem;
+  top: 0.4rem;
   width: 1rem;
-  height: 4rem;
-  background: currentcolor;
+  height: 5rem;
+  background: var(--arm);
+  border-radius: 0.5rem 0.5rem 0 0;
+  transform-origin: bottom center;
   visibility: hidden;
+  transform: translateY(2.6rem) rotate(0deg);
+  z-index: 1;
+}
+
+.finger {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: 1.6rem;
+  height: 1rem;
+  background: var(--arm);
+  border-radius: 0.5rem 0 0 0.5rem;
 }
 
 .machine[data-state="on"] .arm {
   visibility: visible;
+  animation: reach 0.8s ease-in-out;
+}
+
+@keyframes reach {
+  0% {
+    transform: translateY(2.6rem) rotate(0deg);
+  }
+  45% {
+    transform: translateY(0) rotate(-24deg);
+  }
+  70% {
+    transform: translateY(0) rotate(-30deg);
+  }
+  100% {
+    transform: translateY(2.2rem) rotate(-8deg);
+  }
+}
+
+.switch {
+  appearance: none;
+  border: 0;
+  width: 3.4rem;
+  height: 1.8rem;
+  border-radius: 1rem;
+  background: light-dark(#e8dfd2, #3a352e);
+  box-shadow: inset 0 0.15rem 0.3rem rgb(0 0 0 / 40%);
+  cursor: pointer;
+  position: relative;
+  margin-left: 6rem;
+}
+
+.lever {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--lever);
+  transition: transform 0.2s ease-out;
+}
+
+.switch[aria-checked="true"] .lever {
+  transform: translateX(1.6rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lid,
+  .lever {
+    transition: none;
+  }
+
+  .machine[data-state="on"] .arm {
+    animation: none;
+    transform: translateY(1rem) rotate(-15deg);
+  }
 }
