@@ -1,7 +1,36 @@
 import type { Machine } from "./machine";
 
-/** Milliseconds after switch-on at which the antenna's glide reaches contact. */
-export const CONTACT_DELAY_MS = 1800;
+/** Duration of the antenna's first move; each subsequent move is 50% faster. */
+export const BASE_CONTACT_DELAY_MS = 1800;
+const MIN_CONTACT_DELAY_MS = 100;
+/** No flip for this long resets the pace back to the first move's speed. */
+const IDLE_RESET_MS = 5000;
+
+let moveCount = 0;
+let contactDelayMs = BASE_CONTACT_DELAY_MS;
+let idleResetTimer: ReturnType<typeof setTimeout> | undefined;
+
+function armIdleReset(): void {
+  clearTimeout(idleResetTimer);
+  idleResetTimer = setTimeout(() => {
+    moveCount = 0;
+  }, IDLE_RESET_MS);
+}
+
+function advanceContactDelay(): number {
+  contactDelayMs = Math.max(
+    BASE_CONTACT_DELAY_MS * 0.5 ** moveCount,
+    MIN_CONTACT_DELAY_MS,
+  );
+  moveCount++;
+  return contactDelayMs;
+}
+
+/** The delay used for the move in progress — read by the machine's own
+ * switch-off timer so it lands exactly when the antenna's glide does. */
+export function currentContactDelayMs(): number {
+  return contactDelayMs;
+}
 
 export function renderMachine(root: HTMLElement, machine: Machine): void {
   root.innerHTML = `
@@ -35,19 +64,24 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     timers = [];
   }
 
-  function retreat(): void {
+  function retreat(durMs: number): void {
     antenna.classList.remove("reach");
     antenna.classList.add("retreat");
-    schedule(() => antenna.classList.remove("retreat"), CONTACT_DELAY_MS);
+    schedule(() => antenna.classList.remove("retreat"), durMs);
   }
 
   function startSequence(): void {
+    const durMs = advanceContactDelay();
+    antenna.style.setProperty("--dur", `${durMs}ms`);
     antenna.classList.remove("retreat");
     requestAnimationFrame(() => antenna.classList.add("reach"));
-    schedule(retreat, CONTACT_DELAY_MS + 100);
+    schedule(() => retreat(durMs), durMs + 100);
   }
 
-  rocker.addEventListener("click", () => machine.flip());
+  rocker.addEventListener("click", () => {
+    armIdleReset();
+    machine.flip();
+  });
 
   machine.onEvent((event) => {
     rocker.setAttribute("aria-checked", String(machine.state === "on"));
@@ -57,7 +91,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
-      if (antenna.classList.contains("reach")) retreat();
+      if (antenna.classList.contains("reach")) retreat(currentContactDelayMs());
     }
   });
 }
