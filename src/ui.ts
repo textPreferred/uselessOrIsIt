@@ -1,3 +1,4 @@
+import { unlockAchievement } from "./achievements";
 import type { Machine } from "./machine";
 
 /** Duration of the antenna's first move; each subsequent move is 50% faster. */
@@ -72,13 +73,19 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   function startSequence(): void {
     const durMs = advanceContactDelay();
+    if (durMs <= MIN_CONTACT_DELAY_MS) unlockAchievement("top-speed");
     antenna.style.setProperty("--dur", `${durMs}ms`);
     antenna.classList.remove("retreat");
     requestAnimationFrame(() => antenna.classList.add("reach"));
     schedule(() => retreat(durMs), durMs + 100);
   }
 
-  rocker.addEventListener("click", () => {
+  rocker.addEventListener("click", (event) => {
+    const rect = rocker.getBoundingClientRect();
+    const clickedTop = event.clientY - rect.top < rect.height / 2;
+    const isOn = machine.state === "on";
+    // only the top half turns it on, only the bottom half turns it off
+    if (clickedTop === isOn) return;
     armIdleReset();
     machine.flip();
   });
@@ -91,7 +98,10 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
-      if (antenna.classList.contains("reach")) retreat(currentContactDelayMs());
+      if (antenna.classList.contains("reach")) {
+        retreat(currentContactDelayMs());
+        unlockAchievement("beat-the-antenna");
+      }
     }
   });
 }
