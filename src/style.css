@@ -182,53 +182,34 @@ body {
 
 .antenna {
   position: absolute;
-  left: calc(50% + 6.6rem); /* poised: knob just right of the rocker */
+  left: calc(50% + 6.6rem); /* rest: knob just right of the rocker */
   top: calc(50% + 2.4rem); /* aligned with the O end of the paddle */
   width: 46rem;
   height: 1.6rem;
   visibility: hidden;
-  transform: translateX(120vw);
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  /* start just past the stage's right edge — no dead travel off in empty
+     space before the knob is visible. */
+  transform: translateX(calc(min(100vw, 64rem) / 2 - 6.6rem + 1rem));
+  /* linear timing end to end — no ease-in/out, no spring: it never speeds
+     up on approach or slows for the touch, it just arrives, bored. */
+  transition: transform 1.8s linear;
   pointer-events: none;
   z-index: 3;
 }
 
-.antenna.in,
-.antenna.jab,
+.antenna.reach,
 .antenna.retreat {
   visibility: visible;
 }
 
-.antenna.in {
-  transform: translateX(0);
-}
-
-.antenna.poised {
-  animation: waver 0.9s ease-in-out infinite;
-}
-
-@keyframes waver {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  50% {
-    transform: translateX(0.35rem);
-  }
-}
-
-.antenna.jab {
-  animation: none;
-  /* reach all the way to the middle of the O side and press */
+.antenna.reach {
+  /* one continuous move, straight to the middle of the O side */
   transform: translate(-7.3rem, 0.2rem);
-  transition: transform 0.14s cubic-bezier(0.4, 0, 1, 1);
 }
 
 .antenna.retreat {
-  animation: none;
-  transform: translateX(120vw);
-  transition: transform 0.55s cubic-bezier(0.5, 0, 0.75, 0.4);
+  transform: translateX(calc(min(100vw, 64rem) / 2 - 6.6rem + 1rem));
+  transition: transform 1.8s linear;
 }
 
 .antenna span {
@@ -279,9 +260,5 @@ body {
   .paddle,
   .antenna {
     transition: none;
-  }
-
-  .antenna.poised {
-    animation: none;
   }
 }
