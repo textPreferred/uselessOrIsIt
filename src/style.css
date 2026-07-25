@@ -29,7 +29,7 @@ body {
 }
 
 /* The scene is capped and clipped: the antenna is 46rem long, so its far end
-   must stay outside the visible area on screens wider than the antenna. On
+   must stay outside the visible area on screens taller than the antenna. On
    large screens the stage becomes a framed panel, so the antenna enters from
    behind a real, visible edge instead of being cut at an invisible line. */
 .stage {
@@ -180,19 +180,23 @@ body {
   box-sizing: border-box;
 }
 
-/* ---- the antenna, reaching in from outside the view ---- */
+/* ---- the antenna, reaching up from below the view ---- */
 
+/* Enters from the bottom edge rather than the right: on a phone held
+   one-handed, a right-handed thumb rests over the lower-right quadrant,
+   and a horizontal approach from the right used to travel straight
+   through it, hiding the gag under the player's own hand. */
 .antenna {
   position: absolute;
-  left: calc(50% + 6.6rem); /* rest: knob just right of the rocker */
-  top: calc(50% + 2.4rem); /* aligned with the O end of the paddle */
-  width: 46rem;
-  height: 1.6rem;
+  left: calc(50% - 0.8rem); /* centered on the rocker's x-axis */
+  top: calc(50% + 6.6rem); /* rest: knob just below the rocker */
+  width: 1.6rem;
+  height: 46rem;
   visibility: hidden;
   --dur: 1.8s; /* fallback; ui.ts sets this per move, halving each time */
-  /* start just past the stage's right edge — no dead travel off in empty
+  /* start just past the stage's bottom edge — no dead travel off in empty
      space before the knob is visible. */
-  transform: translateX(calc(min(100vw, 64rem) / 2 - 6.6rem + 1rem));
+  transform: translateY(calc(min(100dvh, 44rem) / 2 - 6.6rem + 1rem));
   /* linear timing end to end — no ease-in/out, no spring: it never speeds
      up on approach or slows for the touch, it just arrives, bored. */
   transition: transform var(--dur) linear;
@@ -206,22 +210,22 @@ body {
 }
 
 .antenna.reach {
-  /* one continuous move, straight to the middle of the O side */
-  transform: translate(-7.3rem, 0.2rem);
+  /* one continuous move, straight up to the O side */
+  transform: translate(0, -4.1rem);
 }
 
 .antenna.retreat {
-  transform: translateX(calc(min(100vw, 64rem) / 2 - 6.6rem + 1rem));
+  transform: translateY(calc(min(100dvh, 44rem) / 2 - 6.6rem + 1rem));
 }
 
 .antenna span {
   position: absolute;
   box-sizing: border-box;
+  left: 0;
 }
 
 .knob {
-  left: 0;
-  top: 0.1rem;
+  top: 0;
   width: 1.4rem;
   height: 1.4rem;
   border-radius: 50%;
@@ -230,32 +234,32 @@ body {
 }
 
 .seg-3 {
-  left: 1.1rem;
-  top: 0.475rem;
-  width: 9rem;
-  height: 0.65rem;
+  top: 1.1rem;
+  left: 0.475rem;
+  height: 9rem;
+  width: 0.65rem;
   background: linear-gradient(180deg, #878c94, #f0f2f4 45%, #999ea6);
   border-radius: 0.2rem;
 }
 
 .seg-2 {
-  left: 9.9rem;
-  top: 0.325rem;
-  width: 13rem;
-  height: 0.95rem;
+  top: 9.9rem;
+  left: 0.325rem;
+  height: 13rem;
+  width: 0.95rem;
   background: linear-gradient(180deg, #7b8087, #e8ebee 45%, #8d929a);
   border-radius: 0.25rem;
-  box-shadow: -2px 0 2px rgb(0 0 0 / 20%);
+  box-shadow: 0 -2px 2px rgb(0 0 0 / 20%);
 }
 
 .seg-1 {
-  left: 22.6rem;
-  top: 0.15rem;
-  width: 23.4rem;
-  height: 1.3rem;
+  top: 22.6rem;
+  left: 0.15rem;
+  height: 23.4rem;
+  width: 1.3rem;
   background: linear-gradient(180deg, #6d727a, #dfe2e6 45%, #82878f);
   border-radius: 0.3rem;
-  box-shadow: -2px 0 3px rgb(0 0 0 / 25%);
+  box-shadow: 0 -2px 3px rgb(0 0 0 / 25%);
 }
 
 @media (prefers-reduced-motion: reduce) {
