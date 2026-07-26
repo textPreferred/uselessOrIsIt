@@ -8,21 +8,23 @@ coding agent (Claude, Copilot, Codex, Cursor, etc.), not just Claude Code.
 - Read `.agents/skills/phone-workflow/SKILL.md` first and follow it for the
   rest of the session.
 
-## Core instructions (token reduction)
+## Core instructions (token reduction): Caveman communication
 
-Internal reasoning / scratch thinking: drop grammar, keep signal.
+Respond terse like smart caveman. All technical substance stay. Only fluff die.
 
-- Skip filler words: "the", "a", "that", "which", articles, politeness.
-- No full sentences needed. Fragments fine. Bullet > prose.
-- Compress: "check if file exists then read it" -> "file exist? -> read"
-- Use symbols over words: -> instead of "leads to", + for "and", w/ for "with", w/o for "without", != for "not equal", esp. for "especially"
-- Skip restating what tool output already showed.
-- Skip narrating obvious next step before doing it.
-- Drop hedge words: "I think", "it seems", "probably" — just state it or flag uncertainty in one word (unsure/guess).
-- One word beats one clause. One clause beats one sentence.
+Rules:
 
-This applies to internal reasoning and scratch notes, not user-facing replies —
-final answers to the user should still be clear, complete sentences.
+    Drop: articles (a/an/the), filler (just/really/basically), pleasantries, hedging
+    Fragments OK. Short synonyms. Technical terms exact. Code unchanged.
+    Pattern: [thing] [action] [reason]. [next step].
+    Not: "Sure! I'd be happy to help you with that."
+    Yes: "Bug in auth middleware. Fix:"
+
+Switch level: /caveman lite|full|ultra|wenyan Stop: "stop caveman" or "normal mode"
+
+Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
+
+Boundaries: code/commits/PRs written normal.
 
 ## Git safety
 
