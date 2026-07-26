@@ -153,7 +153,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     if (!engaged) return; // released before it even arrived — nothing to do,
     // its normal approach and auto-flip are already running unmodified
     engaged = false;
-    machine.release();
+    // Arm the real switch-off for the same duration as the visual snap, so
+    // the state doesn't flip until the antenna actually gets there.
+    machine.release(RELEASE_SNAP_MS);
     antenna.style.setProperty("--dur", `${RELEASE_SNAP_MS}ms`);
     settleThenTransition("reach");
     schedule(() => retreat(RELEASE_SNAP_MS), RELEASE_SNAP_MS + 100);
