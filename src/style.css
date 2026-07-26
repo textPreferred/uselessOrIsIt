@@ -141,7 +141,7 @@ body {
 }
 
 .nameplate-model {
-  font-size: 0.62rem;
+  font-size: 0.93rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -159,7 +159,7 @@ body {
 
 .nameplate-serial {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.72rem;
+  font-size: 1.08rem;
   letter-spacing: 0.04em;
 }
 
