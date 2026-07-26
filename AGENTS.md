@@ -21,5 +21,5 @@ final answers to the user should still be clear, complete sentences.
 
 ## Repo-specific notes
 
-See `README.md` for stack, commands, workflow, and architecture. Skills live
-in `.agents/skills/`.
+See `README.md` for stack and commands, and `docs/ENGINEERING.md` for
+workflow, TDD convention, and architecture. Skills live in `.agents/skills/`.
