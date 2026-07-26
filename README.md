@@ -39,8 +39,9 @@ Development is strict red/green/refactor with one commit per state:
 
 ## Architecture
 
-- `src/machine.ts` — framework-free state core that emits events (`switched-on`, `switched-off` with who did it). Future features (achievements, easter eggs) subscribe here without touching the core.
+- `src/machine.ts` — framework-free state core that emits events (`switched-on`, `switched-off` with who did it). Future features subscribe here without touching the core.
 - `src/ui.ts` — renders the DOM and syncs it to machine state via `data-state` / `aria-checked`.
+- `src/easter-eggs.ts` — the list of hidden easter eggs, and the toast that reveals one when it's unlocked.
 - `src/main.ts` — wiring only.
 
 The switch is a real `role="switch"` button, so tests assert on semantics (`aria-checked`), not CSS internals.

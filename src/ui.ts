@@ -1,4 +1,4 @@
-import { unlockAchievement } from "./achievements";
+import { unlockEasterEgg } from "./easter-eggs";
 import type { Machine } from "./machine";
 
 /** Duration of the antenna's first move; each subsequent move is 50% faster. */
@@ -86,7 +86,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   function startSequence(): void {
     const durMs = advanceContactDelay();
-    if (durMs <= MIN_CONTACT_DELAY_MS) unlockAchievement("top-speed");
+    if (durMs <= MIN_CONTACT_DELAY_MS) unlockEasterEgg("top-speed");
     antenna.style.setProperty("--dur", `${durMs}ms`);
     antenna.classList.remove("retreat");
     requestAnimationFrame(() => antenna.classList.add("reach"));
@@ -103,6 +103,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   let pushTimer: ReturnType<typeof setTimeout> | undefined;
   let shiverTimer: ReturnType<typeof setTimeout> | undefined;
   let engaged = false;
+  let hasGivenUp = false;
 
   function noticeStillHeld(): void {
     engaged = true;
@@ -141,6 +142,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   }
 
   function giveUp(): void {
+    hasGivenUp = true;
     settleThenTransition("retreat");
   }
 
@@ -199,14 +201,19 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     rocker.setAttribute("aria-checked", String(machine.state === "on"));
     snap(machine.state === "on");
     if (event.type === "switched-on") {
+      hasGivenUp = false;
       cancelSequence();
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
-        unlockAchievement("beat-the-antenna");
+        unlockEasterEgg("beat-the-antenna");
       }
+    } else if (hasGivenUp) {
+      // it looked like it had backed off for good, but it was still right
+      // there — the machine still gets the last word
+      unlockEasterEgg("tug-of-war");
     }
   });
 }

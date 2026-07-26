@@ -1,6 +1,6 @@
 ---
 name: easter-eggs
-description: Ground rules for designing or implementing easter eggs, hidden features, secrets, or achievements in the Useless Machine app (e.g. src/achievements.ts). Use this whenever proposing, brainstorming, reviewing, or coding a new easter egg or hidden behavior for this app, even if the user just says "add something fun" or "hide a secret" without using the words "easter egg" — these constraints apply every time, so check them before designing the feature rather than after.
+description: Ground rules for designing or implementing easter eggs, hidden features, or secrets in the Useless Machine app (e.g. src/easter-eggs.ts). Use this whenever proposing, brainstorming, reviewing, or coding a new easter egg or hidden behavior for this app, even if the user just says "add something fun" or "hide a secret" without using the words "easter egg" — these constraints apply every time, so check them before designing the feature rather than after.
 ---
 
 # Easter eggs in the Useless Machine
