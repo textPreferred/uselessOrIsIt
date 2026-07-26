@@ -47,8 +47,8 @@ let toastShowing = false;
 
 /** Clicks land within this window of the toast appearing are ignored, so the
  * reflexive click that often follows triggering an egg can't instantly
- * dismiss it before it's been seen. */
-const DISMISS_GRACE_MS = 500;
+ * dismiss it before it's been seen. Counted down visibly in the hint text. */
+const DISMISS_GRACE_MS = 3000;
 
 function showNextToast(): void {
   if (toastShowing) return;
@@ -76,12 +76,23 @@ function showNextToast(): void {
 
   const hint = document.createElement("p");
   hint.className = "egg-hint";
-  hint.textContent = "Click anywhere to dismiss";
 
   card.append(eyebrow, title, desc, hint);
   overlay.append(card);
 
   const shownAt = Date.now();
+  function updateHint(): void {
+    const remainingS = Math.max(
+      0,
+      Math.ceil((shownAt + DISMISS_GRACE_MS - Date.now()) / 1000),
+    );
+    hint.textContent =
+      remainingS > 0 ? `Wait ${remainingS}s…` : "Click anywhere to dismiss";
+    if (remainingS <= 0) clearInterval(tickTimer);
+  }
+  updateHint();
+  const tickTimer = setInterval(updateHint, 250);
+
   overlay.addEventListener("click", () => {
     if (Date.now() - shownAt < DISMISS_GRACE_MS) return;
     overlay.remove();
