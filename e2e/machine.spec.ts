@@ -57,11 +57,11 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
   });
 
-  test("unlocks an achievement for beating the antenna", async ({ page }) => {
+  test("unlocks an easter egg for beating the antenna", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // beat the antenna to it
-    await expect(page.locator(".achievement-title")).toHaveText(
+    await expect(page.locator(".egg-title")).toHaveText(
       /turning it on and off again/i,
     );
   });
@@ -123,5 +123,21 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).toBeChecked();
 
     await expect(machineSwitch).not.toBeChecked({ timeout: 1000 });
+  });
+
+  test("unlocks an easter egg when the antenna wins after giving up", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const box = await machineSwitch.boundingBox();
+    if (!box) throw new Error("switch has no bounding box");
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.25);
+    await page.mouse.down();
+    // past arrival, past the quiet push, past the shiver — it's given up
+    await page.waitForTimeout(BASE_CONTACT_DELAY_MS + 3000);
+    await page.mouse.up();
+
+    await expect(page.locator(".egg-title")).toHaveText(/tug of war/i);
   });
 });
