@@ -5,10 +5,8 @@ coding agent (Claude, Copilot, Codex, Cursor, etc.), not just Claude Code.
 
 ## Session start checklist
 
-- If today is on or before **2026-08-16**: read
-  `.agents/skills/phone-workflow/SKILL.md` first and follow it for the rest
-  of the session — the user is phone-only until then. After that date, skip
-  this line (and feel free to delete it and the skill file).
+- Read `.agents/skills/phone-workflow/SKILL.md` first and follow it for the
+  rest of the session.
 
 ## Core instructions (token reduction)
 
