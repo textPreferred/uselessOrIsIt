@@ -1,15 +1,13 @@
 ---
 name: phone-workflow
-description: Temporary (through 2026-08-16) operating mode for when the user is working from a phone only. Read at the start of every session in this window and apply for the rest of it. Adjusts three things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, and Artifact-view HTML/JS prototypes for interaction/demo requests. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
+description: Default operating mode for this repository — assume the user is working from a phone. Read at the start of every session and apply for the rest of it. Adjusts three things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, and Artifact-view HTML/JS prototypes for interaction/demo requests. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
 ---
 
-# Working from a phone (temporary, through 2026-08-16)
+# Working from a phone
 
-The user is phone-only right now. Typing is expensive, screen space is
+Assume the user is on a phone. Typing is expensive, screen space is
 small, and PR review happens from the GitHub mobile app. Adjust
-interaction accordingly. **Expiry: 2026-08-16** — after that date this
-skill no longer applies; skip it, and feel free to delete this file and
-its reference in `AGENTS.md`.
+interaction accordingly.
 
 Apply the three rules below silently — don't announce "I'm in phone
 mode," just behave accordingly. If a request matches more than one
