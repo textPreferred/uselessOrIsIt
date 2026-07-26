@@ -1,4 +1,5 @@
 import { expect, type Locator, test } from "@playwright/test";
+import { BASE_CONTACT_DELAY_MS } from "../src/ui";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
 async function clickTop(locator: Locator): Promise<void> {
@@ -63,5 +64,26 @@ test.describe("useless machine", () => {
     await expect(page.locator(".achievement-title")).toHaveText(
       /turning it on and off again/i,
     );
+  });
+
+  test("holding the switch holds off the antenna until released", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const box = await machineSwitch.boundingBox();
+    if (!box) throw new Error("switch has no bounding box");
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.25);
+    await page.mouse.down();
+    await expect(machineSwitch).toBeChecked();
+
+    // held well past the antenna's normal flip duration — still on, because
+    // the hold is fighting it off rather than just delaying the same clock
+    await page.waitForTimeout(BASE_CONTACT_DELAY_MS * 1.5);
+    await expect(machineSwitch).toBeChecked();
+
+    // release, and the antenna wins almost immediately
+    await page.mouse.up();
+    await expect(machineSwitch).not.toBeChecked({ timeout: 2000 });
   });
 });
