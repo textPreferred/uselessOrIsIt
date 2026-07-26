@@ -6,6 +6,12 @@ export const BASE_CONTACT_DELAY_MS = 1800;
 const MIN_CONTACT_DELAY_MS = 100;
 /** No flip for this long resets the pace back to the first move's speed. */
 const IDLE_RESET_MS = 5000;
+/** A press shorter than this is just a tap; longer, and it becomes a hold
+ * that fights the antenna off. */
+const HOLD_THRESHOLD_MS = 160;
+/** How long the antenna keeps struggling against a hold before it gives up
+ * and backs off — still frozen, still waiting for the user to let go. */
+const STRUGGLE_MS = 1400;
 
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
@@ -80,11 +86,84 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     schedule(() => retreat(durMs), durMs + 100);
   }
 
-  rocker.addEventListener("click", (event) => {
+  // Holding the switch on (rather than tapping it) starts a tug-of-war: the
+  // antenna struggles against the hold, eventually backs off as if it's
+  // given up, then lunges back in the instant the user lets go.
+  let holdPointerId: number | undefined;
+  let holdTimer: ReturnType<typeof setTimeout> | undefined;
+  let struggling = false;
+
+  function startStruggle(): void {
+    struggling = true;
+    machine.hold();
+    cancelSequence();
+    antenna.classList.remove("reach", "retreat");
+    antenna.classList.add("struggle");
+    schedule(giveUp, STRUGGLE_MS);
+  }
+
+  function giveUp(): void {
+    antenna.classList.remove("struggle");
+    antenna.classList.add("retreat");
+  }
+
+  function endHold(): void {
+    if (holdPointerId === undefined) return;
+    clearTimeout(holdTimer);
+    holdPointerId = undefined;
+    if (!struggling) return; // released before the hold even kicked in
+    struggling = false;
+    cancelSequence();
+    const resumedMs = machine.release();
+    if (resumedMs === undefined) return;
+    // Whatever's in flight (the struggle shake, or the "give up" retreat)
+    // needs to be killed rather than redirected: freeze the antenna exactly
+    // where it visually is, with transitions off, then let the "reach"
+    // transition start fresh from there. Redirecting an in-flight retreat
+    // straight to "reach" instead would make the browser treat the comeback
+    // as a *reversal* of that retreat and shorten its duration to match how
+    // little of the retreat had played — snapping instead of gliding.
+    const frozenTransform = getComputedStyle(antenna).transform;
+    antenna.classList.remove("struggle", "retreat");
+    antenna.style.transition = "none";
+    antenna.style.transform = frozenTransform;
+    void antenna.offsetHeight;
+    antenna.style.setProperty("--dur", `${resumedMs}ms`);
+    antenna.style.removeProperty("transition");
+    requestAnimationFrame(() => {
+      antenna.style.removeProperty("transform");
+      antenna.classList.add("reach");
+    });
+    schedule(() => retreat(resumedMs), resumedMs + 100);
+  }
+
+  rocker.addEventListener("pointerdown", (event) => {
+    if (holdPointerId !== undefined) return; // a hold is already in progress
     const rect = rocker.getBoundingClientRect();
     const clickedTop = event.clientY - rect.top < rect.height / 2;
     const isOn = machine.state === "on";
     // only the top half turns it on, only the bottom half turns it off
+    if (clickedTop === isOn) return;
+    armIdleReset();
+    const turningOn = clickedTop && !isOn;
+    machine.flip();
+    if (turningOn) {
+      holdPointerId = event.pointerId;
+      holdTimer = setTimeout(startStruggle, HOLD_THRESHOLD_MS);
+    }
+  });
+  window.addEventListener("pointerup", (event) => {
+    if (event.pointerId === holdPointerId) endHold();
+  });
+  window.addEventListener("pointercancel", (event) => {
+    if (event.pointerId === holdPointerId) endHold();
+  });
+
+  rocker.addEventListener("click", (event) => {
+    if (event.detail !== 0) return; // pointer taps are handled by pointerdown
+    const rect = rocker.getBoundingClientRect();
+    const clickedTop = event.clientY - rect.top < rect.height / 2;
+    const isOn = machine.state === "on";
     if (clickedTop === isOn) return;
     armIdleReset();
     machine.flip();

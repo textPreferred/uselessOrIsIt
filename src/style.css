@@ -205,7 +205,8 @@ body {
 }
 
 .antenna.reach,
-.antenna.retreat {
+.antenna.retreat,
+.antenna.struggle {
   visibility: visible;
 }
 
@@ -216,6 +217,35 @@ body {
 
 .antenna.retreat {
   transform: translateY(calc(min(100dvh, 44rem) / 2 - 6.6rem + 1rem));
+}
+
+/* Fighting off a held switch: it jitters in place near the paddle instead
+   of calmly arriving, since a transition can't express "resisting". */
+.antenna.struggle {
+  animation: antenna-struggle 0.18s ease-in-out infinite;
+}
+
+@keyframes antenna-struggle {
+  0%,
+  100% {
+    transform: translate(0, -4.1rem);
+  }
+
+  20% {
+    transform: translate(-0.35rem, -4rem);
+  }
+
+  40% {
+    transform: translate(0.3rem, -4.15rem);
+  }
+
+  60% {
+    transform: translate(-0.25rem, -3.95rem);
+  }
+
+  80% {
+    transform: translate(0.35rem, -4.1rem);
+  }
 }
 
 .antenna span {
@@ -266,6 +296,10 @@ body {
   .paddle,
   .antenna {
     transition: none;
+  }
+
+  .antenna.struggle {
+    animation: none;
   }
 }
 
