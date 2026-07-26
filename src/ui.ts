@@ -6,12 +6,16 @@ export const BASE_CONTACT_DELAY_MS = 1800;
 const MIN_CONTACT_DELAY_MS = 100;
 /** No flip for this long resets the pace back to the first move's speed. */
 const IDLE_RESET_MS = 5000;
-/** A press shorter than this is just a tap; longer, and it becomes a hold
- * that fights the antenna off. */
-const HOLD_THRESHOLD_MS = 160;
-/** How long the antenna keeps struggling against a hold before it gives up
- * and backs off — still frozen, still waiting for the user to let go. */
-const STRUGGLE_MS = 1400;
+/** How much earlier than its calculated arrival to check whether the switch
+ * is still held — keeps that check reliably ahead of the machine's own
+ * switch-off timer, which is armed for the same moment. */
+const ARRIVAL_LEAD_MS = 40;
+/** How long the antenna quietly presses against a held switch before it
+ * starts visibly struggling. */
+const PUSH_MS = 1300;
+/** How fast the antenna finishes the job once the switch is finally let go
+ * — always this fast, regardless of how long it was held. */
+const RELEASE_SNAP_MS = 220;
 
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
@@ -87,54 +91,54 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   }
 
   // Holding the switch on (rather than tapping it) starts a tug-of-war: the
-  // antenna struggles against the hold, eventually backs off as if it's
-  // given up, then lunges back in the instant the user lets go.
+  // antenna makes its normal approach, notices the switch is still pressed
+  // once it arrives, quietly pushes for a while, then struggles — all while
+  // the user keeps holding. Letting go at any point makes it finish fast.
   let holdPointerId: number | undefined;
-  let holdTimer: ReturnType<typeof setTimeout> | undefined;
-  let struggling = false;
+  let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
+  let pushTimer: ReturnType<typeof setTimeout> | undefined;
+  let engaged = false;
 
-  function startStruggle(): void {
-    struggling = true;
+  function noticeStillHeld(): void {
+    engaged = true;
     machine.hold();
-    cancelSequence();
-    antenna.classList.remove("reach", "retreat");
-    antenna.classList.add("struggle");
-    schedule(giveUp, STRUGGLE_MS);
+    cancelSequence(); // cancel the retreat startSequence() scheduled for arrival
+    pushTimer = setTimeout(startStruggle, PUSH_MS);
   }
 
-  function giveUp(): void {
-    antenna.classList.remove("struggle");
-    antenna.classList.add("retreat");
+  function startStruggle(): void {
+    antenna.classList.remove("reach");
+    antenna.classList.add("struggle");
   }
 
   function endHold(): void {
     if (holdPointerId === undefined) return;
-    clearTimeout(holdTimer);
+    clearTimeout(arrivalTimer);
+    clearTimeout(pushTimer);
     holdPointerId = undefined;
-    if (!struggling) return; // released before the hold even kicked in
-    struggling = false;
-    cancelSequence();
-    const resumedMs = machine.release();
-    if (resumedMs === undefined) return;
-    // Whatever's in flight (the struggle shake, or the "give up" retreat)
-    // needs to be killed rather than redirected: freeze the antenna exactly
-    // where it visually is, with transitions off, then let the "reach"
-    // transition start fresh from there. Redirecting an in-flight retreat
-    // straight to "reach" instead would make the browser treat the comeback
-    // as a *reversal* of that retreat and shorten its duration to match how
-    // little of the retreat had played — snapping instead of gliding.
+    if (!engaged) return; // released before it even arrived — nothing to do,
+    // its normal approach and auto-flip are already running unmodified
+    engaged = false;
+    machine.release();
+    // Whatever's in flight (the quiet push, or the struggle shake) needs to
+    // be killed rather than redirected: freeze the antenna exactly where it
+    // visually is, with transitions off, then let the finishing snap start
+    // fresh from there. Redirecting an in-flight transition straight into a
+    // new one instead would make the browser treat it as a *reversal* and
+    // shorten its duration to match how little of the original had played —
+    // snapping into place instead of a clean, fast motion.
     const frozenTransform = getComputedStyle(antenna).transform;
-    antenna.classList.remove("struggle", "retreat");
+    antenna.classList.remove("struggle", "reach");
     antenna.style.transition = "none";
     antenna.style.transform = frozenTransform;
     void antenna.offsetHeight;
-    antenna.style.setProperty("--dur", `${resumedMs}ms`);
+    antenna.style.setProperty("--dur", `${RELEASE_SNAP_MS}ms`);
     antenna.style.removeProperty("transition");
     requestAnimationFrame(() => {
       antenna.style.removeProperty("transform");
       antenna.classList.add("reach");
     });
-    schedule(() => retreat(resumedMs), resumedMs + 100);
+    schedule(() => retreat(RELEASE_SNAP_MS), RELEASE_SNAP_MS + 100);
   }
 
   rocker.addEventListener("pointerdown", (event) => {
@@ -149,7 +153,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     machine.flip();
     if (turningOn) {
       holdPointerId = event.pointerId;
-      holdTimer = setTimeout(startStruggle, HOLD_THRESHOLD_MS);
+      engaged = false;
+      const arrivalMs = Math.max(0, currentContactDelayMs() - ARRIVAL_LEAD_MS);
+      arrivalTimer = setTimeout(noticeStillHeld, arrivalMs);
     }
   });
   window.addEventListener("pointerup", (event) => {
