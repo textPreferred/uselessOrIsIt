@@ -25,7 +25,7 @@ All work happens through PRs — designed to be driveable entirely from a phone:
 2. The **check** job (lint, typecheck, build, e2e) must go green on the PR.
 3. Merge to `main` → auto-deploy to GitHub Pages → a **smoke** job re-runs the `@smoke` tests against the live site, so a broken deployment turns the pipeline red.
 
-Dependabot opens grouped weekly update PRs that auto-merge once the pipeline passes.
+Dependabot opens grouped hourly update PRs that auto-merge once the pipeline passes.
 
 ### TDD convention
 
