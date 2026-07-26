@@ -15,6 +15,7 @@ const smokeUrl = process.env.SMOKE_URL;
 
 export default defineConfig({
   testDir: "./e2e",
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
@@ -31,8 +32,13 @@ export default defineConfig({
   ],
   webServer: smokeUrl
     ? undefined
+    // CI already ran `npm run build` as a separate step (so build failures
+    // surface before the slower browser install/test steps); avoid building
+    // the app twice by only building here for local runs.
     : {
-        command: "npm run build && npm run preview",
+        command: process.env.CI
+          ? "npm run preview"
+          : "npm run build && npm run preview",
         url: "http://localhost:4173/uselessOrIsIt/",
         reuseExistingServer: !process.env.CI,
       },
