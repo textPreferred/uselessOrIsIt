@@ -45,6 +45,11 @@ const unlocked = loadUnlocked();
 const toastQueue: EasterEgg[] = [];
 let toastShowing = false;
 
+/** Clicks land within this window of the toast appearing are ignored, so the
+ * reflexive click that often follows triggering an egg can't instantly
+ * dismiss it before it's been seen. */
+const DISMISS_GRACE_MS = 500;
+
 function showNextToast(): void {
   if (toastShowing) return;
   const egg = toastQueue.shift();
@@ -75,7 +80,10 @@ function showNextToast(): void {
 
   card.append(eyebrow, title, desc, hint);
   overlay.append(card);
+
+  const shownAt = Date.now();
   overlay.addEventListener("click", () => {
+    if (Date.now() - shownAt < DISMISS_GRACE_MS) return;
     overlay.remove();
     toastShowing = false;
     showNextToast();
