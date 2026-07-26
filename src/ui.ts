@@ -1,4 +1,4 @@
-import { unlockEasterEgg } from "./easter-eggs";
+import { offerEasterEggReset, unlockEasterEgg } from "./easter-eggs";
 import type { Machine } from "./machine";
 
 /** Dashes between letter/digit runs so the build's commit SHA reads like a
@@ -27,6 +27,12 @@ const SHIVER_MS = 1200;
 /** How fast the antenna finishes the job once the switch is finally let go
  * — always this fast, regardless of how long it was held. */
 const RELEASE_SNAP_MS = 220;
+
+// Clicking the four mounting screws clockwise, starting from the top-left,
+// offers to reset every unlocked easter egg. A pause between clicks resets
+// progress — this is a click pattern, not a race against the clock.
+const SCREW_SEQUENCE = ["tl", "tr", "br", "bl"] as const;
+const SCREW_STEP_TIMEOUT_MS = 3000;
 
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
@@ -83,6 +89,29 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   const rocker = mustFind<HTMLButtonElement>(root, "[role=switch]");
   const antenna = mustFind<HTMLDivElement>(root, "[data-testid=arm]");
+
+  let screwStep = 0;
+  let screwStepTimer: ReturnType<typeof setTimeout> | undefined;
+
+  for (const corner of SCREW_SEQUENCE) {
+    const screw = mustFind<HTMLSpanElement>(root, `.screw-${corner}`);
+    screw.addEventListener("click", () => {
+      clearTimeout(screwStepTimer);
+      if (corner === SCREW_SEQUENCE[screwStep]) {
+        screwStep++;
+      } else {
+        screwStep = corner === SCREW_SEQUENCE[0] ? 1 : 0;
+      }
+      if (screwStep === SCREW_SEQUENCE.length) {
+        screwStep = 0;
+        offerEasterEggReset();
+        return;
+      }
+      screwStepTimer = setTimeout(() => {
+        screwStep = 0;
+      }, SCREW_STEP_TIMEOUT_MS);
+    });
+  }
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 

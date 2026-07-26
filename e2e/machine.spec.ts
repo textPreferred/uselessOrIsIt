@@ -1,4 +1,4 @@
-import { expect, type Locator, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { BASE_CONTACT_DELAY_MS } from "../src/ui";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
@@ -12,6 +12,14 @@ async function clickBottom(locator: Locator): Promise<void> {
   const box = await locator.boundingBox();
   if (!box) throw new Error("switch has no bounding box");
   await locator.click({ position: { x: box.width / 2, y: box.height * 0.75 } });
+}
+
+/** Clicks the four mounting screws clockwise, starting from the top-left. */
+async function clickScrewsClockwise(page: Page): Promise<void> {
+  await page.locator(".screw-tl").click();
+  await page.locator(".screw-tr").click();
+  await page.locator(".screw-br").click();
+  await page.locator(".screw-bl").click();
 }
 
 test.describe("useless machine", () => {
@@ -162,5 +170,67 @@ test.describe("useless machine", () => {
     await page.mouse.up();
 
     await expect(page.locator(".egg-title")).toHaveText(/tug of war/i);
+  });
+
+  test("clicking the four screws clockwise from the top-left offers to reset easter eggs", async ({
+    page,
+  }) => {
+    await clickScrewsClockwise(page);
+    await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
+    await expect(
+      page.getByRole("button", { name: "Yes, reset my easter eggs" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: "Don't reset easter eggs but collect this one",
+      }),
+    ).toBeVisible();
+  });
+
+  test("clicking screws out of order doesn't offer to reset", async ({
+    page,
+  }) => {
+    await page.locator(".screw-tl").click();
+    await page.locator(".screw-bl").click(); // wrong — bl isn't next after tl
+    await page.locator(".screw-tr").click();
+    await page.locator(".screw-br").click();
+    await expect(page.locator(".egg-toast")).toBeHidden();
+  });
+
+  test("declining the reset collects the anti-easter-egg like any other", async ({
+    page,
+  }) => {
+    await clickScrewsClockwise(page);
+    await page
+      .getByRole("button", {
+        name: "Don't reset easter eggs but collect this one",
+      })
+      .click();
+    await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
+    await expect(page.locator(".egg-hint")).toBeVisible();
+  });
+
+  test("resetting wipes previously found easter eggs so they can be found again", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-title")).toHaveText(
+      /turning it on and off again/i,
+    );
+    await page.locator(".egg-toast").click(); // dismiss
+
+    await clickScrewsClockwise(page);
+    await page
+      .getByRole("button", { name: "Yes, reset my easter eggs" })
+      .click();
+    await expect(page.locator(".egg-toast")).toBeHidden();
+
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch);
+    await expect(page.locator(".egg-title")).toHaveText(
+      /turning it on and off again/i,
+    );
   });
 });
