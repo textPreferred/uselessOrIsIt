@@ -503,6 +503,45 @@ body {
   margin: 0;
 }
 
+.egg-toast-confirm {
+  cursor: default;
+}
+
+.egg-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.egg-button {
+  appearance: none;
+  border: 0;
+  border-radius: 0.6rem;
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.egg-button-reset {
+  background: var(--red);
+  color: #fff;
+}
+
+.egg-button-reset:hover {
+  background: var(--red-hi);
+}
+
+.egg-button-keep {
+  background: color-mix(in srgb, var(--card-ink) 12%, transparent);
+  color: var(--card-ink);
+}
+
+.egg-button-keep:hover {
+  background: color-mix(in srgb, var(--card-ink) 18%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .egg-toast,
   .egg-card {

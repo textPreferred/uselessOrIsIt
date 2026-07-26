@@ -4,6 +4,8 @@ export interface EasterEgg {
   description: string;
 }
 
+export const ANTI_EASTER_EGG_ID = "anti-easter-egg";
+
 export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "beat-the-antenna",
@@ -19,6 +21,11 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     id: "tug-of-war",
     title: "Tug of war",
     description: "They, who are last will be first.",
+  },
+  {
+    id: ANTI_EASTER_EGG_ID,
+    title: "Anti-Easter Egg",
+    description: "Delete all easter eggs, so I can start over.",
   },
 ];
 
@@ -93,4 +100,58 @@ export function unlockEasterEgg(id: string): void {
   saveUnlocked(unlocked);
   toastQueue.push(egg);
   showNextToast();
+}
+
+/** The anti-easter-egg: found by clicking all four screws clockwise from the
+ * top-left. Offers to wipe every unlocked egg (this one included) so they're
+ * all up for grabs again, rather than just unlocking on discovery like the
+ * others — declining collects it normally instead. */
+export function offerEasterEggReset(): void {
+  const egg = EASTER_EGGS.find((e) => e.id === ANTI_EASTER_EGG_ID);
+  if (!egg) return;
+
+  const overlay = document.createElement("div");
+  overlay.className = "egg-toast egg-toast-confirm";
+
+  const card = document.createElement("div");
+  card.className = "egg-card";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "egg-eyebrow";
+  eyebrow.textContent = "Easter egg found";
+
+  const title = document.createElement("p");
+  title.className = "egg-title";
+  title.textContent = egg.title;
+
+  const desc = document.createElement("p");
+  desc.className = "egg-desc";
+  desc.textContent = egg.description;
+
+  const actions = document.createElement("div");
+  actions.className = "egg-actions";
+
+  const resetButton = document.createElement("button");
+  resetButton.type = "button";
+  resetButton.className = "egg-button egg-button-reset";
+  resetButton.textContent = "Yes, reset my easter eggs";
+  resetButton.addEventListener("click", () => {
+    unlocked.clear();
+    saveUnlocked(unlocked);
+    overlay.remove();
+  });
+
+  const keepButton = document.createElement("button");
+  keepButton.type = "button";
+  keepButton.className = "egg-button egg-button-keep";
+  keepButton.textContent = "Don't reset easter eggs but collect this one";
+  keepButton.addEventListener("click", () => {
+    overlay.remove();
+    unlockEasterEgg(ANTI_EASTER_EGG_ID);
+  });
+
+  actions.append(resetButton, keepButton);
+  card.append(eyebrow, title, desc, actions);
+  overlay.append(card);
+  document.body.appendChild(overlay);
 }
