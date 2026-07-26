@@ -49,6 +49,12 @@ export function currentContactDelayMs(): number {
 export function renderMachine(root: HTMLElement, machine: Machine): void {
   root.innerHTML = `
     <div class="stage">
+      <div class="plate" aria-hidden="true">
+        <span class="screw screw-tl"></span>
+        <span class="screw screw-tr"></span>
+        <span class="screw screw-bl"></span>
+        <span class="screw screw-br"></span>
+      </div>
       <div class="sticky-note sticky-note-on" aria-hidden="true">On</div>
       <button class="rocker" type="button" role="switch" aria-checked="false" aria-label="Switch">
         <span class="well"></span>
