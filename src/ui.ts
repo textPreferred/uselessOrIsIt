@@ -13,6 +13,9 @@ const ARRIVAL_LEAD_MS = 40;
 /** How long the antenna quietly presses against a held switch before it
  * starts visibly struggling. */
 const PUSH_MS = 1300;
+/** How long the antenna struggles before it gives up and backs off — still
+ * waiting, not actually leaving, for as long as the switch stays held. */
+const SHIVER_MS = 1200;
 /** How fast the antenna finishes the job once the switch is finally let go
  * — always this fast, regardless of how long it was held. */
 const RELEASE_SNAP_MS = 220;
@@ -92,11 +95,13 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   // Holding the switch on (rather than tapping it) starts a tug-of-war: the
   // antenna makes its normal approach, notices the switch is still pressed
-  // once it arrives, quietly pushes for a while, then struggles — all while
-  // the user keeps holding. Letting go at any point makes it finish fast.
+  // once it arrives, quietly pushes for a while, struggles, then gives up
+  // and backs off — but it's still right there, waiting. Letting go at any
+  // point makes it finish fast.
   let holdPointerId: number | undefined;
   let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
   let pushTimer: ReturnType<typeof setTimeout> | undefined;
+  let shiverTimer: ReturnType<typeof setTimeout> | undefined;
   let engaged = false;
 
   function noticeStillHeld(): void {
@@ -109,35 +114,48 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   function startStruggle(): void {
     antenna.classList.remove("reach");
     antenna.classList.add("struggle");
+    shiverTimer = setTimeout(giveUp, SHIVER_MS);
+  }
+
+  // Whatever's in flight (the struggle shake, a mid-flight transition) needs
+  // to be killed rather than redirected: freeze the antenna exactly where it
+  // visually is, with transitions off, then let `nextClass` start a fresh
+  // transition from there. Redirecting an in-flight animation or transition
+  // straight into a new target instead means the browser never registers a
+  // distinct "before" to transition from — an in-flight *transition* gets
+  // read as a reversal and has its duration shortened to match how little
+  // had played, while an active *animation* being removed at the same
+  // moment its replacement is added leaves nothing to transition from at
+  // all. Either way, the result is snapping into place instead of gliding.
+  function settleThenTransition(nextClass: string): void {
+    const frozenTransform = getComputedStyle(antenna).transform;
+    antenna.classList.remove("reach", "retreat", "struggle");
+    antenna.style.transition = "none";
+    antenna.style.transform = frozenTransform;
+    void antenna.offsetHeight;
+    antenna.style.removeProperty("transition");
+    requestAnimationFrame(() => {
+      antenna.style.removeProperty("transform");
+      antenna.classList.add(nextClass);
+    });
+  }
+
+  function giveUp(): void {
+    settleThenTransition("retreat");
   }
 
   function endHold(): void {
     if (holdPointerId === undefined) return;
     clearTimeout(arrivalTimer);
     clearTimeout(pushTimer);
+    clearTimeout(shiverTimer);
     holdPointerId = undefined;
     if (!engaged) return; // released before it even arrived — nothing to do,
     // its normal approach and auto-flip are already running unmodified
     engaged = false;
     machine.release();
-    // Whatever's in flight (the quiet push, or the struggle shake) needs to
-    // be killed rather than redirected: freeze the antenna exactly where it
-    // visually is, with transitions off, then let the finishing snap start
-    // fresh from there. Redirecting an in-flight transition straight into a
-    // new one instead would make the browser treat it as a *reversal* and
-    // shorten its duration to match how little of the original had played —
-    // snapping into place instead of a clean, fast motion.
-    const frozenTransform = getComputedStyle(antenna).transform;
-    antenna.classList.remove("struggle", "reach");
-    antenna.style.transition = "none";
-    antenna.style.transform = frozenTransform;
-    void antenna.offsetHeight;
     antenna.style.setProperty("--dur", `${RELEASE_SNAP_MS}ms`);
-    antenna.style.removeProperty("transition");
-    requestAnimationFrame(() => {
-      antenna.style.removeProperty("transform");
-      antenna.classList.add("reach");
-    });
+    settleThenTransition("reach");
     schedule(() => retreat(RELEASE_SNAP_MS), RELEASE_SNAP_MS + 100);
   }
 
