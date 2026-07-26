@@ -66,7 +66,25 @@ test.describe("useless machine", () => {
     );
   });
 
-  test("holding the switch holds off the antenna until released", async ({
+  test("releasing before the antenna arrives doesn't rush it off", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const box = await machineSwitch.boundingBox();
+    if (!box) throw new Error("switch has no bounding box");
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.25);
+    await page.mouse.down();
+    await page.waitForTimeout(300); // let go long before the antenna arrives
+    await page.mouse.up();
+
+    // still mid-approach — letting go early shouldn't have sped anything up
+    await page.waitForTimeout(BASE_CONTACT_DELAY_MS - 600);
+    await expect(machineSwitch).toBeChecked();
+    await expect(machineSwitch).not.toBeChecked({ timeout: 2000 });
+  });
+
+  test("holding the switch past its arrival holds it off until released", async ({
     page,
   }) => {
     const machineSwitch = page.getByRole("switch");
@@ -77,13 +95,13 @@ test.describe("useless machine", () => {
     await page.mouse.down();
     await expect(machineSwitch).toBeChecked();
 
-    // held well past the antenna's normal flip duration — still on, because
-    // the hold is fighting it off rather than just delaying the same clock
+    // held well past the antenna's normal arrival — still on, because it
+    // noticed the hold and is waiting rather than just delaying the clock
     await page.waitForTimeout(BASE_CONTACT_DELAY_MS * 1.5);
     await expect(machineSwitch).toBeChecked();
 
-    // release, and the antenna wins almost immediately
+    // release, and it wins fast
     await page.mouse.up();
-    await expect(machineSwitch).not.toBeChecked({ timeout: 2000 });
+    await expect(machineSwitch).not.toBeChecked({ timeout: 1000 });
   });
 });
