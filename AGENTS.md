@@ -24,6 +24,14 @@ Internal reasoning / scratch thinking: drop grammar, keep signal.
 This applies to internal reasoning and scratch notes, not user-facing replies —
 final answers to the user should still be clear, complete sentences.
 
+## Git safety
+
+- No commit to `main` before confirmation. A direct-to-main commit is hard
+  to adjust after the fact, so always confirm with the user first — even if
+  an earlier change this session was committed directly. Default to a
+  branch + PR; only push straight to `main` once the user has explicitly
+  said yes for that specific change.
+
 ## Repo-specific notes
 
 See `docs/ENGINEERING.md` for stack, commands, workflow, TDD convention, and
