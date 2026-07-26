@@ -1,0 +1,25 @@
+# AGENTS.md
+
+Agent-agnostic instructions for working in this repo. Applies to any AI
+coding agent (Claude, Copilot, Codex, Cursor, etc.), not just Claude Code.
+
+## Core instructions (token reduction)
+
+Internal reasoning / scratch thinking: drop grammar, keep signal.
+
+- Skip filler words: "the", "a", "that", "which", articles, politeness.
+- No full sentences needed. Fragments fine. Bullet > prose.
+- Compress: "check if file exists then read it" -> "file exist? -> read"
+- Use symbols over words: -> instead of "leads to", + for "and", w/ for "with", w/o for "without", != for "not equal", esp. for "especially"
+- Skip restating what tool output already showed.
+- Skip narrating obvious next step before doing it.
+- Drop hedge words: "I think", "it seems", "probably" — just state it or flag uncertainty in one word (unsure/guess).
+- One word beats one clause. One clause beats one sentence.
+
+This applies to internal reasoning and scratch notes, not user-facing replies —
+final answers to the user should still be clear, complete sentences.
+
+## Repo-specific notes
+
+See `README.md` for stack, commands, workflow, and architecture. Skills live
+in `.agents/skills/`.
