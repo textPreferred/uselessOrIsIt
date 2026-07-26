@@ -9,7 +9,6 @@
   --red: #c8313a;
   --red-hi: #e05560;
   --red-lo: #8f1d26;
-  --mark: #e6dfda;
   --card: light-dark(#fdfcfa, #26272b);
   --card-ink: light-dark(#1c1c1e, #f1f0ed);
 }
@@ -159,25 +158,40 @@ body {
   );
 }
 
-.mark {
-  color: var(--mark);
+/* ---- sticky notes: hand-labeled since the switch itself isn't ---- */
+
+.sticky-note {
+  position: absolute;
+  left: 50%;
+  width: 4.6rem;
+  height: 4.2rem;
+  display: grid;
+  place-items: center;
+  background: #f7e98e;
+  background-image: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 35%),
+    transparent 40%
+  );
+  box-shadow:
+    0.15rem 0.25rem 0.5rem rgb(0 0 0 / 35%),
+    inset 0 0 0 1px rgb(0 0 0 / 5%);
+  font-family: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #2c2a1e;
   user-select: none;
+  z-index: 1;
 }
 
-.mark-i {
-  width: 0.5rem;
-  height: 1.9rem;
-  border-radius: 0.3rem;
-  background: var(--mark);
-  box-shadow: 0 -1px 1px rgb(0 0 0 / 35%);
+.sticky-note-on {
+  top: calc(50% - 6.75rem - 0.7rem);
+  transform: translate(calc(-50% - 1.1rem), -100%) rotate(-7deg);
 }
 
-.mark-o {
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 50%;
-  border: 0.45rem solid var(--mark);
-  box-sizing: border-box;
+.sticky-note-off {
+  top: calc(50% + 6.75rem + 0.7rem);
+  transform: translate(calc(-50% + 1.1rem), 0) rotate(5deg);
 }
 
 /* ---- the antenna, reaching up from below the view ---- */
