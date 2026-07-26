@@ -1,6 +1,14 @@
 import { unlockEasterEgg } from "./easter-eggs";
 import type { Machine } from "./machine";
 
+/** Dashes between letter/digit runs so the build's commit SHA reads like a
+ * stamped serial number instead of a hex hash. */
+function serialize(sha: string): string {
+  return sha
+    .toUpperCase()
+    .replace(/(?<=[0-9])(?=[A-Z])|(?<=[A-Z])(?=[0-9])/g, "-");
+}
+
 /** Duration of the antenna's first move; each subsequent move is 50% faster. */
 export const BASE_CONTACT_DELAY_MS = 1800;
 const MIN_CONTACT_DELAY_MS = 100;
@@ -54,6 +62,10 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         <span class="screw screw-tr"></span>
         <span class="screw screw-bl"></span>
         <span class="screw screw-br"></span>
+      </div>
+      <div class="nameplate" aria-hidden="true">
+        <span class="nameplate-model">Useless Machine <span class="nameplate-mark">?</span></span>
+        <span class="nameplate-serial">S/N ${serialize(__COMMIT_SHA__)}</span>
       </div>
       <div class="sticky-note sticky-note-on" aria-hidden="true">On</div>
       <button class="rocker" type="button" role="switch" aria-checked="false" aria-label="Switch">
