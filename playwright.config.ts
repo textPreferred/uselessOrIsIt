@@ -32,10 +32,10 @@ export default defineConfig({
   ],
   webServer: smokeUrl
     ? undefined
-    // CI already ran `npm run build` as a separate step (so build failures
-    // surface before the slower browser install/test steps); avoid building
-    // the app twice by only building here for local runs.
-    : {
+    : // CI already ran `npm run build` as a separate step (so build failures
+      // surface before the slower browser install/test steps); avoid building
+      // the app twice by only building here for local runs.
+      {
         command: process.env.CI
           ? "npm run preview"
           : "npm run build && npm run preview",
