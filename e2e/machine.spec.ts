@@ -66,6 +66,29 @@ test.describe("useless machine", () => {
     );
   });
 
+  test("counts down the easter egg toast's dismiss grace period", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // beat the antenna to it
+
+    const hint = page.locator(".egg-hint");
+    await expect(hint).toHaveText(/wait 3s/i);
+
+    // clicking mid-countdown doesn't dismiss it
+    await page.locator(".egg-toast").click();
+    await expect(page.locator(".egg-toast")).toBeVisible();
+    await expect(hint).toHaveText(/wait 2s/i);
+
+    // once the countdown reaches zero, it invites a click and honors it
+    await expect(hint).toHaveText(/click anywhere to dismiss/i, {
+      timeout: 4000,
+    });
+    await page.locator(".egg-toast").click();
+    await expect(page.locator(".egg-toast")).toBeHidden();
+  });
+
   test("releasing before the antenna arrives doesn't rush it off", async ({
     page,
   }) => {
