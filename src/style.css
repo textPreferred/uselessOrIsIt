@@ -221,7 +221,6 @@ body {
 .antenna span {
   position: absolute;
   box-sizing: border-box;
-  left: 0;
 }
 
 .knob {
