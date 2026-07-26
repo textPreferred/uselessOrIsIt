@@ -26,11 +26,15 @@ final answers to the user should still be clear, complete sentences.
 
 ## Git safety
 
-- No commit to `main` before confirmation. A direct-to-main commit is hard
-  to adjust after the fact, so always confirm with the user first — even if
-  an earlier change this session was committed directly. Default to a
-  branch + PR; only push straight to `main` once the user has explicitly
-  said yes for that specific change.
+- No direct commit/push to `main` before confirmation. A direct-to-main
+  commit is hard to adjust after the fact, so always confirm with the user
+  first — even if an earlier change this session was committed directly.
+  Default to a branch + PR; only push straight to `main` once the user has
+  explicitly said yes for that specific change.
+- This does not apply to merging a PR once its CI is green — that's the
+  normal shipping path (see `.agents/skills/phone-workflow/SKILL.md` rule
+  1, "Ship it"), already reviewable and revertable via the PR itself, and
+  doesn't need a second confirmation beyond the one that started it.
 
 ## Repo-specific notes
 

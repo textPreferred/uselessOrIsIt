@@ -1,6 +1,6 @@
 ---
 name: phone-workflow
-description: Default operating mode for this repository — assume the user is working from a phone. Read at the start of every session and apply for the rest of it. Adjusts three things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, and Artifact-view HTML/JS prototypes for interaction/demo requests. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
+description: Default operating mode for this repository — assume the user is working from a phone. Read at the start of every session and apply for the rest of it. Adjusts four things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, Artifact-view HTML/JS prototypes for interaction/demo requests (no TDD needed for previews/prototypes), and TDD-following real implementation plus a re-confirmation once a preview is approved. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
 ---
 
 # Working from a phone
@@ -9,9 +9,9 @@ Assume the user is on a phone. Typing is expensive, screen space is
 small, and PR review happens from the GitHub mobile app. Adjust
 interaction accordingly.
 
-Apply the three rules below silently — don't announce "I'm in phone
-mode," just behave accordingly. If a request matches more than one
-trigger, satisfy all of the matching ones.
+Apply the rules below silently — don't announce "I'm in phone mode,"
+just behave accordingly. If a request matches more than one trigger,
+satisfy all of the matching ones.
 
 ## 1. Ship-it default
 
@@ -51,7 +51,8 @@ similar visual asks.
 Don't build an HTML mockup in the Artifact view for these — on a phone
 that's an extra tap into a side panel, away from the chat. Instead:
 
-- Implement (or mock) the change for real in the app.
+- Mock the change quickly, in the app or otherwise — this is a preview,
+  not the shipped change, so skip the TDD convention here.
 - Run it (see the `run` skill) and take a screenshot.
 - Send the screenshot(s) with `SendUserFile` (`display: 'render'`) so
   they show inline in the chat, not as a side-panel link.
@@ -66,4 +67,20 @@ Trigger words: "prototype", "demo", "try it", "play with",
 These need actual interaction, which a screenshot can't give — use the
 `Artifact` tool to publish a self-contained HTML/JS prototype so the user
 can tap around on the phone screen. This is the one case in this skill
-where the artifact view is the right call, not the exception.
+where the artifact view is the right call, not the exception. Build it
+standalone and skip the TDD convention — it's a throwaway preview, not
+the shipped change.
+
+## 4. Preview confirmed → implement for real
+
+Once the user confirms a preview or prototype (rule 2 or 3) matches what
+they want, don't ship the preview itself:
+
+1. Implement the change properly in the codebase, this time following
+   the repo's TDD convention (rule 1, step 2) — the quick mock was
+   exploration, not production code.
+2. Before offering the "Ship it" one-tap option, show the real, running
+   result once more (a fresh screenshot or prototype) — a quick preview
+   isn't guaranteed to match the TDD'd version exactly, so confirm on
+   the real thing before shipping.
+3. Then proceed with rule 1 as normal.
