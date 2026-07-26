@@ -1,12 +1,12 @@
 ---
 name: phone-workflow
-description: Temporary (through 2026-08-16) operating mode for when Hannes is working from a phone only. Read at the start of every session in this window and apply for the rest of it. Adjusts three things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, and Artifact-view HTML/JS prototypes for interaction/demo requests. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
+description: Temporary (through 2026-08-16) operating mode for when the user is working from a phone only. Read at the start of every session in this window and apply for the rest of it. Adjusts three things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, and Artifact-view HTML/JS prototypes for interaction/demo requests. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
 ---
 
 # Working from a phone (temporary, through 2026-08-16)
 
-Hannes is phone-only for about three weeks. Typing is expensive, screen
-space is small, and PR review happens from the GitHub mobile app. Adjust
+The user is phone-only right now. Typing is expensive, screen space is
+small, and PR review happens from the GitHub mobile app. Adjust
 interaction accordingly. **Expiry: 2026-08-16** — after that date this
 skill no longer applies; skip it, and feel free to delete this file and
 its reference in `AGENTS.md`.
@@ -31,8 +31,8 @@ Ask this once per checkpoint; don't nag on every message.
 "Ship it" means, without further prompting:
 
 1. Make sure the work is on a feature branch (create one if needed).
-   Don't commit straight to `main` for this flow — the phone owner
-   reviews from a PR in the GitHub mobile app.
+   Don't commit straight to `main` for this flow — the user reviews
+   from a PR in the GitHub mobile app.
 2. Follow the repo's TDD convention (`docs/ENGINEERING.md`): red/green/
    refactor commits for behavior changes. Don't retrofit history that's
    already there — just keep following it from here on.
@@ -43,7 +43,7 @@ Ask this once per checkpoint; don't nag on every message.
 
 If CI fails, diagnose and re-push automatically, same as normal PR
 babysitting. Only send a message if genuinely blocked on a decision only
-Hannes can make.
+the user can make.
 
 ## 2. Visual/design requests → inline pictures, not artifacts
 
@@ -66,6 +66,6 @@ Trigger words: "prototype", "demo", "try it", "play with",
 "interactive".
 
 These need actual interaction, which a screenshot can't give — use the
-`Artifact` tool to publish a self-contained HTML/JS prototype so Hannes
+`Artifact` tool to publish a self-contained HTML/JS prototype so the user
 can tap around on the phone screen. This is the one case in this skill
 where the artifact view is the right call, not the exception.
