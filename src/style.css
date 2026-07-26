@@ -205,7 +205,8 @@ body {
 }
 
 .antenna.reach,
-.antenna.retreat {
+.antenna.retreat,
+.antenna.struggle {
   visibility: visible;
 }
 
@@ -216,6 +217,35 @@ body {
 
 .antenna.retreat {
   transform: translateY(calc(min(100dvh, 44rem) / 2 - 6.6rem + 1rem));
+}
+
+/* Fighting off a held switch: it jitters in place near the paddle instead
+   of calmly arriving, since a transition can't express "resisting". */
+.antenna.struggle {
+  animation: antenna-struggle 0.18s ease-in-out infinite;
+}
+
+@keyframes antenna-struggle {
+  0%,
+  100% {
+    transform: translate(0, -4.1rem);
+  }
+
+  20% {
+    transform: translate(-0.35rem, -4rem);
+  }
+
+  40% {
+    transform: translate(0.3rem, -4.15rem);
+  }
+
+  60% {
+    transform: translate(-0.25rem, -3.95rem);
+  }
+
+  80% {
+    transform: translate(0.35rem, -4.1rem);
+  }
 }
 
 .antenna span {
@@ -267,11 +297,15 @@ body {
   .antenna {
     transition: none;
   }
+
+  .antenna.struggle {
+    animation: none;
+  }
 }
 
-/* ---- achievement unlock toast ---- */
+/* ---- easter egg toast ---- */
 
-.achievement-toast {
+.egg-toast {
   position: fixed;
   inset: 0;
   background: rgb(0 0 0 / 45%);
@@ -279,10 +313,10 @@ body {
   place-items: center;
   z-index: 20;
   cursor: pointer;
-  animation: achievement-fade-in 0.2s ease;
+  animation: egg-fade-in 0.2s ease;
 }
 
-@keyframes achievement-fade-in {
+@keyframes egg-fade-in {
   from {
     opacity: 0;
   }
@@ -292,7 +326,7 @@ body {
   }
 }
 
-.achievement-card {
+.egg-card {
   background: var(--card);
   color: var(--card-ink);
   border-radius: 1rem;
@@ -302,10 +336,10 @@ body {
   box-sizing: border-box;
   box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 40%);
   text-align: center;
-  animation: achievement-pop-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+  animation: egg-pop-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
-@keyframes achievement-pop-in {
+@keyframes egg-pop-in {
   from {
     transform: scale(0.85);
     opacity: 0;
@@ -317,7 +351,7 @@ body {
   }
 }
 
-.achievement-eyebrow {
+.egg-eyebrow {
   font-size: 0.7rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -326,28 +360,28 @@ body {
   margin: 0 0 0.5rem;
 }
 
-.achievement-title {
+.egg-title {
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0 0 0.4rem;
   text-wrap: balance;
 }
 
-.achievement-desc {
+.egg-desc {
   font-size: 0.9rem;
   color: color-mix(in srgb, var(--card-ink) 70%, transparent);
   margin: 0 0 0.9rem;
 }
 
-.achievement-hint {
+.egg-hint {
   font-size: 0.7rem;
   color: color-mix(in srgb, var(--card-ink) 45%, transparent);
   margin: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .achievement-toast,
-  .achievement-card {
+  .egg-toast,
+  .egg-card {
     animation: none;
   }
 }

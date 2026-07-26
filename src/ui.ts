@@ -1,4 +1,4 @@
-import { unlockAchievement } from "./achievements";
+import { unlockEasterEgg } from "./easter-eggs";
 import type { Machine } from "./machine";
 
 /** Duration of the antenna's first move; each subsequent move is 50% faster. */
@@ -6,6 +6,19 @@ export const BASE_CONTACT_DELAY_MS = 1800;
 const MIN_CONTACT_DELAY_MS = 100;
 /** No flip for this long resets the pace back to the first move's speed. */
 const IDLE_RESET_MS = 5000;
+/** How much earlier than its calculated arrival to check whether the switch
+ * is still held — keeps that check reliably ahead of the machine's own
+ * switch-off timer, which is armed for the same moment. */
+const ARRIVAL_LEAD_MS = 40;
+/** How long the antenna quietly presses against a held switch before it
+ * starts visibly struggling. */
+const PUSH_MS = 1300;
+/** How long the antenna struggles before it gives up and backs off — still
+ * waiting, not actually leaving, for as long as the switch stays held. */
+const SHIVER_MS = 1200;
+/** How fast the antenna finishes the job once the switch is finally let go
+ * — always this fast, regardless of how long it was held. */
+const RELEASE_SNAP_MS = 220;
 
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
@@ -73,18 +86,112 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   function startSequence(): void {
     const durMs = advanceContactDelay();
-    if (durMs <= MIN_CONTACT_DELAY_MS) unlockAchievement("top-speed");
+    if (durMs <= MIN_CONTACT_DELAY_MS) unlockEasterEgg("top-speed");
     antenna.style.setProperty("--dur", `${durMs}ms`);
     antenna.classList.remove("retreat");
     requestAnimationFrame(() => antenna.classList.add("reach"));
     schedule(() => retreat(durMs), durMs + 100);
   }
 
-  rocker.addEventListener("click", (event) => {
+  // Holding the switch on (rather than tapping it) starts a tug-of-war: the
+  // antenna makes its normal approach, notices the switch is still pressed
+  // once it arrives, quietly pushes for a while, struggles, then gives up
+  // and backs off — but it's still right there, waiting. Letting go at any
+  // point makes it finish fast.
+  let holdPointerId: number | undefined;
+  let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
+  let pushTimer: ReturnType<typeof setTimeout> | undefined;
+  let shiverTimer: ReturnType<typeof setTimeout> | undefined;
+  let engaged = false;
+  let hasGivenUp = false;
+
+  function noticeStillHeld(): void {
+    engaged = true;
+    machine.hold();
+    cancelSequence(); // cancel the retreat startSequence() scheduled for arrival
+    pushTimer = setTimeout(startStruggle, PUSH_MS);
+  }
+
+  function startStruggle(): void {
+    antenna.classList.remove("reach");
+    antenna.classList.add("struggle");
+    shiverTimer = setTimeout(giveUp, SHIVER_MS);
+  }
+
+  // Whatever's in flight (the struggle shake, a mid-flight transition) needs
+  // to be killed rather than redirected: freeze the antenna exactly where it
+  // visually is, with transitions off, then let `nextClass` start a fresh
+  // transition from there. Redirecting an in-flight animation or transition
+  // straight into a new target instead means the browser never registers a
+  // distinct "before" to transition from — an in-flight *transition* gets
+  // read as a reversal and has its duration shortened to match how little
+  // had played, while an active *animation* being removed at the same
+  // moment its replacement is added leaves nothing to transition from at
+  // all. Either way, the result is snapping into place instead of gliding.
+  function settleThenTransition(nextClass: string): void {
+    const frozenTransform = getComputedStyle(antenna).transform;
+    antenna.classList.remove("reach", "retreat", "struggle");
+    antenna.style.transition = "none";
+    antenna.style.transform = frozenTransform;
+    void antenna.offsetHeight;
+    antenna.style.removeProperty("transition");
+    requestAnimationFrame(() => {
+      antenna.style.removeProperty("transform");
+      antenna.classList.add(nextClass);
+    });
+  }
+
+  function giveUp(): void {
+    hasGivenUp = true;
+    settleThenTransition("retreat");
+  }
+
+  function endHold(): void {
+    if (holdPointerId === undefined) return;
+    clearTimeout(arrivalTimer);
+    clearTimeout(pushTimer);
+    clearTimeout(shiverTimer);
+    holdPointerId = undefined;
+    if (!engaged) return; // released before it even arrived — nothing to do,
+    // its normal approach and auto-flip are already running unmodified
+    engaged = false;
+    // Arm the real switch-off for the same duration as the visual snap, so
+    // the state doesn't flip until the antenna actually gets there.
+    machine.release(RELEASE_SNAP_MS);
+    antenna.style.setProperty("--dur", `${RELEASE_SNAP_MS}ms`);
+    settleThenTransition("reach");
+    schedule(() => retreat(RELEASE_SNAP_MS), RELEASE_SNAP_MS + 100);
+  }
+
+  rocker.addEventListener("pointerdown", (event) => {
+    if (holdPointerId !== undefined) return; // a hold is already in progress
     const rect = rocker.getBoundingClientRect();
     const clickedTop = event.clientY - rect.top < rect.height / 2;
     const isOn = machine.state === "on";
     // only the top half turns it on, only the bottom half turns it off
+    if (clickedTop === isOn) return;
+    armIdleReset();
+    const turningOn = clickedTop && !isOn;
+    machine.flip();
+    if (turningOn) {
+      holdPointerId = event.pointerId;
+      engaged = false;
+      const arrivalMs = Math.max(0, currentContactDelayMs() - ARRIVAL_LEAD_MS);
+      arrivalTimer = setTimeout(noticeStillHeld, arrivalMs);
+    }
+  });
+  window.addEventListener("pointerup", (event) => {
+    if (event.pointerId === holdPointerId) endHold();
+  });
+  window.addEventListener("pointercancel", (event) => {
+    if (event.pointerId === holdPointerId) endHold();
+  });
+
+  rocker.addEventListener("click", (event) => {
+    if (event.detail !== 0) return; // pointer taps are handled by pointerdown
+    const rect = rocker.getBoundingClientRect();
+    const clickedTop = event.clientY - rect.top < rect.height / 2;
+    const isOn = machine.state === "on";
     if (clickedTop === isOn) return;
     armIdleReset();
     machine.flip();
@@ -94,14 +201,19 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     rocker.setAttribute("aria-checked", String(machine.state === "on"));
     snap(machine.state === "on");
     if (event.type === "switched-on") {
+      hasGivenUp = false;
       cancelSequence();
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
-        unlockAchievement("beat-the-antenna");
+        unlockEasterEgg("beat-the-antenna");
       }
+    } else if (hasGivenUp) {
+      // it looked like it had backed off for good, but it was still right
+      // there — the machine still gets the last word
+      unlockEasterEgg("tug-of-war");
     }
   });
 }

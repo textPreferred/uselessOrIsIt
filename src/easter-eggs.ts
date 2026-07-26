@@ -1,10 +1,10 @@
-export interface Achievement {
+export interface EasterEgg {
   id: string;
   title: string;
   description: string;
 }
 
-export const ACHIEVEMENTS: readonly Achievement[] = [
+export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "beat-the-antenna",
     title: "Have you tried turning it on and off again?",
@@ -15,16 +15,21 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "So fast!",
     description: "Reached the machine's top speed.",
   },
+  {
+    id: "tug-of-war",
+    title: "Tug of war",
+    description: "They, who are last will be first.",
+  },
 ];
 
-const STORAGE_KEY = "uselessMachine.achievements";
+const STORAGE_KEY = "uselessMachine.easterEggs";
 
 function loadUnlocked(): Set<string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
   } catch {
-    return new Set(); // storage unavailable — achievements just won't persist
+    return new Set(); // storage unavailable — easter eggs just won't persist
   }
 }
 
@@ -37,35 +42,35 @@ function saveUnlocked(ids: Set<string>): void {
 }
 
 const unlocked = loadUnlocked();
-const toastQueue: Achievement[] = [];
+const toastQueue: EasterEgg[] = [];
 let toastShowing = false;
 
 function showNextToast(): void {
   if (toastShowing) return;
-  const achievement = toastQueue.shift();
-  if (!achievement) return;
+  const egg = toastQueue.shift();
+  if (!egg) return;
   toastShowing = true;
 
   const overlay = document.createElement("div");
-  overlay.className = "achievement-toast";
+  overlay.className = "egg-toast";
 
   const card = document.createElement("div");
-  card.className = "achievement-card";
+  card.className = "egg-card";
 
   const eyebrow = document.createElement("p");
-  eyebrow.className = "achievement-eyebrow";
-  eyebrow.textContent = "Achievement unlocked";
+  eyebrow.className = "egg-eyebrow";
+  eyebrow.textContent = "Easter egg found";
 
   const title = document.createElement("p");
-  title.className = "achievement-title";
-  title.textContent = achievement.title;
+  title.className = "egg-title";
+  title.textContent = egg.title;
 
   const desc = document.createElement("p");
-  desc.className = "achievement-desc";
-  desc.textContent = achievement.description;
+  desc.className = "egg-desc";
+  desc.textContent = egg.description;
 
   const hint = document.createElement("p");
-  hint.className = "achievement-hint";
+  hint.className = "egg-hint";
   hint.textContent = "Click anywhere to dismiss";
 
   card.append(eyebrow, title, desc, hint);
@@ -78,14 +83,14 @@ function showNextToast(): void {
   document.body.appendChild(overlay);
 }
 
-/** Unlocks an achievement (a no-op if already unlocked) and, if newly
+/** Unlocks an easter egg (a no-op if already unlocked) and, if newly
  * unlocked, shows it until the user clicks anywhere on screen. */
-export function unlockAchievement(id: string): void {
+export function unlockEasterEgg(id: string): void {
   if (unlocked.has(id)) return;
-  const achievement = ACHIEVEMENTS.find((a) => a.id === id);
-  if (!achievement) return;
+  const egg = EASTER_EGGS.find((e) => e.id === id);
+  if (!egg) return;
   unlocked.add(id);
   saveUnlocked(unlocked);
-  toastQueue.push(achievement);
+  toastQueue.push(egg);
   showNextToast();
 }
