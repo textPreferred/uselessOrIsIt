@@ -328,7 +328,9 @@ body {
 
 .label-tape-on {
   top: calc(50% - 6.75rem - 0.7rem);
-  transform: translate(calc(-50% - 1.1rem), -100%) rotate(-2deg);
+  transform: translate(calc(-50% - 1.1rem), -100%)
+    rotate(calc(-2deg + var(--on-label-spin, 0deg)));
+  transition: transform 250ms ease-out;
 }
 
 .label-tape-off {

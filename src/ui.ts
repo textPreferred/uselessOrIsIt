@@ -108,6 +108,24 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   const rocker = mustFind<HTMLButtonElement>(root, "[role=switch]");
   const antenna = mustFind<HTMLDivElement>(root, "[data-testid=arm]");
+  const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
+
+  // Each click spins the ON label 90deg counter-clockwise. Since O and N are
+  // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
+  // — and blocks the switch to match. Four clicks (360deg) is back to ON,
+  // reactivating it; the first time round unlocks an easter egg.
+  let onLabelSpins = 0;
+  // Set when a real turn-on attempt is swallowed by the block above; a
+  // later successful turn-on that follows it unlocks its own easter egg.
+  let attemptedWhileBlocked = false;
+  function onLabelBlocksSwitch(): boolean {
+    return onLabelSpins % 4 === 2;
+  }
+  onLabel.addEventListener("click", () => {
+    onLabelSpins++;
+    onLabel.style.setProperty("--on-label-spin", `${-90 * onLabelSpins}deg`);
+    if (onLabelSpins % 4 === 0) unlockEasterEgg("on-no-on");
+  });
 
   let screwStep = 0;
   let screwStepTimer: ReturnType<typeof setTimeout> | undefined;
@@ -306,8 +324,16 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     const isOn = machine.state === "on";
     // only the top half turns it on, only the bottom half turns it off
     if (clickedTop === isOn) return;
-    armIdleReset();
     const turningOn = clickedTop && !isOn;
+    if (turningOn && onLabelBlocksSwitch()) {
+      attemptedWhileBlocked = true;
+      return;
+    }
+    if (turningOn && attemptedWhileBlocked) {
+      attemptedWhileBlocked = false;
+      unlockEasterEgg("no-means-no");
+    }
+    armIdleReset();
     machine.flip();
     if (turningOn) {
       holdPointerId = event.pointerId;
@@ -337,6 +363,15 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     const clickedTop = event.clientY - rect.top < rect.height / 2;
     const isOn = machine.state === "on";
     if (clickedTop === isOn) return;
+    const turningOn = clickedTop && !isOn;
+    if (turningOn && onLabelBlocksSwitch()) {
+      attemptedWhileBlocked = true;
+      return;
+    }
+    if (turningOn && attemptedWhileBlocked) {
+      attemptedWhileBlocked = false;
+      unlockEasterEgg("no-means-no");
+    }
     armIdleReset();
     machine.flip();
   });

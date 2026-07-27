@@ -281,6 +281,80 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-hint")).toBeVisible();
   });
 
+  test("spinning the ON label upside down blocks the switch", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click(); // 2 clicks = 180deg = upside down, reads NO
+    await clickTop(machineSwitch);
+    // immediate check — the machine's own auto-off would eventually satisfy
+    // a retrying "not checked" assertion even if the click wasn't blocked
+    expect(await machineSwitch.getAttribute("aria-checked")).toBe("false");
+  });
+
+  test("spinning the ON label a full turn reactivates the switch and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click();
+    await onLabel.click();
+    await onLabel.click(); // 4 clicks = 360deg = back to normal, first time
+    await expect(page.locator(".egg-title")).toHaveText(/full circle/i);
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click(); // dismiss
+    await clickTop(machineSwitch);
+    await expect(machineSwitch).toBeChecked();
+  });
+
+  test("trying the switch while blocked, then succeeding once unblocked, unlocks an easter egg", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click(); // 2 clicks = upside down, blocked
+    await clickTop(machineSwitch); // a real attempt, swallowed
+    expect(await machineSwitch.getAttribute("aria-checked")).toBe("false");
+
+    await onLabel.click();
+    await onLabel.click(); // back to ON — this also fires "Full circle"
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click(); // dismiss
+
+    await clickTop(machineSwitch);
+    await expect(page.locator(".egg-title")).toHaveText(/no means no/i);
+  });
+
+  test("turning the switch on normally, without ever trying while blocked, doesn't unlock that egg", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click();
+    await onLabel.click();
+    await onLabel.click(); // full turn, unblocked throughout — fires "Full circle"
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click(); // dismiss
+
+    await clickTop(machineSwitch);
+    await expect(machineSwitch).toBeChecked();
+    await expect(page.locator(".egg-toast")).toBeHidden();
+  });
+
   test("resetting wipes previously found easter eggs so they can be found again", async ({
     page,
   }) => {
