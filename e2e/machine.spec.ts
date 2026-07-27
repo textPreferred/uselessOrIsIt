@@ -248,6 +248,13 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-title")).toHaveText(
       /turning it on and off again/i,
     );
+    // the toast ignores clicks during its dismiss grace period, so wait it
+    // out first — otherwise this click is swallowed and the toast lingers,
+    // blocking every click after it (including the screws below)
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
     await page.locator(".egg-toast").click(); // dismiss
 
     await clickScrewsClockwise(page);
