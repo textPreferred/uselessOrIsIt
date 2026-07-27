@@ -10,7 +10,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "beat-the-antenna",
     title: "Have you tried turning it on and off again?",
-    description: "Turning the switch off before the antenna does it.",
+    description: "Switched off before the machine could.",
   },
   {
     id: "top-speed",
@@ -20,12 +20,12 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "tug-of-war",
     title: "Tug of war",
-    description: "They, who are last will be first.",
+    description: "It gave up — then won anyway.",
   },
   {
     id: "poked-the-antenna",
     title: "Don't poke the bear",
-    description: "Blocked the antenna. It came back angrier.",
+    description: "Blocked the antenna — it struck back angrier.",
   },
   {
     id: "on-no-on",
@@ -178,7 +178,8 @@ export function offerEasterEggReset(): void {
   const keepButton = document.createElement("button");
   keepButton.type = "button";
   keepButton.className = "egg-button egg-button-keep";
-  keepButton.textContent = "Don't reset easter eggs but collect this one";
+  keepButton.textContent =
+    "Don't reset my easter eggs, but collect this one anyway.";
   keepButton.addEventListener("click", () => {
     overlay.remove();
     unlockEasterEgg(ANTI_EASTER_EGG_ID);
