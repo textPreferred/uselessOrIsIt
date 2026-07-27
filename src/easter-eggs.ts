@@ -23,6 +23,11 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     description: "They, who are last will be first.",
   },
   {
+    id: "poked-the-antenna",
+    title: "Don't poke the bear",
+    description: "Blocked the antenna. It came back angrier.",
+  },
+  {
     id: ANTI_EASTER_EGG_ID,
     title: "Anti-Easter Egg",
     description: "Delete all easter eggs, so I can start over.",

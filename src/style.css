@@ -345,13 +345,13 @@ body {
   /* linear timing end to end — no ease-in/out, no spring: it never speeds
      up on approach or slows for the touch, it just arrives, bored. */
   transition: transform var(--dur) linear;
-  pointer-events: none;
   z-index: 3;
 }
 
 .antenna.reach,
 .antenna.retreat,
-.antenna.struggle {
+.antenna.struggle,
+.antenna.blocked {
   visibility: visible;
 }
 
@@ -390,6 +390,49 @@ body {
 
   80% {
     transform: translate(0.35rem, -4.1rem);
+  }
+}
+
+/* Directly blocking the antenna mid-approach: it shivers in place right
+   where it got stopped, instead of the fixed contact point .struggle uses,
+   since a block can land anywhere along its path. ui.ts freezes the point
+   of contact into --block-x/--block-y before this class is applied. */
+.antenna.blocked {
+  animation: antenna-blocked 0.18s ease-in-out infinite;
+}
+
+@keyframes antenna-blocked {
+  0%,
+  100% {
+    transform: translate(var(--block-x, 0), var(--block-y, -4.1rem));
+  }
+
+  20% {
+    transform: translate(
+      calc(var(--block-x, 0) - 0.35rem),
+      calc(var(--block-y, -4.1rem) + 0.1rem)
+    );
+  }
+
+  40% {
+    transform: translate(
+      calc(var(--block-x, 0) + 0.3rem),
+      calc(var(--block-y, -4.1rem) - 0.15rem)
+    );
+  }
+
+  60% {
+    transform: translate(
+      calc(var(--block-x, 0) - 0.25rem),
+      calc(var(--block-y, -4.1rem) + 0.05rem)
+    );
+  }
+
+  80% {
+    transform: translate(
+      calc(var(--block-x, 0) + 0.35rem),
+      var(--block-y, -4.1rem)
+    );
   }
 }
 
@@ -444,7 +487,8 @@ body {
     transition: none;
   }
 
-  .antenna.struggle {
+  .antenna.struggle,
+  .antenna.blocked {
     animation: none;
   }
 }
