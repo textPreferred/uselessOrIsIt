@@ -281,6 +281,33 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-hint")).toBeVisible();
   });
 
+  test("spinning the ON label upside down blocks the switch", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click(); // 2 clicks = 180deg = upside down, reads NO
+    await clickTop(machineSwitch);
+    // immediate check — the machine's own auto-off would eventually satisfy
+    // a retrying "not checked" assertion even if the click wasn't blocked
+    expect(await machineSwitch.getAttribute("aria-checked")).toBe("false");
+  });
+
+  test("spinning the ON label a full turn reactivates the switch and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click();
+    await onLabel.click();
+    await onLabel.click(); // 4 clicks = 360deg = back to normal, first time
+    await expect(page.locator(".egg-title")).toHaveText(/full circle/i);
+    await clickTop(machineSwitch);
+    await expect(machineSwitch).toBeChecked();
+  });
+
   test("resetting wipes previously found easter eggs so they can be found again", async ({
     page,
   }) => {
