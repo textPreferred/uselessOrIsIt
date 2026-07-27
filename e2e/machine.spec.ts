@@ -208,7 +208,8 @@ test.describe("useless machine", () => {
     const arm = page.getByTestId("arm");
     await clickTop(machineSwitch);
 
-    await page.waitForTimeout(150); // well into its approach, short of contact
+    // near the end of its approach, safely on-screen, still short of contact
+    await page.waitForTimeout(BASE_CONTACT_DELAY_MS - 200);
     const box = await arm.boundingBox();
     if (!box) throw new Error("arm has no bounding box");
     await page.mouse.move(box.x + box.width / 2, box.y + 10);
@@ -231,7 +232,7 @@ test.describe("useless machine", () => {
     const arm = page.getByTestId("arm");
     await clickTop(machineSwitch);
 
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(BASE_CONTACT_DELAY_MS - 200);
     const box = await arm.boundingBox();
     if (!box) throw new Error("arm has no bounding box");
     await page.mouse.move(box.x + box.width / 2, box.y + 10);

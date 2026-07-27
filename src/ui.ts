@@ -40,6 +40,13 @@ const SHIVER_MS = 1200;
  * — always this fast, regardless of how long it was held. */
 const RELEASE_SNAP_MS = 220;
 
+/** How long the antenna's annoyed pull-back takes after being physically
+ * blocked and released, before it strikes back. */
+const BLOCK_RETREAT_MS = 200;
+/** How fast its retaliatory approach is — quicker than a normal move, since
+ * it's coming back annoyed rather than just trying again. */
+const HIT_BACK_MS = 120;
+
 // Clicking the four mounting screws clockwise, starting from the top-left,
 // offers to reset every unlocked easter egg. A pause between clicks resets
 // progress — this is a click pattern, not a race against the clock.
@@ -193,17 +200,29 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   // had played, while an active *animation* being removed at the same
   // moment its replacement is added leaves nothing to transition from at
   // all. Either way, the result is snapping into place instead of gliding.
-  function settleThenTransition(nextClass: string): void {
+  function settleThenTransition(
+    nextClass: string,
+    onSettled?: (frozenTransform: string) => void,
+  ): void {
     const frozenTransform = getComputedStyle(antenna).transform;
-    antenna.classList.remove("reach", "retreat", "struggle");
+    antenna.classList.remove("reach", "retreat", "struggle", "blocked");
     antenna.style.transition = "none";
     antenna.style.transform = frozenTransform;
     void antenna.offsetHeight;
     antenna.style.removeProperty("transition");
     requestAnimationFrame(() => {
       antenna.style.removeProperty("transform");
+      onSettled?.(frozenTransform);
       antenna.classList.add(nextClass);
     });
+  }
+
+  /** Extracts the x/y translation (in px) from a computed `transform`
+   * string, so a freshly frozen position can seed --block-x/--block-y. */
+  function translationOf(transform: string): { x: number; y: number } {
+    if (transform === "none") return { x: 0, y: 0 };
+    const matrix = new DOMMatrixReadOnly(transform);
+    return { x: matrix.m41, y: matrix.m42 };
   }
 
   function giveUp(): void {
@@ -235,6 +254,51 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     );
   }
 
+  // Blocking the antenna directly — pressing on it wherever it currently is,
+  // mid-approach — is a separate provocation from holding the switch: it
+  // freezes right there for as long as it's blocked (holding the machine on
+  // the same way a held switch does), then once released it backs off
+  // annoyed and strikes back with a fast, aggressive approach. Blocking that
+  // retaliatory approach again just repeats the cycle.
+  let blockedPointerId: number | undefined;
+
+  function beginBlock(pointerId: number): void {
+    blockedPointerId = pointerId;
+    machine.hold();
+    cancelSequence(); // cancel whatever retreat/hit-back was scheduled next
+    settleThenTransition("blocked", (frozenTransform) => {
+      const { x, y } = translationOf(frozenTransform);
+      antenna.style.setProperty("--block-x", `${x}px`);
+      antenna.style.setProperty("--block-y", `${y}px`);
+    });
+  }
+
+  function hitBack(): void {
+    unlockEasterEgg("poked-the-antenna");
+    antenna.classList.remove("retreat");
+    antenna.style.setProperty("--dur", `${HIT_BACK_MS}ms`);
+    rocker.style.setProperty(
+      "--paddle-dur",
+      `${scaleWithPace(PADDLE_FLIP_MS, HIT_BACK_MS)}ms`,
+    );
+    requestAnimationFrame(() => antenna.classList.add("reach"));
+    schedule(
+      () => retreat(HIT_BACK_MS),
+      HIT_BACK_MS + scaleWithPace(CONTACT_HOLD_MS, HIT_BACK_MS),
+    );
+  }
+
+  function endBlock(): void {
+    if (blockedPointerId === undefined) return;
+    blockedPointerId = undefined;
+    // Arm the real switch-off for when the retaliatory strike actually
+    // lands, same idea as endHold()'s RELEASE_SNAP_MS timing.
+    machine.release(BLOCK_RETREAT_MS + HIT_BACK_MS);
+    antenna.style.setProperty("--dur", `${BLOCK_RETREAT_MS}ms`);
+    settleThenTransition("retreat");
+    schedule(hitBack, BLOCK_RETREAT_MS);
+  }
+
   rocker.addEventListener("pointerdown", (event) => {
     if (holdPointerId !== undefined) return; // a hold is already in progress
     const rect = rocker.getBoundingClientRect();
@@ -252,11 +316,19 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       arrivalTimer = setTimeout(noticeStillHeld, arrivalMs);
     }
   });
+  antenna.addEventListener("pointerdown", (event) => {
+    if (blockedPointerId !== undefined) return; // already blocked
+    if (holdPointerId !== undefined || engaged) return; // switch-hold in control
+    if (!antenna.classList.contains("reach")) return; // only mid-approach
+    beginBlock(event.pointerId);
+  });
   window.addEventListener("pointerup", (event) => {
     if (event.pointerId === holdPointerId) endHold();
+    if (event.pointerId === blockedPointerId) endBlock();
   });
   window.addEventListener("pointercancel", (event) => {
     if (event.pointerId === holdPointerId) endHold();
+    if (event.pointerId === blockedPointerId) endBlock();
   });
 
   rocker.addEventListener("click", (event) => {
@@ -281,6 +353,13 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
         unlockEasterEgg("beat-the-antenna");
+      } else if (antenna.classList.contains("blocked")) {
+        blockedPointerId = undefined; // its own pointerup would now no-op anyway
+        const durMs = currentContactDelayMs();
+        antenna.style.setProperty("--dur", `${durMs}ms`);
+        settleThenTransition("retreat"); // "blocked" is an animation, not a
+        // transition — retreat() alone would leave both classes fighting
+        schedule(() => antenna.classList.remove("retreat"), durMs);
       }
     } else if (hasGivenUp) {
       // it looked like it had backed off for good, but it was still right
