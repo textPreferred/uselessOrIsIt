@@ -65,6 +65,35 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
   });
 
+  test("the switch's own flip speeds up with the antenna, not just its approach", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const paddle = page.locator(".paddle");
+
+    async function paddleFlipMs(): Promise<number> {
+      return paddle.evaluate(
+        (el) => parseFloat(getComputedStyle(el).transitionDuration) * 1000,
+      );
+    }
+
+    await clickTop(machineSwitch);
+    const firstFlipMs = await paddleFlipMs();
+    await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
+
+    // a few more auto-flips ratchet the pace well past the first flip
+    for (let i = 0; i < 3; i++) {
+      await clickTop(machineSwitch);
+      await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
+    }
+    await clickTop(machineSwitch);
+    const fastFlipMs = await paddleFlipMs();
+
+    // otherwise the paddle looks like it's still finishing the push well
+    // after a fast antenna has already arrived and frozen in place
+    expect(fastFlipMs).toBeLessThan(firstFlipMs);
+  });
+
   test("unlocks an easter egg for beating the antenna", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
@@ -218,6 +247,13 @@ test.describe("useless machine", () => {
     await clickBottom(machineSwitch); // unlock "beat-the-antenna"
     await expect(page.locator(".egg-title")).toHaveText(
       /turning it on and off again/i,
+    );
+    // the toast ignores clicks during its dismiss grace period, so wait it
+    // out first — otherwise this click is swallowed and the toast lingers,
+    // blocking every click after it (including the screws below)
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
     );
     await page.locator(".egg-toast").click(); // dismiss
 
