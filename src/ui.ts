@@ -115,6 +115,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   // — and blocks the switch to match. Four clicks (360deg) is back to ON,
   // reactivating it; the first time round unlocks an easter egg.
   let onLabelSpins = 0;
+  // Set when a real turn-on attempt is swallowed by the block above; a
+  // later successful turn-on that follows it unlocks its own easter egg.
+  let attemptedWhileBlocked = false;
   function onLabelBlocksSwitch(): boolean {
     return onLabelSpins % 4 === 2;
   }
@@ -322,7 +325,14 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     // only the top half turns it on, only the bottom half turns it off
     if (clickedTop === isOn) return;
     const turningOn = clickedTop && !isOn;
-    if (turningOn && onLabelBlocksSwitch()) return;
+    if (turningOn && onLabelBlocksSwitch()) {
+      attemptedWhileBlocked = true;
+      return;
+    }
+    if (turningOn && attemptedWhileBlocked) {
+      attemptedWhileBlocked = false;
+      unlockEasterEgg("no-means-no");
+    }
     armIdleReset();
     machine.flip();
     if (turningOn) {
@@ -353,7 +363,15 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     const clickedTop = event.clientY - rect.top < rect.height / 2;
     const isOn = machine.state === "on";
     if (clickedTop === isOn) return;
-    if (clickedTop && !isOn && onLabelBlocksSwitch()) return;
+    const turningOn = clickedTop && !isOn;
+    if (turningOn && onLabelBlocksSwitch()) {
+      attemptedWhileBlocked = true;
+      return;
+    }
+    if (turningOn && attemptedWhileBlocked) {
+      attemptedWhileBlocked = false;
+      unlockEasterEgg("no-means-no");
+    }
     armIdleReset();
     machine.flip();
   });
