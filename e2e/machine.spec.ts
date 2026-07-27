@@ -253,7 +253,7 @@ test.describe("useless machine", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("button", {
-        name: "Don't reset easter eggs but collect this one",
+        name: "Don't reset my easter eggs, but collect this one anyway.",
       }),
     ).toBeVisible();
   });
@@ -274,7 +274,7 @@ test.describe("useless machine", () => {
     await clickScrewsClockwise(page);
     await page
       .getByRole("button", {
-        name: "Don't reset easter eggs but collect this one",
+        name: "Don't reset my easter eggs, but collect this one anyway.",
       })
       .click();
     await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
