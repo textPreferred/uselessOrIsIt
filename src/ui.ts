@@ -18,6 +18,18 @@ const IDLE_RESET_MS = 5000;
  * is still held — keeps that check reliably ahead of the machine's own
  * switch-off timer, which is armed for the same moment. */
 const ARRIVAL_LEAD_MS = 40;
+/** How long the paddle's own flip takes, and how long the antenna dwells at
+ * contact before retreating, at base pace — both scale down with the
+ * current pace like everything else (see `scaleWithPace`), so a fast
+ * antenna doesn't look like it's still finishing the push well after it's
+ * already arrived and frozen in place. */
+const PADDLE_FLIP_MS = 160;
+const CONTACT_HOLD_MS = 100;
+
+function scaleWithPace(msAtBasePace: number, durMs: number): number {
+  return (msAtBasePace / BASE_CONTACT_DELAY_MS) * durMs;
+}
+
 /** How long the antenna quietly presses against a held switch before it
  * starts visibly struggling. */
 const PUSH_MS = 1300;
@@ -134,9 +146,16 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     const durMs = advanceContactDelay();
     if (durMs <= MIN_CONTACT_DELAY_MS) unlockEasterEgg("top-speed");
     antenna.style.setProperty("--dur", `${durMs}ms`);
+    rocker.style.setProperty(
+      "--paddle-dur",
+      `${scaleWithPace(PADDLE_FLIP_MS, durMs)}ms`,
+    );
     antenna.classList.remove("retreat");
     requestAnimationFrame(() => antenna.classList.add("reach"));
-    schedule(() => retreat(durMs), durMs + 100);
+    schedule(
+      () => retreat(durMs),
+      durMs + scaleWithPace(CONTACT_HOLD_MS, durMs),
+    );
   }
 
   // Holding the switch on (rather than tapping it) starts a tug-of-war: the
@@ -205,8 +224,15 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     // the state doesn't flip until the antenna actually gets there.
     machine.release(RELEASE_SNAP_MS);
     antenna.style.setProperty("--dur", `${RELEASE_SNAP_MS}ms`);
+    rocker.style.setProperty(
+      "--paddle-dur",
+      `${scaleWithPace(PADDLE_FLIP_MS, RELEASE_SNAP_MS)}ms`,
+    );
     settleThenTransition("reach");
-    schedule(() => retreat(RELEASE_SNAP_MS), RELEASE_SNAP_MS + 100);
+    schedule(
+      () => retreat(RELEASE_SNAP_MS),
+      RELEASE_SNAP_MS + scaleWithPace(CONTACT_HOLD_MS, RELEASE_SNAP_MS),
+    );
   }
 
   rocker.addEventListener("pointerdown", (event) => {
