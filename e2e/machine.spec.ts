@@ -201,6 +201,47 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-title")).toHaveText(/tug of war/i);
   });
 
+  test("blocking the antenna holds the machine on until released", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickTop(machineSwitch);
+
+    await page.waitForTimeout(150); // well into its approach, short of contact
+    const box = await arm.boundingBox();
+    if (!box) throw new Error("arm has no bounding box");
+    await page.mouse.move(box.x + box.width / 2, box.y + 10);
+    await page.mouse.down();
+
+    // held well past its normal arrival — still on, blocking holds it exactly
+    // like holding the switch does
+    await page.waitForTimeout(BASE_CONTACT_DELAY_MS);
+    await expect(machineSwitch).toBeChecked();
+
+    // let go, and it eventually finishes the job
+    await page.mouse.up();
+    await expect(machineSwitch).not.toBeChecked({ timeout: 3000 });
+  });
+
+  test("provoking the antenna by blocking it unlocks an easter egg", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickTop(machineSwitch);
+
+    await page.waitForTimeout(150);
+    const box = await arm.boundingBox();
+    if (!box) throw new Error("arm has no bounding box");
+    await page.mouse.move(box.x + box.width / 2, box.y + 10);
+    await page.mouse.down();
+    await page.waitForTimeout(300); // let it struggle against the block a beat
+    await page.mouse.up();
+
+    await expect(page.locator(".egg-title")).toHaveText(/poke/i);
+  });
+
   test("clicking the four screws clockwise from the top-left offers to reset easter eggs", async ({
     page,
   }) => {
