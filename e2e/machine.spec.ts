@@ -304,6 +304,11 @@ test.describe("useless machine", () => {
     await onLabel.click();
     await onLabel.click(); // 4 clicks = 360deg = back to normal, first time
     await expect(page.locator(".egg-title")).toHaveText(/full circle/i);
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click(); // dismiss
     await clickTop(machineSwitch);
     await expect(machineSwitch).toBeChecked();
   });
