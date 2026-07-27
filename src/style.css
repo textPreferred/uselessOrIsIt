@@ -289,40 +289,51 @@ body {
   );
 }
 
-/* ---- sticky notes: hand-labeled since the switch itself isn't ---- */
+/* ---- label tape: embossed with a dial label maker, since the switch
+   itself isn't labeled ---- */
 
-.sticky-note {
+.label-tape {
   position: absolute;
   left: 50%;
-  width: 4.6rem;
-  height: 4.2rem;
+  min-width: 5.2rem;
+  height: 1.75rem;
+  padding: 0 0.6rem;
   display: grid;
   place-items: center;
-  background: #f7e98e;
-  background-image: linear-gradient(
-    135deg,
-    rgb(255 255 255 / 35%),
-    transparent 40%
-  );
+  background: linear-gradient(180deg, #303032, #19191a 55%, #0c0c0d);
   box-shadow:
-    0.15rem 0.25rem 0.5rem rgb(0 0 0 / 35%),
-    inset 0 0 0 1px rgb(0 0 0 / 5%);
-  font-family: "Caveat", "Segoe Print", "Bradley Hand", cursive;
-  font-size: 1.9rem;
-  line-height: 1;
-  color: #2c2a1e;
+    0.15rem 0.25rem 0.5rem rgb(0 0 0 / 40%),
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    inset 0 -1px 1px rgb(0 0 0 / 65%);
+  clip-path: polygon(
+    0.3rem 0%,
+    calc(100% - 0.3rem) 0%,
+    100% 0.3rem,
+    100% 100%,
+    0% 100%,
+    0% 0.3rem
+  );
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  color: #eeeeec;
+  text-shadow:
+    0 1px 0 rgb(0 0 0 / 70%),
+    0 -1px 0 rgb(255 255 255 / 18%);
+  white-space: nowrap;
   user-select: none;
   z-index: 1;
 }
 
-.sticky-note-on {
+.label-tape-on {
   top: calc(50% - 6.75rem - 0.7rem);
-  transform: translate(calc(-50% - 1.1rem), -100%) rotate(-7deg);
+  transform: translate(calc(-50% - 1.1rem), -100%) rotate(-2deg);
 }
 
-.sticky-note-off {
+.label-tape-off {
   top: calc(50% + 6.75rem + 0.7rem);
-  transform: translate(calc(-50% + 1.1rem), 0) rotate(5deg);
+  transform: translate(calc(-50% + 1.1rem), 0) rotate(1.5deg);
 }
 
 /* ---- the antenna, reaching up from below the view ---- */
