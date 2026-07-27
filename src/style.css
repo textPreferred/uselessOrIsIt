@@ -221,7 +221,7 @@ body {
   inset: 0;
   border-radius: 0.75rem;
   transform-origin: 50% 50%;
-  transform: rotateX(-14deg);
+  transform: rotateX(-26deg);
   /* --paddle-dur is set per-move in ui.ts, scaled to the current pace —
      0.16s is only the pre-JS fallback for the very first paint. */
   transition: transform var(--paddle-dur, 0.16s) cubic-bezier(0.3, 1.4, 0.6, 1);
@@ -245,7 +245,20 @@ body {
 }
 
 .rocker[aria-checked="true"] .paddle {
-  transform: rotateX(14deg);
+  transform: rotateX(26deg);
+}
+
+/* The lit-side gradient lives on its own layer, crossfaded in via opacity
+   rather than swapped on `background` directly: browsers don't interpolate
+   a gradient's angle (verified — Chromium snaps it instantly even with a
+   transition declared), so without this the color would jump to its final
+   state the instant the flip starts while the tilt was still easing in,
+   and the flip would read as a color-swap-then-shrug instead of one motion. */
+.paddle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: linear-gradient(
     0deg,
     var(--red-hi) 0%,
@@ -253,6 +266,12 @@ body {
     var(--red) 52%,
     var(--red-lo) 100%
   );
+  opacity: 0;
+  transition: opacity var(--paddle-dur, 0.16s) linear;
+}
+
+.rocker[aria-checked="true"] .paddle::before {
+  opacity: 1;
 }
 
 .paddle::after {
@@ -420,6 +439,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .paddle,
+  .paddle::before,
   .antenna {
     transition: none;
   }
