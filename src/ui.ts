@@ -193,6 +193,11 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   let shiverTimer: ReturnType<typeof setTimeout> | undefined;
   let engaged = false;
   let hasGivenUp = false;
+  // Whichever pointer is currently pressing the rocker, on or off — tracked
+  // separately from holdPointerId (which only means "holding it on") so
+  // dragging across the midline or off the switch entirely can be detected
+  // regardless of which direction the press started in.
+  let pressPointerId: number | undefined;
 
   function noticeStillHeld(): void {
     engaged = true;
@@ -247,15 +252,25 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     settleThenTransition("retreat");
   }
 
-  function endHold(): void {
-    if (holdPointerId === undefined) return;
+  // Stops the local hold-tracking (timers + flags) without touching the
+  // machine or the antenna's visuals — used both by a normal release and by
+  // a mid-drag flip straight to off, which needs the machine and antenna
+  // handled through the paths their own callers already use for a direct
+  // flip instead.
+  function cancelHold(): void {
     clearTimeout(arrivalTimer);
     clearTimeout(pushTimer);
     clearTimeout(shiverTimer);
     holdPointerId = undefined;
-    if (!engaged) return; // released before it even arrived — nothing to do,
-    // its normal approach and auto-flip are already running unmodified
     engaged = false;
+  }
+
+  function endHold(): void {
+    if (holdPointerId === undefined) return;
+    const wasEngaged = engaged;
+    cancelHold();
+    if (!wasEngaged) return; // released before it even arrived — nothing to
+    // do, its normal approach and auto-flip are already running unmodified
     // Arm the real switch-off for the same duration as the visual snap, so
     // the state doesn't flip until the antenna actually gets there.
     machine.release(RELEASE_SNAP_MS);
@@ -316,10 +331,14 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     schedule(hitBack, BLOCK_RETREAT_MS);
   }
 
-  rocker.addEventListener("pointerdown", (event) => {
-    if (holdPointerId !== undefined) return; // a hold is already in progress
+  // Applies whatever a press/drag to this Y position should do — turning
+  // on, turning off, or nothing if it's already sitting on that side. Used
+  // for both the initial pointerdown and every pointermove while pressed,
+  // so dragging across the midline acts exactly like releasing and
+  // freshly pressing at the new position.
+  function applyPressAt(clientY: number, pointerId: number): void {
     const rect = rocker.getBoundingClientRect();
-    const clickedTop = event.clientY - rect.top < rect.height / 2;
+    const clickedTop = clientY - rect.top < rect.height / 2;
     const isOn = machine.state === "on";
     // only the top half turns it on, only the bottom half turns it off
     if (clickedTop === isOn) return;
@@ -335,12 +354,58 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     armIdleReset();
     machine.flip();
     if (turningOn) {
-      holdPointerId = event.pointerId;
+      holdPointerId = pointerId;
       engaged = false;
       const arrivalMs = Math.max(0, currentContactDelayMs() - ARRIVAL_LEAD_MS);
       arrivalTimer = setTimeout(noticeStillHeld, arrivalMs);
+    } else {
+      // machine.flip() above already turned it off synchronously (and the
+      // machine.onEvent listener below already reacted to that) — this just
+      // stops the local hold timers from later firing into a switch that's
+      // already off.
+      cancelHold();
     }
+  }
+
+  function withinRocker(clientX: number, clientY: number): boolean {
+    const rect = rocker.getBoundingClientRect();
+    return (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    );
+  }
+
+  function endPress(pointerId: number): void {
+    if (pressPointerId !== pointerId) return;
+    pressPointerId = undefined;
+    if (rocker.hasPointerCapture(pointerId)) {
+      rocker.releasePointerCapture(pointerId);
+    }
+    if (pointerId === holdPointerId) endHold();
+  }
+
+  rocker.addEventListener("pointerdown", (event) => {
+    if (pressPointerId !== undefined) return; // a press is already in progress
+    pressPointerId = event.pointerId;
+    // Captured so drags that leave the rocker's bounds still deliver
+    // pointermove/pointerup here instead of wherever the pointer ends up.
+    rocker.setPointerCapture(event.pointerId);
+    applyPressAt(event.clientY, event.pointerId);
   });
+  rocker.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pressPointerId) return;
+    if (!withinRocker(event.clientX, event.clientY)) {
+      endPress(event.pointerId); // left the switch — no longer pressed
+      return;
+    }
+    applyPressAt(event.clientY, event.pointerId);
+  });
+  rocker.addEventListener("pointerup", (event) => endPress(event.pointerId));
+  rocker.addEventListener("pointercancel", (event) =>
+    endPress(event.pointerId),
+  );
   antenna.addEventListener("pointerdown", (event) => {
     if (blockedPointerId !== undefined) return; // already blocked
     if (holdPointerId !== undefined || engaged) return; // switch-hold in control
@@ -348,11 +413,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     beginBlock(event.pointerId);
   });
   window.addEventListener("pointerup", (event) => {
-    if (event.pointerId === holdPointerId) endHold();
     if (event.pointerId === blockedPointerId) endBlock();
   });
   window.addEventListener("pointercancel", (event) => {
-    if (event.pointerId === holdPointerId) endHold();
     if (event.pointerId === blockedPointerId) endBlock();
   });
 
@@ -386,6 +449,13 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       cancelSequence();
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
+        unlockEasterEgg("beat-the-antenna");
+      } else if (antenna.classList.contains("struggle")) {
+        // dragged straight to off while the antenna was already pushing
+        // against the held switch — same idea as the "reach" case above,
+        // just needing settleThenTransition() to freeze its mid-struggle
+        // position before transitioning, the way giveUp() does.
+        settleThenTransition("retreat");
         unlockEasterEgg("beat-the-antenna");
       } else if (antenna.classList.contains("blocked")) {
         blockedPointerId = undefined; // its own pointerup would now no-op anyway
