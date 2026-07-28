@@ -294,7 +294,7 @@ test.describe("useless machine", () => {
     expect(await machineSwitch.getAttribute("aria-checked")).toBe("false");
   });
 
-  test("spinning the ON label a full turn reactivates the switch and unlocks an easter egg", async ({
+  test("spinning the ON label a full turn reactivates the switch", async ({
     page,
   }) => {
     const machineSwitch = page.getByRole("switch");
@@ -302,13 +302,8 @@ test.describe("useless machine", () => {
     await onLabel.click();
     await onLabel.click();
     await onLabel.click();
-    await onLabel.click(); // 4 clicks = 360deg = back to normal, first time
-    await expect(page.locator(".egg-title")).toHaveText(/full circle/i);
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click(); // dismiss
+    await onLabel.click(); // 4 clicks = 360deg = back to normal
+    await expect(page.locator(".egg-toast")).toBeHidden();
     await clickTop(machineSwitch);
     await expect(machineSwitch).toBeChecked();
   });
@@ -324,12 +319,7 @@ test.describe("useless machine", () => {
     expect(await machineSwitch.getAttribute("aria-checked")).toBe("false");
 
     await onLabel.click();
-    await onLabel.click(); // back to ON — this also fires "Full circle"
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click(); // dismiss
+    await onLabel.click(); // back to ON
 
     await clickTop(machineSwitch);
     await expect(page.locator(".egg-title")).toHaveText(/no means no/i);
@@ -343,12 +333,7 @@ test.describe("useless machine", () => {
     await onLabel.click();
     await onLabel.click();
     await onLabel.click();
-    await onLabel.click(); // full turn, unblocked throughout — fires "Full circle"
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click(); // dismiss
+    await onLabel.click(); // full turn, unblocked throughout
 
     await clickTop(machineSwitch);
     await expect(machineSwitch).toBeChecked();
