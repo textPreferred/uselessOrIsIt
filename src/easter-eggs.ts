@@ -28,11 +28,6 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     description: "Blocked the antenna — it struck back angrier.",
   },
   {
-    id: "on-no-on",
-    title: "Full circle",
-    description: "On and on...",
-  },
-  {
     id: "no-means-no",
     title: "No means no",
     description: "Turned to on to turn it on.",

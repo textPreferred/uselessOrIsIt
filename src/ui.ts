@@ -113,7 +113,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
   // — and blocks the switch to match. Four clicks (360deg) is back to ON,
-  // reactivating it; the first time round unlocks an easter egg.
+  // reactivating it.
   let onLabelSpins = 0;
   // Set when a real turn-on attempt is swallowed by the block above; a
   // later successful turn-on that follows it unlocks its own easter egg.
@@ -124,7 +124,6 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   onLabel.addEventListener("click", () => {
     onLabelSpins++;
     onLabel.style.setProperty("--on-label-spin", `${-90 * onLabelSpins}deg`);
-    if (onLabelSpins % 4 === 0) unlockEasterEgg("on-no-on");
   });
 
   let screwStep = 0;
