@@ -185,6 +185,47 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).not.toBeChecked({ timeout: 1000 });
   });
 
+  test("dragging past the midline flips the switch live", async ({ page }) => {
+    const machineSwitch = page.getByRole("switch");
+    const box = await machineSwitch.boundingBox();
+    if (!box) throw new Error("switch has no bounding box");
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.25);
+    await page.mouse.down();
+    await expect(machineSwitch).toBeChecked();
+
+    // drag down into the bottom half without ever letting go
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.75);
+    await expect(machineSwitch).not.toBeChecked();
+
+    // and back up again, still without letting go
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.25);
+    await expect(machineSwitch).toBeChecked();
+
+    await page.mouse.up();
+  });
+
+  test("leaving the switch while pressed ends the press", async ({ page }) => {
+    const machineSwitch = page.getByRole("switch");
+    const box = await machineSwitch.boundingBox();
+    if (!box) throw new Error("switch has no bounding box");
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.1);
+    await page.mouse.down();
+    await expect(machineSwitch).toBeChecked();
+
+    // drag out of the switch entirely, staying level with the top half
+    await page.mouse.move(box.x + box.width + 40, box.y + box.height * 0.1);
+
+    // now come back in over the bottom half, still held down — the press
+    // already ended on leaving, so this shouldn't register as a flip
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.75);
+    await expect(machineSwitch).toBeChecked();
+
+    await page.mouse.up();
+    await expect(machineSwitch).toBeChecked(); // releasing outside doesn't flip it either
+  });
+
   test("unlocks an easter egg when the antenna wins after giving up", async ({
     page,
   }) => {
