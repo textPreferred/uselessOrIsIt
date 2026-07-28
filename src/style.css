@@ -170,6 +170,7 @@ body {
   border: 0;
   padding: 0;
   cursor: pointer;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
   position: relative;
   z-index: 1;
