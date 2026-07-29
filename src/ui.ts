@@ -52,6 +52,45 @@ const HIT_BACK_MS = 120;
 // progress — this is a click pattern, not a race against the clock.
 const SCREW_SEQUENCE = ["tl", "tr", "br", "bl"] as const;
 const SCREW_STEP_TIMEOUT_MS = 3000;
+type Corner = (typeof SCREW_SEQUENCE)[number];
+
+// The peeled OFF label backs a screw out by brushing against it while
+// dragged — no precision required, just get close. Touch gets a wider catch
+// than a mouse, since a fingertip covers far more of the plate than a
+// pointer does.
+const SCREW_TOUCH_RADIUS_PX = 28;
+const SCREW_TOUCH_RADIUS_TOUCHSCREEN_PX = 40;
+// If the label's never been grabbed by this point, its corner lifts once on
+// its own — a nudge for anyone who's stalled, gone before anyone who moves
+// fast enough to see it as an interruption.
+const LABEL_PEEK_DELAY_MS = 3200;
+
+const SCREWS_STORAGE_KEY = "uselessMachine.plateScrews";
+const ALL_FASTENED: Record<Corner, boolean> = {
+  tl: true,
+  tr: true,
+  bl: true,
+  br: true,
+};
+
+function loadFastened(): Record<Corner, boolean> {
+  try {
+    const raw = localStorage.getItem(SCREWS_STORAGE_KEY);
+    if (!raw) return { ...ALL_FASTENED };
+    const saved = JSON.parse(raw) as Partial<Record<Corner, boolean>>;
+    return { ...ALL_FASTENED, ...saved };
+  } catch {
+    return { ...ALL_FASTENED }; // storage unavailable — screws just won't persist
+  }
+}
+
+function saveFastened(state: Record<Corner, boolean>): void {
+  try {
+    localStorage.setItem(SCREWS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* storage unavailable — still works for this session */
+  }
+}
 
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
@@ -82,24 +121,34 @@ export function currentContactDelayMs(): number {
 export function renderMachine(root: HTMLElement, machine: Machine): void {
   root.innerHTML = `
     <div class="stage">
-      <div class="plate" aria-hidden="true">
-        <span class="screw screw-tl"></span>
-        <span class="screw screw-tr"></span>
-        <span class="screw screw-bl"></span>
-        <span class="screw screw-br"></span>
+      <div class="wall-tape-group" aria-hidden="true">
+        <div class="wall-tape">USELESS MACHINE,</div>
+        <div class="wall-tape wall-tape-2">ISN'T IT?</div>
+      </div>
+      <div class="plate-mount">
+        <div class="plate">
+          <span class="hole hole-tl"></span>
+          <span class="hole hole-tr"></span>
+          <span class="hole hole-bl"></span>
+          <span class="hole hole-br"></span>
+          <span class="screw screw-tl"></span>
+          <span class="screw screw-tr"></span>
+          <span class="screw screw-bl"></span>
+          <span class="screw screw-br"></span>
+          <div class="label-tape label-tape-on" aria-hidden="true">ON</div>
+          <button class="rocker" type="button" role="switch" aria-checked="false" aria-label="Switch">
+            <span class="well"></span>
+            <span class="paddle-stage">
+              <span class="paddle"></span>
+            </span>
+          </button>
+          <div class="label-tape label-tape-off" aria-hidden="true">OFF</div>
+        </div>
       </div>
       <div class="nameplate" aria-hidden="true">
         <span class="nameplate-model">Useless Machine <span class="nameplate-mark">?</span></span>
         <span class="nameplate-serial">S/N ${serialize(__COMMIT_SHA__)}</span>
       </div>
-      <div class="label-tape label-tape-on" aria-hidden="true">ON</div>
-      <button class="rocker" type="button" role="switch" aria-checked="false" aria-label="Switch">
-        <span class="well"></span>
-        <span class="paddle-stage">
-          <span class="paddle"></span>
-        </span>
-      </button>
-      <div class="label-tape label-tape-off" aria-hidden="true">OFF</div>
       <div class="antenna" data-testid="arm" aria-hidden="true">
         <span class="seg-1"></span><span class="seg-2"></span><span class="seg-3"></span><span class="knob"></span>
       </div>
@@ -109,6 +158,8 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   const rocker = mustFind<HTMLButtonElement>(root, "[role=switch]");
   const antenna = mustFind<HTMLDivElement>(root, "[data-testid=arm]");
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
+  const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
+  const plate = mustFind<HTMLDivElement>(root, ".plate");
 
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
@@ -126,12 +177,47 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     onLabel.style.setProperty("--on-label-spin", `${-90 * onLabelSpins}deg`);
   });
 
+  const screwEls: Record<Corner, HTMLSpanElement> = {
+    tl: mustFind(root, ".screw-tl"),
+    tr: mustFind(root, ".screw-tr"),
+    bl: mustFind(root, ".screw-bl"),
+    br: mustFind(root, ".screw-br"),
+  };
+  // Whether each corner screw is still driven in. Backing one out is a drag
+  // gesture (the OFF label brushing against it, below); winding it back in
+  // is a direct click — kept as two different gestures on purpose. Persisted
+  // so a plate left open stays open across a reload, like the eggs it can
+  // unlock.
+  const fastened: Record<Corner, boolean> = loadFastened();
+
+  function renderScrews(): void {
+    for (const corner of SCREW_SEQUENCE) {
+      screwEls[corner].classList.toggle("loose", !fastened[corner]);
+    }
+    const allLoose = SCREW_SEQUENCE.every((corner) => !fastened[corner]);
+    plate.classList.toggle("open", allLoose);
+    saveFastened(fastened);
+    if (allLoose) unlockEasterEgg("behind-the-wall");
+  }
+  renderScrews(); // reflect whatever was loaded before any interaction
+
+  function popScrew(corner: Corner): void {
+    const el = screwEls[corner];
+    el.classList.remove("pop");
+    void el.offsetWidth; // restart the animation even mid-drag, corner after corner
+    el.classList.add("pop");
+  }
+
   let screwStep = 0;
   let screwStepTimer: ReturnType<typeof setTimeout> | undefined;
 
   for (const corner of SCREW_SEQUENCE) {
-    const screw = mustFind<HTMLSpanElement>(root, `.screw-${corner}`);
-    screw.addEventListener("click", () => {
+    screwEls[corner].addEventListener("click", () => {
+      if (!fastened[corner]) {
+        fastened[corner] = true;
+        renderScrews();
+        return; // winding a loose screw back in doesn't also feed the sequence
+      }
       clearTimeout(screwStepTimer);
       if (corner === SCREW_SEQUENCE[screwStep]) {
         screwStep++;
@@ -148,6 +234,87 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       }, SCREW_STEP_TIMEOUT_MS);
     });
   }
+
+  // Once ajar, the whole panel is a big, obvious target for pushing it shut
+  // again — no hunting down four loose screws one at a time to recover.
+  // Requires the plate itself to be the click's target, not just an
+  // ancestor of it: any of its children (a screw, the rocker, either label)
+  // already has its own click behavior, and — critically — releasing the
+  // OFF label's drag fires its own trailing click, which bubbles up through
+  // .plate right as it opens; targeting only the bare panel keeps that
+  // click from immediately re-fastening what the drag just loosened.
+  plate.addEventListener("click", (event) => {
+    if (!plate.classList.contains("open")) return;
+    if (event.target !== plate) return;
+    for (const c of SCREW_SEQUENCE) fastened[c] = true;
+    renderScrews();
+  });
+
+  // Dragging the peeled OFF label across a screw backs it out — the label
+  // itself just follows the pointer via CSS custom properties, and every
+  // move checks proximity to each still-fastened screw.
+  let dragPointerId: number | undefined;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let toggledThisDrag = new Set<Corner>();
+  let everGrabbed = false;
+
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setTimeout(() => {
+      if (!everGrabbed) offLabel.classList.add("peek");
+    }, LABEL_PEEK_DELAY_MS);
+  }
+
+  function catchRadiusPx(pointerType: string): number {
+    return pointerType === "touch"
+      ? SCREW_TOUCH_RADIUS_TOUCHSCREEN_PX
+      : SCREW_TOUCH_RADIUS_PX;
+  }
+
+  function checkScrewCollisions(pointerType: string): void {
+    const labelRect = offLabel.getBoundingClientRect();
+    const lx = labelRect.left + labelRect.width / 2;
+    const ly = labelRect.top + labelRect.height / 2;
+    const radius = catchRadiusPx(pointerType);
+    for (const corner of SCREW_SEQUENCE) {
+      if (!fastened[corner] || toggledThisDrag.has(corner)) continue;
+      const r = screwEls[corner].getBoundingClientRect();
+      const dx = lx - (r.left + r.width / 2);
+      const dy = ly - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < radius) {
+        toggledThisDrag.add(corner);
+        fastened[corner] = false;
+        popScrew(corner);
+        renderScrews();
+      }
+    }
+  }
+
+  offLabel.addEventListener("pointerdown", (event) => {
+    everGrabbed = true;
+    offLabel.classList.remove("peek");
+    dragPointerId = event.pointerId;
+    toggledThisDrag = new Set();
+    offLabel.setPointerCapture(event.pointerId);
+    offLabel.classList.add("grabbed");
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+  });
+  offLabel.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== dragPointerId) return;
+    offLabel.style.setProperty("--drag-x", `${event.clientX - dragStartX}px`);
+    offLabel.style.setProperty("--drag-y", `${event.clientY - dragStartY}px`);
+    checkScrewCollisions(event.pointerType);
+  });
+  function endLabelDrag(event: PointerEvent): void {
+    if (event.pointerId !== dragPointerId) return;
+    dragPointerId = undefined;
+    offLabel.classList.remove("grabbed");
+    offLabel.style.removeProperty("--drag-x");
+    offLabel.style.removeProperty("--drag-y");
+  }
+  offLabel.addEventListener("pointerup", endLabelDrag);
+  offLabel.addEventListener("pointercancel", endLabelDrag);
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 
