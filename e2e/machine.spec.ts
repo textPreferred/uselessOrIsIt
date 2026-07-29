@@ -351,6 +351,22 @@ test.describe("useless machine", () => {
     await expect(page.locator(".screw-br")).not.toHaveClass(/removed/);
   });
 
+  test("clicking a loose screw winds it back in", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    const screwTl = page.locator(".screw-tl");
+    await dragOnto(page, offLabel, screwTl);
+    await expect(screwTl).toHaveClass(/removed/);
+
+    await screwTl.click();
+    await expect(screwTl).not.toHaveClass(/removed/);
+  });
+
+  test("clicking a fastened screw doesn't back it out", async ({ page }) => {
+    const screwTl = page.locator(".screw-tl");
+    await screwTl.click(); // just a click, no drag — shouldn't unscrew it
+    await expect(screwTl).not.toHaveClass(/removed/);
+  });
+
   test("spinning the ON label upside down blocks the switch", async ({
     page,
   }) => {
