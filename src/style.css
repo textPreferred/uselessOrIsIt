@@ -53,17 +53,28 @@ body {
 }
 
 /* ---- the mounting plate: switch and stickies are screwed to this, not
-   directly to the wall ---- */
+   directly to the wall. .plate-mount only centers it on the stage (unchanged
+   maths from before); .plate itself is the part that can swing open on its
+   corner screws, so its own rotation doesn't fight the centering transform. */
 
-.plate {
+.plate-mount {
   position: absolute;
   top: 50%;
   left: 50%;
   width: 14rem;
   height: 25rem;
   transform: translate(-50%, -50%);
-  border-radius: 0.7rem;
+  perspective: 60rem;
   z-index: 0;
+}
+
+.plate {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.7rem;
+  transform-style: preserve-3d;
+  transform-origin: 0% 50%;
+  transition: transform 0.65s cubic-bezier(0.3, 0.85, 0.25, 1.05);
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
     linear-gradient(170deg, #dcdee1, #b3b7bd 45%, #83878e);
@@ -72,6 +83,78 @@ body {
     inset 0 -3px 5px rgb(0 0 0 / 30%),
     0 0.9rem 1.6rem rgb(0 0 0 / 35%),
     0 0.2rem 0.4rem rgb(0 0 0 / 30%);
+}
+
+/* Ajar, the whole panel is a big obvious target for pushing it shut again —
+   see the plate's own click handler in ui.ts. */
+.plate.open {
+  transform: rotateY(-100deg);
+  box-shadow: 0.3rem 0 1.5rem rgb(0 0 0 / 45%);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate {
+    transition: none;
+  }
+}
+
+/* ---- the wall tape: stuck behind the plate, only visible once it's
+   unscrewed and swung open. Same label-maker tape as the ON/OFF pair, split
+   across two applied strips the way a longer phrase actually would be. ---- */
+
+/* Compound selector needed to out-specificity .label-tape's own z-index:1 —
+   a single .wall-tape class rule loses that tie on source order alone.
+   z-index:0 rather than a negative value: .stage doesn't establish its own
+   stacking context, so a negative z-index here escapes it entirely and
+   ends up compared against the page body's own background instead of
+   .plate-mount — invisible under *everything*, not just the plate. Tied at
+   0, the two are compared as siblings within whatever context they're
+   actually in, and .plate-mount (later in the DOM) wins the tie. */
+.wall-tape-group {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-2.5deg);
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wall-tape {
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  padding: 0 0.65rem;
+  background: linear-gradient(180deg, #303032, #19191a 55%, #0c0c0d);
+  box-shadow:
+    0.15rem 0.25rem 0.5rem rgb(0 0 0 / 40%),
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    inset 0 -1px 1px rgb(0 0 0 / 65%);
+  clip-path: polygon(
+    0.3rem 0%,
+    calc(100% - 0.3rem) 0%,
+    100% 0.3rem,
+    100% 100%,
+    0% 100%,
+    0% 0.3rem
+  );
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  color: #eeeeec;
+  text-shadow:
+    0 1px 0 rgb(0 0 0 / 70%),
+    0 -1px 0 rgb(255 255 255 / 18%);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.wall-tape-2 {
+  transform: rotate(1.2deg);
 }
 
 .screw {
@@ -84,6 +167,8 @@ body {
     inset 0 1px 1px rgb(255 255 255 / 55%),
     inset 0 -1px 1px rgb(0 0 0 / 40%),
     0 1px 2px rgb(0 0 0 / 55%);
+  transition: transform 0.35s cubic-bezier(0.3, 0.8, 0.3, 1.2);
+  cursor: pointer;
 }
 
 .screw::after {
@@ -119,6 +204,86 @@ body {
   bottom: 0.65rem;
   right: 0.65rem;
   --slot-angle: 40deg;
+}
+
+/* A screw dragged loose doesn't fall out of the scene — it tips over and
+   rests on the plate near its own hole, canted and shadowed clearly enough
+   to be read as "loose" at a glance and not confused with a fastened screw
+   sitting at rest. */
+.screw-tl.loose {
+  transform: translate(0.9rem, 0.7rem) rotate(-35deg);
+}
+
+.screw-tr.loose {
+  transform: translate(-0.9rem, 0.7rem) rotate(35deg);
+}
+
+.screw-bl.loose {
+  transform: translate(0.9rem, -0.7rem) rotate(35deg);
+}
+
+.screw-br.loose {
+  transform: translate(-0.9rem, -0.7rem) rotate(-35deg);
+}
+
+/* The moment a screw lets go: a quick brightness flash layered on top of the
+   settle transform above, so brushing past all four in one drag reads as
+   four distinct hits instead of one silent state flip. */
+.screw.pop {
+  animation: screw-pop 0.4s cubic-bezier(0.25, 0.9, 0.25, 1.3);
+}
+
+@keyframes screw-pop {
+  0% {
+    filter: brightness(1);
+  }
+
+  35% {
+    filter: brightness(1.6);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
+.hole {
+  position: absolute;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #26282b;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 70%);
+}
+
+.hole-tl {
+  top: 0.85rem;
+  left: 0.85rem;
+}
+
+.hole-tr {
+  top: 0.85rem;
+  right: 0.85rem;
+}
+
+.hole-bl {
+  bottom: 0.85rem;
+  left: 0.85rem;
+}
+
+.hole-br {
+  bottom: 0.85rem;
+  right: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screw {
+    transition: none;
+  }
+
+  .screw.pop {
+    animation: none;
+  }
 }
 
 /* ---- nameplate: stamped into the case itself (the box the switch's
@@ -184,7 +349,13 @@ body {
   cursor: pointer;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
-  position: relative;
+  /* Used to be centered for free via .stage's grid, back when it was a
+     direct grid child. Now nested inside .plate (so it can swing with it),
+     it needs the same explicit centering the labels already use. */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 1;
   width: 10rem;
   height: 13.5rem;
@@ -346,9 +517,54 @@ body {
   transition: transform 250ms ease-out;
 }
 
+/* Draggable: peels loose and can be brushed against a screw to back it out.
+   ui.ts drives --drag-x/--drag-y while held; releasing clears them and this
+   transition springs it back to its resting spot on the plate. */
 .label-tape-off {
   top: calc(50% + 6.75rem + 0.7rem);
-  transform: translate(calc(-50% + 1.1rem), 0) rotate(1.5deg);
+  transform: translate(
+      calc(-50% + 1.1rem + var(--drag-x, 0px)),
+      var(--drag-y, 0px)
+    )
+    rotate(var(--off-label-rot, 1.5deg));
+  transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
+  touch-action: none;
+  cursor: grab;
+}
+
+.label-tape-off.grabbed {
+  transition: none;
+  cursor: grabbing;
+  --off-label-rot: -6deg;
+}
+
+/* A one-time, unprompted lift of the tape's own corner — the only hint that
+   it comes loose at all. Cancelled the instant it's actually grabbed, and
+   skipped entirely under reduced motion (see the guard in ui.ts). */
+.label-tape-off.peek {
+  animation: label-peek 2.4s ease-in-out;
+}
+
+@keyframes label-peek {
+  0%,
+  100% {
+    transform: translate(calc(-50% + 1.1rem), 0) rotate(1.5deg);
+  }
+
+  12%,
+  30% {
+    transform: translate(calc(-50% + 1.1rem), -0.2rem) rotate(-4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label-tape-off {
+    transition: none;
+  }
+
+  .label-tape-off.peek {
+    animation: none;
+  }
 }
 
 /* ---- the antenna, reaching up from below the view ---- */

@@ -22,6 +22,27 @@ async function clickScrewsClockwise(page: Page): Promise<void> {
   await page.locator(".screw-bl").click();
 }
 
+/** Drags one element on top of another via raw mouse movement (for elements
+ * that respond to pointer drags rather than clicks). */
+async function dragOnto(page: Page, from: Locator, to: Locator): Promise<void> {
+  const fromBox = await from.boundingBox();
+  const toBox = await to.boundingBox();
+  if (!fromBox || !toBox) throw new Error("missing bounding box");
+  await page.mouse.move(
+    fromBox.x + fromBox.width / 2,
+    fromBox.y + fromBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2, {
+    steps: 10,
+  });
+  await page.mouse.up();
+  // let the dragged element's spring-back transition finish before anyone
+  // reads its position again — otherwise a follow-up drag's bounding-box
+  // read can be stale by the time the real mousedown lands.
+  await page.waitForTimeout(350);
+}
+
 test.describe("useless machine", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("./");
@@ -320,6 +341,139 @@ test.describe("useless machine", () => {
       .click();
     await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
     await expect(page.locator(".egg-hint")).toBeVisible();
+  });
+
+  test("dragging the OFF label across a screw backs it loose", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    await dragOnto(page, offLabel, page.locator(".screw-tl"));
+    await expect(page.locator(".screw-tl")).toHaveClass(/loose/);
+    // untouched screws stay put
+    await expect(page.locator(".screw-tr")).not.toHaveClass(/loose/);
+    await expect(page.locator(".screw-bl")).not.toHaveClass(/loose/);
+    await expect(page.locator(".screw-br")).not.toHaveClass(/loose/);
+  });
+
+  test("clicking a loose screw winds it back in", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    const screwTl = page.locator(".screw-tl");
+    await dragOnto(page, offLabel, screwTl);
+    await expect(screwTl).toHaveClass(/loose/);
+
+    await screwTl.click();
+    await expect(screwTl).not.toHaveClass(/loose/);
+  });
+
+  test("clicking a fastened screw doesn't back it out", async ({ page }) => {
+    const screwTl = page.locator(".screw-tl");
+    await screwTl.click(); // just a click, no drag — shouldn't unscrew it
+    await expect(screwTl).not.toHaveClass(/loose/);
+  });
+
+  test("backing out all four screws swings the plate open and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      // the label springs back to rest between drags — wait for that
+      // settle so the next drag reads its actual (not mid-transition) box
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).not.toHaveClass(/open/); // three isn't enough
+    await dragOnto(page, offLabel, page.locator(".screw-br"));
+
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".egg-title")).toHaveText(/behind the wall/i);
+    await expect(page.locator(".wall-tape").nth(0)).toHaveText(
+      /useless machine,/i,
+    );
+    await expect(page.locator(".wall-tape").nth(1)).toHaveText(/isn't it\?/i);
+  });
+
+  test("re-seating a screw closes the plate again", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    // the discovery toast covers the screen — dismiss it before reaching
+    // the screw again
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    await page.locator(".screw-tl").click();
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
+  });
+
+  test("tapping the open plate pushes it shut and re-fastens every screw", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    // the plate itself, not any one screw, closes everything in one go. A
+    // real-coordinate click is unreliable here — the plate is mid-3D-rotation,
+    // so its on-screen quad doesn't line up with its axis-aligned bounding
+    // box — so this dispatches the click directly instead.
+    await page.locator(".plate").evaluate((el) => (el as HTMLElement).click());
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await expect(page.locator(corner)).not.toHaveClass(/loose/);
+    }
+  });
+
+  test("the open plate stays open across a reload", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await page.reload();
+
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".screw-tl")).toHaveClass(/loose/);
+    await expect(page.locator(".screw-tr")).toHaveClass(/loose/);
+    await expect(page.locator(".screw-bl")).toHaveClass(/loose/);
+    await expect(page.locator(".screw-br")).toHaveClass(/loose/);
+  });
+
+  test("nudges an untouched OFF label with a one-time peek", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    await expect(offLabel).not.toHaveClass(/peek/);
+    await expect(offLabel).toHaveClass(/peek/, { timeout: 5000 });
+  });
+
+  test("grabbing the OFF label cancels the peek nudge", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    const box = await offLabel.boundingBox();
+    if (!box) throw new Error("label has no bounding box");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.up();
+    // held well past when the nudge would otherwise have fired
+    await page.waitForTimeout(5000);
+    await expect(offLabel).not.toHaveClass(/peek/);
   });
 
   test("spinning the ON label upside down blocks the switch", async ({
