@@ -367,6 +367,32 @@ test.describe("useless machine", () => {
     await expect(screwTl).not.toHaveClass(/removed/);
   });
 
+  test("backing out all four screws swings the plate open and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    await dragOnto(page, offLabel, page.locator(".screw-tl"));
+    await dragOnto(page, offLabel, page.locator(".screw-tr"));
+    await dragOnto(page, offLabel, page.locator(".screw-bl"));
+    await expect(page.locator(".plate")).not.toHaveClass(/open/); // three isn't enough
+    await dragOnto(page, offLabel, page.locator(".screw-br"));
+
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".egg-title")).toHaveText(/behind the wall/i);
+    await expect(page.locator(".wall-tape")).toHaveText(/is it\?/i);
+  });
+
+  test("re-seating a screw closes the plate again", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await page.locator(".screw-tl").click();
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
+  });
+
   test("spinning the ON label upside down blocks the switch", async ({
     page,
   }) => {
