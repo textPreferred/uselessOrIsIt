@@ -20,7 +20,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "tug-of-war",
     title: "Tug of war",
-    description: "It gave up — then won anyway.",
+    description: "The machine gave up - but won anyway.",
   },
   {
     id: "poked-the-antenna",
