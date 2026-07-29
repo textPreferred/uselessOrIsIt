@@ -10,32 +10,32 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "beat-the-antenna",
     title: "Have you tried turning it on and off again?",
-    description: "Switched off before the machine could.",
+    description: "Why did you turn it on in the first place?",
   },
   {
     id: "top-speed",
     title: "So fast!",
-    description: "Reached the machine's top speed.",
+    description: "You reached a limit.",
   },
   {
     id: "tug-of-war",
     title: "Tug of war",
-    description: "The machine gave up - but won anyway.",
+    description: "Who is useful, here?",
   },
   {
     id: "poked-the-antenna",
-    title: "Don't poke the bear",
-    description: "Blocking the machine will make it come back more angry.",
+    title: "You're in the way",
+    description: "Why block it if you set it going?",
   },
   {
     id: "no-means-no",
     title: "No means no",
-    description: "Turned to on to turn it on.",
+    description: "And on means on.",
   },
   {
     id: "behind-the-wall",
-    title: "Behind the wall",
-    description: "Took the switch off its mount. Found the question waiting.",
+    title: "And off they go",
+    description: "Useful label?",
   },
   {
     id: ANTI_EASTER_EGG_ID,
