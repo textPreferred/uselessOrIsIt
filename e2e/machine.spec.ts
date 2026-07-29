@@ -409,6 +409,23 @@ test.describe("useless machine", () => {
     await expect(page.locator(".plate")).not.toHaveClass(/open/);
   });
 
+  test("the open plate stays open across a reload", async ({ page }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/removed/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await page.reload();
+
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".screw-tl")).toHaveClass(/removed/);
+    await expect(page.locator(".screw-tr")).toHaveClass(/removed/);
+    await expect(page.locator(".screw-bl")).toHaveClass(/removed/);
+    await expect(page.locator(".screw-br")).toHaveClass(/removed/);
+  });
+
   test("spinning the ON label upside down blocks the switch", async ({
     page,
   }) => {
