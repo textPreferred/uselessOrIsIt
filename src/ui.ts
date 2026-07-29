@@ -166,6 +166,11 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   for (const corner of SCREW_SEQUENCE) {
     screwEls[corner].addEventListener("click", () => {
+      if (!fastened[corner]) {
+        fastened[corner] = true;
+        renderScrews();
+        return; // winding a loose screw back in doesn't also feed the sequence
+      }
       clearTimeout(screwStepTimer);
       if (corner === SCREW_SEQUENCE[screwStep]) {
         screwStep++;
