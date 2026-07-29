@@ -22,6 +22,25 @@ async function clickScrewsClockwise(page: Page): Promise<void> {
   await page.locator(".screw-bl").click();
 }
 
+/** Drags one element on top of another via raw mouse movement (for elements
+ * that respond to pointer drags rather than clicks). */
+async function dragOnto(page: Page, from: Locator, to: Locator): Promise<void> {
+  const fromBox = await from.boundingBox();
+  const toBox = await to.boundingBox();
+  if (!fromBox || !toBox) throw new Error("missing bounding box");
+  await page.mouse.move(
+    fromBox.x + fromBox.width / 2,
+    fromBox.y + fromBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    toBox.x + toBox.width / 2,
+    toBox.y + toBox.height / 2,
+    { steps: 10 },
+  );
+  await page.mouse.up();
+}
+
 test.describe("useless machine", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("./");
@@ -320,6 +339,18 @@ test.describe("useless machine", () => {
       .click();
     await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
     await expect(page.locator(".egg-hint")).toBeVisible();
+  });
+
+  test("dragging the OFF label across a screw backs it loose", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    await dragOnto(page, offLabel, page.locator(".screw-tl"));
+    await expect(page.locator(".screw-tl")).toHaveClass(/removed/);
+    // untouched screws stay put
+    await expect(page.locator(".screw-tr")).not.toHaveClass(/removed/);
+    await expect(page.locator(".screw-bl")).not.toHaveClass(/removed/);
+    await expect(page.locator(".screw-br")).not.toHaveClass(/removed/);
   });
 
   test("spinning the ON label upside down blocks the switch", async ({
