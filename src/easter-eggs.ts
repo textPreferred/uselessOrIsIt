@@ -25,7 +25,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "poked-the-antenna",
     title: "Don't poke the bear",
-    description: "Blocked the antenna — it struck back angrier.",
+    description: "Blocking the machine will make it come back more angry.",
   },
   {
     id: "no-means-no",
