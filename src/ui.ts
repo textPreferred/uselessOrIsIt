@@ -58,6 +58,33 @@ type Corner = (typeof SCREW_SEQUENCE)[number];
 // dragged — no precision required, just get close.
 const SCREW_TOUCH_RADIUS_PX = 28;
 
+const SCREWS_STORAGE_KEY = "uselessMachine.plateScrews";
+const ALL_FASTENED: Record<Corner, boolean> = {
+  tl: true,
+  tr: true,
+  bl: true,
+  br: true,
+};
+
+function loadFastened(): Record<Corner, boolean> {
+  try {
+    const raw = localStorage.getItem(SCREWS_STORAGE_KEY);
+    if (!raw) return { ...ALL_FASTENED };
+    const saved = JSON.parse(raw) as Partial<Record<Corner, boolean>>;
+    return { ...ALL_FASTENED, ...saved };
+  } catch {
+    return { ...ALL_FASTENED }; // storage unavailable — screws just won't persist
+  }
+}
+
+function saveFastened(state: Record<Corner, boolean>): void {
+  try {
+    localStorage.setItem(SCREWS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* storage unavailable — still works for this session */
+  }
+}
+
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
 let idleResetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -147,13 +174,10 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   };
   // Whether each corner screw is still driven in. Backing one out is a drag
   // gesture (the OFF label brushing against it, below); winding it back in
-  // is a direct click — kept as two different gestures on purpose.
-  const fastened: Record<Corner, boolean> = {
-    tl: true,
-    tr: true,
-    bl: true,
-    br: true,
-  };
+  // is a direct click — kept as two different gestures on purpose. Persisted
+  // so a plate left open stays open across a reload, like the eggs it can
+  // unlock.
+  const fastened: Record<Corner, boolean> = loadFastened();
 
   const plate = mustFind<HTMLDivElement>(root, ".plate");
 
@@ -163,8 +187,10 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     }
     const allLoose = SCREW_SEQUENCE.every((corner) => !fastened[corner]);
     plate.classList.toggle("open", allLoose);
+    saveFastened(fastened);
     if (allLoose) unlockEasterEgg("behind-the-wall");
   }
+  renderScrews(); // reflect whatever was loaded before any interaction
 
   let screwStep = 0;
   let screwStepTimer: ReturnType<typeof setTimeout> | undefined;
