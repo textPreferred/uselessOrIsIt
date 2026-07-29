@@ -99,7 +99,9 @@ body {
 /* ---- the wall tape: stuck behind the plate, only visible once it's
    unscrewed and swung open. Same label-maker tape as the ON/OFF pair. ---- */
 
-.wall-tape {
+/* Compound selector needed to out-specificity .label-tape's own z-index:1 —
+   a single .wall-tape class rule loses that tie on source order alone. */
+.wall-tape.label-tape {
   position: absolute;
   top: 50%;
   left: 50%;

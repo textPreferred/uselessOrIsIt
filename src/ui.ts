@@ -125,10 +125,6 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
           <span class="screw screw-tr"></span>
           <span class="screw screw-bl"></span>
           <span class="screw screw-br"></span>
-          <div class="nameplate" aria-hidden="true">
-            <span class="nameplate-model">Useless Machine <span class="nameplate-mark">?</span></span>
-            <span class="nameplate-serial">S/N ${serialize(__COMMIT_SHA__)}</span>
-          </div>
           <div class="label-tape label-tape-on" aria-hidden="true">ON</div>
           <button class="rocker" type="button" role="switch" aria-checked="false" aria-label="Switch">
             <span class="well"></span>
@@ -138,6 +134,10 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
           </button>
           <div class="label-tape label-tape-off" aria-hidden="true">OFF</div>
         </div>
+      </div>
+      <div class="nameplate" aria-hidden="true">
+        <span class="nameplate-model">Useless Machine <span class="nameplate-mark">?</span></span>
+        <span class="nameplate-serial">S/N ${serialize(__COMMIT_SHA__)}</span>
       </div>
       <div class="antenna" data-testid="arm" aria-hidden="true">
         <span class="seg-1"></span><span class="seg-2"></span><span class="seg-3"></span><span class="knob"></span>
