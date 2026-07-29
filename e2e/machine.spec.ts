@@ -37,6 +37,10 @@ async function dragOnto(page: Page, from: Locator, to: Locator): Promise<void> {
     steps: 10,
   });
   await page.mouse.up();
+  // let the dragged element's spring-back transition finish before anyone
+  // reads its position again — otherwise a follow-up drag's bounding-box
+  // read can be stale by the time the real mousedown lands.
+  await page.waitForTimeout(350);
 }
 
 test.describe("useless machine", () => {
@@ -371,9 +375,12 @@ test.describe("useless machine", () => {
     page,
   }) => {
     const offLabel = page.locator(".label-tape-off");
-    await dragOnto(page, offLabel, page.locator(".screw-tl"));
-    await dragOnto(page, offLabel, page.locator(".screw-tr"));
-    await dragOnto(page, offLabel, page.locator(".screw-bl"));
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      // the label springs back to rest between drags — wait for that
+      // settle so the next drag reads its actual (not mid-transition) box
+      await expect(page.locator(corner)).toHaveClass(/removed/);
+    }
     await expect(page.locator(".plate")).not.toHaveClass(/open/); // three isn't enough
     await dragOnto(page, offLabel, page.locator(".screw-br"));
 
@@ -386,8 +393,17 @@ test.describe("useless machine", () => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
       await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/removed/);
     }
     await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    // the discovery toast covers the screen — dismiss it before reaching
+    // the screw again
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
 
     await page.locator(".screw-tl").click();
     await expect(page.locator(".plate")).not.toHaveClass(/open/);

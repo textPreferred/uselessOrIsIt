@@ -155,10 +155,15 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     br: true,
   };
 
+  const plate = mustFind<HTMLDivElement>(root, ".plate");
+
   function renderScrews(): void {
     for (const corner of SCREW_SEQUENCE) {
       screwEls[corner].classList.toggle("removed", !fastened[corner]);
     }
+    const allLoose = SCREW_SEQUENCE.every((corner) => !fastened[corner]);
+    plate.classList.toggle("open", allLoose);
+    if (allLoose) unlockEasterEgg("behind-the-wall");
   }
 
   let screwStep = 0;
