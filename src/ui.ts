@@ -52,6 +52,11 @@ const HIT_BACK_MS = 120;
 // progress — this is a click pattern, not a race against the clock.
 const SCREW_SEQUENCE = ["tl", "tr", "br", "bl"] as const;
 const SCREW_STEP_TIMEOUT_MS = 3000;
+type Corner = (typeof SCREW_SEQUENCE)[number];
+
+// The peeled OFF label backs a screw out by brushing against it while
+// dragged — no precision required, just get close.
+const SCREW_TOUCH_RADIUS_PX = 28;
 
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
@@ -116,6 +121,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   const rocker = mustFind<HTMLButtonElement>(root, "[role=switch]");
   const antenna = mustFind<HTMLDivElement>(root, "[data-testid=arm]");
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
+  const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
 
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
@@ -133,12 +139,33 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     onLabel.style.setProperty("--on-label-spin", `${-90 * onLabelSpins}deg`);
   });
 
+  const screwEls: Record<Corner, HTMLSpanElement> = {
+    tl: mustFind(root, ".screw-tl"),
+    tr: mustFind(root, ".screw-tr"),
+    bl: mustFind(root, ".screw-bl"),
+    br: mustFind(root, ".screw-br"),
+  };
+  // Whether each corner screw is still driven in. Backing one out is a drag
+  // gesture (the OFF label brushing against it, below); winding it back in
+  // is a direct click — kept as two different gestures on purpose.
+  const fastened: Record<Corner, boolean> = {
+    tl: true,
+    tr: true,
+    bl: true,
+    br: true,
+  };
+
+  function renderScrews(): void {
+    for (const corner of SCREW_SEQUENCE) {
+      screwEls[corner].classList.toggle("removed", !fastened[corner]);
+    }
+  }
+
   let screwStep = 0;
   let screwStepTimer: ReturnType<typeof setTimeout> | undefined;
 
   for (const corner of SCREW_SEQUENCE) {
-    const screw = mustFind<HTMLSpanElement>(root, `.screw-${corner}`);
-    screw.addEventListener("click", () => {
+    screwEls[corner].addEventListener("click", () => {
       clearTimeout(screwStepTimer);
       if (corner === SCREW_SEQUENCE[screwStep]) {
         screwStep++;
@@ -155,6 +182,55 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       }, SCREW_STEP_TIMEOUT_MS);
     });
   }
+
+  // Dragging the peeled OFF label across a screw backs it out — the label
+  // itself just follows the pointer via CSS custom properties, and every
+  // move checks proximity to each still-fastened screw.
+  let dragPointerId: number | undefined;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let toggledThisDrag = new Set<Corner>();
+
+  function checkScrewCollisions(): void {
+    const labelRect = offLabel.getBoundingClientRect();
+    const lx = labelRect.left + labelRect.width / 2;
+    const ly = labelRect.top + labelRect.height / 2;
+    for (const corner of SCREW_SEQUENCE) {
+      if (!fastened[corner] || toggledThisDrag.has(corner)) continue;
+      const r = screwEls[corner].getBoundingClientRect();
+      const dx = lx - (r.left + r.width / 2);
+      const dy = ly - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < SCREW_TOUCH_RADIUS_PX) {
+        toggledThisDrag.add(corner);
+        fastened[corner] = false;
+        renderScrews();
+      }
+    }
+  }
+
+  offLabel.addEventListener("pointerdown", (event) => {
+    dragPointerId = event.pointerId;
+    toggledThisDrag = new Set();
+    offLabel.setPointerCapture(event.pointerId);
+    offLabel.classList.add("grabbed");
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+  });
+  offLabel.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== dragPointerId) return;
+    offLabel.style.setProperty("--drag-x", `${event.clientX - dragStartX}px`);
+    offLabel.style.setProperty("--drag-y", `${event.clientY - dragStartY}px`);
+    checkScrewCollisions();
+  });
+  function endLabelDrag(event: PointerEvent): void {
+    if (event.pointerId !== dragPointerId) return;
+    dragPointerId = undefined;
+    offLabel.classList.remove("grabbed");
+    offLabel.style.removeProperty("--drag-x");
+    offLabel.style.removeProperty("--drag-y");
+  }
+  offLabel.addEventListener("pointerup", endLabelDrag);
+  offLabel.addEventListener("pointercancel", endLabelDrag);
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 

@@ -33,11 +33,9 @@ async function dragOnto(page: Page, from: Locator, to: Locator): Promise<void> {
     fromBox.y + fromBox.height / 2,
   );
   await page.mouse.down();
-  await page.mouse.move(
-    toBox.x + toBox.width / 2,
-    toBox.y + toBox.height / 2,
-    { steps: 10 },
-  );
+  await page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2, {
+    steps: 10,
+  });
   await page.mouse.up();
 }
 
