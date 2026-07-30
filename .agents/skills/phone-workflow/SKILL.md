@@ -1,6 +1,6 @@
 ---
 name: phone-workflow
-description: Default operating mode for this repository — assume the user is working from a phone. Read at the start of every session and apply for the rest of it. Adjusts four things — one-tap ship-it defaults, inline screenshots for visual/design requests instead of artifacts, Artifact-view HTML/JS prototypes for interaction/demo requests (no TDD needed for previews/prototypes), and TDD-following real implementation plus a re-confirmation once a preview is approved. Also triggers mid-session on requests mentioning design, look, shape, style, color (visual) or prototype, demo, try it, interactive (interaction).
+description: Default operating mode for this repository — assume the user is working from a phone. Read at the start of every session and apply for the rest of it. Also triggers mid-session on visual words (design, look, shape, style, color) or interaction words (prototype, demo, try it, play with, interactive).
 ---
 
 # Working from a phone
@@ -35,46 +35,38 @@ Ask this once per checkpoint; don't nag on every message.
    refactor commits for behavior changes. Don't retrofit history that's
    already there — just keep following it from here on.
 3. Push the branch and open a PR (check for a PR template first).
-4. Once CI is green, merge it — "ship it" is the standing authorization
-   for the merge, no separate confirmation needed.
-5. Reply with just the PR/merge link, one line.
+4. Once CI is green, merge it. Merging to `main` auto-deploys to GitHub
+   Pages — "ship it" is the standing authorization for the merge and the
+   deploy it triggers, no separate confirmation needed.
+5. Watch the post-merge **smoke** job (re-runs `@smoke` against the live
+   site). Treat a red smoke job like a CI failure: diagnose and fix.
+6. Reply with just the PR/merge link, one line.
 
-If CI fails, diagnose and re-push automatically, same as normal PR
-babysitting. Only send a message if genuinely blocked on a decision only
-the user can make.
+If CI or the smoke job fails, diagnose and re-push automatically, same as
+normal PR babysitting. Only send a message if genuinely blocked on a
+decision only the user can make.
 
-## 2. Visual/design requests → inline pictures, not artifacts
+## 2. Preview before building — visual or interactive requests
 
-Trigger words: "design", "look(s)", "shape", "style", "color", or
-similar visual asks.
+Trigger on visual words ("design", "look(s)", "shape", "style", "color")
+or interaction words ("prototype", "demo", "try it", "play with",
+"interactive"). Either way: mock it quickly and skip the TDD convention
+— this is a throwaway preview, not the shipped change.
 
-Don't build an HTML mockup in the Artifact view for these — on a phone
-that's an extra tap into a side panel, away from the chat. Instead:
+- **Visual** → mock the change (in the app or otherwise), run it (see
+  the `run` skill), and screenshot it. Send via `SendUserFile`
+  (`display: 'render'`) so it shows inline in chat, not a side-panel
+  link. Comparing options → multiple screenshots in one message, not
+  one artifact with several frames.
+- **Interactive** → build a self-contained HTML/JS prototype and publish
+  it with the `Artifact` tool so the user can tap around on the phone
+  screen. This is the one case in this skill where the artifact view is
+  the right call, not the exception.
 
-- Mock the change quickly, in the app or otherwise — this is a preview,
-  not the shipped change, so skip the TDD convention here.
-- Run it (see the `run` skill) and take a screenshot.
-- Send the screenshot(s) with `SendUserFile` (`display: 'render'`) so
-  they show inline in the chat, not as a side-panel link.
-- Comparing options → send multiple screenshots in one message rather
-  than one artifact with several frames.
+## 3. Preview confirmed → implement for real
 
-## 3. Interaction/prototype requests → Artifact view
-
-Trigger words: "prototype", "demo", "try it", "play with",
-"interactive".
-
-These need actual interaction, which a screenshot can't give — use the
-`Artifact` tool to publish a self-contained HTML/JS prototype so the user
-can tap around on the phone screen. This is the one case in this skill
-where the artifact view is the right call, not the exception. Build it
-standalone and skip the TDD convention — it's a throwaway preview, not
-the shipped change.
-
-## 4. Preview confirmed → implement for real
-
-Once the user confirms a preview or prototype (rule 2 or 3) matches what
-they want, don't ship the preview itself:
+Once the user confirms a preview or prototype (rule 2) matches what they
+want, don't ship the preview itself:
 
 1. Implement the change properly in the codebase, this time following
    the repo's TDD convention (rule 1, step 2) — the quick mock was
