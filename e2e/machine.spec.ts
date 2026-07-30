@@ -302,7 +302,7 @@ test.describe("useless machine", () => {
     await page.waitForTimeout(300); // let it struggle against the block a beat
     await page.mouse.up();
 
-    await expect(page.locator(".egg-title")).toHaveText(/poke/i);
+    await expect(page.locator(".egg-title")).toHaveText(/you're in the way/i);
   });
 
   test("clicking the four screws clockwise from the top-left offers to reset easter eggs", async ({
@@ -385,7 +385,7 @@ test.describe("useless machine", () => {
     await dragOnto(page, offLabel, page.locator(".screw-br"));
 
     await expect(page.locator(".plate")).toHaveClass(/open/);
-    await expect(page.locator(".egg-title")).toHaveText(/behind the wall/i);
+    await expect(page.locator(".egg-title")).toHaveText(/and off they go/i);
     await expect(page.locator(".wall-tape").nth(0)).toHaveText(
       /useless machine,/i,
     );
