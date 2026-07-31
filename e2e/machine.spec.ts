@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { BASE_CONTACT_DELAY_MS } from "../src/ui";
+import { BACK_DOOR_MS, BASE_CONTACT_DELAY_MS } from "../src/ui";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
 async function clickTop(locator: Locator): Promise<void> {
@@ -454,6 +454,44 @@ test.describe("useless machine", () => {
     await expect(page.locator(".screw-tr")).toHaveClass(/loose/);
     await expect(page.locator(".screw-bl")).toHaveClass(/loose/);
     await expect(page.locator(".screw-br")).toHaveClass(/loose/);
+  });
+
+  test("with the panel open, flipping off sends the antenna in diagonally to flip it back on", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    // dismiss the behind-the-wall toast first so it isn't sitting over the
+    // switch when the click below lands
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // flip off manually while the panel's open
+
+    // the antenna sneaks around the back and flips it on again
+    await expect(machineSwitch).toBeChecked({ timeout: BACK_DOOR_MS + 1000 });
+    await expect(page.locator(".egg-title")).toHaveText(/back way too/i);
+
+    // ...and the default sequence takes over from there, turning it off
+    // again on its own, unprompted
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+    await expect(machineSwitch).not.toBeChecked({
+      timeout: BASE_CONTACT_DELAY_MS + 1000,
+    });
   });
 
   test("nudges an untouched OFF label with a one-time peek", async ({
