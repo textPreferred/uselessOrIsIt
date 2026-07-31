@@ -356,6 +356,11 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  /* Without this, .paddle-stage's own 3D tilt gets flattened into a flat
+     picture right here, before .plate's rotateY ever sees it — so opening
+     the panel would just mirror that flat picture instead of correctly
+     showing the paddle's protruding side as sunken from behind. */
+  transform-style: preserve-3d;
   z-index: 1;
   width: 10rem;
   height: 13.5rem;
@@ -398,6 +403,7 @@ body {
   position: absolute;
   inset: 1.2rem;
   perspective: 480px;
+  transform-style: preserve-3d;
 }
 
 .paddle {

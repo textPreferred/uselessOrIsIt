@@ -565,6 +565,11 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   function applyPressAt(clientY: number, pointerId: number): void {
     const rect = rocker.getBoundingClientRect();
     const clickedTop = clientY - rect.top < rect.height / 2;
+    // With the panel open, the ON half always reads as sunk in from
+    // behind — there's nothing there to press. Only the OFF half stays
+    // reachable by hand; turning it back on from there is the antenna's
+    // job alone (see startBackDoorSequence()).
+    if (clickedTop && plate.classList.contains("open")) return;
     const isOn = machine.state === "on";
     // only the top half turns it on, only the bottom half turns it off
     if (clickedTop === isOn) return;
@@ -649,6 +654,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     if (event.detail !== 0) return; // pointer taps are handled by pointerdown
     const rect = rocker.getBoundingClientRect();
     const clickedTop = event.clientY - rect.top < rect.height / 2;
+    if (clickedTop && plate.classList.contains("open")) return;
     const isOn = machine.state === "on";
     if (clickedTop === isOn) return;
     const turningOn = clickedTop && !isOn;

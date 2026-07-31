@@ -43,6 +43,31 @@ async function dragOnto(page: Page, from: Locator, to: Locator): Promise<void> {
   await page.waitForTimeout(350);
 }
 
+/** Drags the OFF label past all four screws in one continuous motion
+ * instead of four separate drags — checkScrewCollisions() in ui.ts fires
+ * on every pointermove, so a single pass through all four corners loosens
+ * all of them without paying dragOnto()'s repeated settle waits. Needed
+ * wherever a test has to beat a real-time clock (the antenna's own
+ * auto-off timer) to get the panel open before the switch turns itself
+ * back off. */
+async function sweepScrewsLoose(page: Page, label: Locator): Promise<void> {
+  const labelBox = await label.boundingBox();
+  if (!labelBox) throw new Error("label has no bounding box");
+  await page.mouse.move(
+    labelBox.x + labelBox.width / 2,
+    labelBox.y + labelBox.height / 2,
+  );
+  await page.mouse.down();
+  for (const corner of [".screw-tl", ".screw-tr", ".screw-br", ".screw-bl"]) {
+    const box = await page.locator(corner).boundingBox();
+    if (!box) throw new Error("screw has no bounding box");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, {
+      steps: 5,
+    });
+  }
+  await page.mouse.up();
+}
+
 test.describe("useless machine", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("./");
@@ -459,39 +484,78 @@ test.describe("useless machine", () => {
   test("with the panel open, flipping off sends the antenna in diagonally to flip it back on", async ({
     page,
   }) => {
-    const offLabel = page.locator(".label-tape-off");
-    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
-      await dragOnto(page, offLabel, page.locator(corner));
-      await expect(page.locator(corner)).toHaveClass(/loose/);
-    }
-    await expect(page.locator(".plate")).toHaveClass(/open/);
-
-    // dismiss the behind-the-wall toast first so it isn't sitting over the
-    // switch when the click below lands
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click();
+    // Once the panel's open, the ON half is never clickable again (see the
+    // next test) — so the switch has to already be on *before* the panel
+    // opens, and it has to survive both the screw-drag and the
+    // behind-the-wall toast without the antenna's own auto-off timer
+    // beating us to it. Pre-unlocking behind-the-wall removes that toast's
+    // mandatory 3s wait from the race; sweepScrewsLoose() (one continuous
+    // drag, not four separate ones) keeps the screw-opening itself well
+    // under the antenna's ~1.8s first-move delay.
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "uselessMachine.easterEggs",
+        JSON.stringify(["behind-the-wall"]),
+      );
+    });
+    await page.goto("./");
 
     const machineSwitch = page.getByRole("switch");
-    await clickTop(machineSwitch);
-    await clickBottom(machineSwitch); // flip off manually while the panel's open
+    await clickTop(machineSwitch); // turn on while the panel's still closed
 
-    // the antenna sneaks around the back and flips it on again
-    await expect(machineSwitch).toBeChecked({ timeout: BACK_DOOR_MS + 1000 });
+    const offLabel = page.locator(".label-tape-off");
+    await sweepScrewsLoose(page, offLabel);
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(machineSwitch).toBeChecked(); // still on — beat the clock
+    // let the plate's own 0.65s swing-open transition (with its overshoot
+    // easing) finish before clicking — otherwise the switch's bounding box
+    // is still moving and the click lands on .plate-mount instead.
+    await page.waitForTimeout(700);
+
+    await clickBottom(machineSwitch); // only the OFF half is reachable now
+    await expect(machineSwitch).not.toBeChecked();
+
+    // the antenna sneaks around the back and flips it on again. Generous
+    // margins below: under the full suite's parallel workers, real-time
+    // setTimeout delays can run well past their nominal duration under
+    // resource contention, so these need more headroom than an isolated
+    // run requires.
+    await expect(machineSwitch).toBeChecked({ timeout: BACK_DOOR_MS + 4000 });
     await expect(page.locator(".egg-title")).toHaveText(/back way too/i);
 
     // ...and the default sequence takes over from there, turning it off
     // again on its own, unprompted
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click();
     await expect(machineSwitch).not.toBeChecked({
-      timeout: BASE_CONTACT_DELAY_MS + 1000,
+      timeout: BASE_CONTACT_DELAY_MS + 4000,
     });
+  });
+
+  test("with the panel open, the ON half is out of reach — only OFF responds", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "uselessMachine.easterEggs",
+        JSON.stringify(["behind-the-wall"]),
+      );
+    });
+    await page.goto("./");
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch); // on, panel still closed
+
+    const offLabel = page.locator(".label-tape-off");
+    await sweepScrewsLoose(page, offLabel);
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(machineSwitch).toBeChecked();
+    await page.waitForTimeout(700); // let the plate's swing-open settle
+
+    // turn it off by hand, then try (and fail) to turn it back on by hand —
+    // only the antenna can do that from behind
+    await clickBottom(machineSwitch);
+    await expect(machineSwitch).not.toBeChecked();
+    await clickTop(machineSwitch);
+    await expect(machineSwitch).not.toBeChecked(); // still off — no-op
   });
 
   test("nudges an untouched OFF label with a one-time peek", async ({
