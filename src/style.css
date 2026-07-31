@@ -598,8 +598,10 @@ body {
 }
 
 .antenna.reach {
-  /* one continuous move, straight up to the O side */
-  transform: translate(0, -4.1rem);
+  /* one continuous move, straight up to the O side by default — the
+     panel-open reverse sequence (ui.ts) overrides --reach-x/--reach-y to
+     take a diagonal path to the rocker's actual rotated position instead. */
+  transform: translate(var(--reach-x, 0), var(--reach-y, -4.1rem));
 }
 
 .antenna.retreat {

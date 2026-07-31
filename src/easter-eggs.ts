@@ -38,6 +38,11 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     description: "Useful label?",
   },
   {
+    id: "back-door",
+    title: "It knows the back way too",
+    description: "You thought it needed the front.",
+  },
+  {
     id: ANTI_EASTER_EGG_ID,
     title: "Anti-Easter Egg",
     description: "Delete all easter eggs, so I can start over.",

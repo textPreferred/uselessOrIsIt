@@ -47,6 +47,11 @@ const BLOCK_RETREAT_MS = 200;
  * it's coming back annoyed rather than just trying again. */
 const HIT_BACK_MS = 120;
 
+/** The panel-open reverse sequence's pace: a deliberately unhurried beat,
+ * since it's going the long way around the open panel rather than repeating
+ * the usual dash. Fixed, not part of the escalating on/off pace loop. */
+export const BACK_DOOR_MS = 1400;
+
 // Clicking the four mounting screws clockwise, starting from the top-left,
 // offers to reset every unlocked easter egg. A pause between clicks resets
 // progress — this is a click pattern, not a race against the clock.
@@ -337,6 +342,10 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     const durMs = advanceContactDelay();
     if (durMs <= MIN_CONTACT_DELAY_MS) unlockEasterEgg("top-speed");
     antenna.style.setProperty("--dur", `${durMs}ms`);
+    // Cleared defensively: a panel-open reverse sequence could have left
+    // these set, and they'd otherwise bend this normal straight-up glide.
+    antenna.style.removeProperty("--reach-x");
+    antenna.style.removeProperty("--reach-y");
     rocker.style.setProperty(
       "--paddle-dur",
       `${scaleWithPace(PADDLE_FLIP_MS, durMs)}ms`,
@@ -347,6 +356,56 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       () => retreat(durMs),
       durMs + scaleWithPace(CONTACT_HOLD_MS, durMs),
     );
+  }
+
+  // With the panel open, the rocker has rotated away with it — the antenna's
+  // usual straight-up glide would aim at empty space. This finds the switch
+  // where it actually is now (rotated, foreshortened toward the hinge, and
+  // showing the mirrored reverse of its face) and taps the back of its ON
+  // zone instead of the OFF zone, sneaking the switch back on after the
+  // user turns it off. The default sequence above reacts to the resulting
+  // switched-on event and turns it off again shortly after, unprompted.
+  function startBackDoorSequence(): void {
+    // transform: translate() on .antenna.reach is always computed from the
+    // antenna's untransformed layout position, never from wherever it's
+    // currently sitting — so the target delta has to be measured against
+    // that same static baseline. Zeroing the inline transform just for the
+    // read (then restoring it) gets that baseline regardless of whatever
+    // state (rest, mid-glide, struggling, blocked) the antenna is in.
+    const prevTransform = antenna.style.transform;
+    antenna.style.transform = "none";
+    const staticRect = antenna.getBoundingClientRect(); // knob sits at top:0
+    antenna.style.transform = prevTransform;
+
+    const targetRect = rocker.getBoundingClientRect(); // post-3D-transform bbox
+    const dx =
+      targetRect.left +
+      targetRect.width / 2 -
+      (staticRect.left + staticRect.width / 2);
+    const dy = targetRect.top + targetRect.height * 0.25 - staticRect.top; // upper quarter — the ON zone
+
+    antenna.style.setProperty("--dur", `${BACK_DOOR_MS}ms`);
+    antenna.style.setProperty("--reach-x", `${dx}px`);
+    antenna.style.setProperty("--reach-y", `${dy}px`);
+    rocker.style.setProperty(
+      "--paddle-dur",
+      `${scaleWithPace(PADDLE_FLIP_MS, BACK_DOOR_MS)}ms`,
+    );
+    // Always routed through the freeze-then-transition helper (not just a
+    // plain class swap): the antenna could already be mid-glide, mid-struggle,
+    // or blocked when the panel-open off-flip lands, and this is the only
+    // path that redirects any of those cleanly into a fresh transition (see
+    // settleThenTransition's own doc comment above for why).
+    settleThenTransition("reach");
+    schedule(() => {
+      machine.flip(); // state is "off" here, so this turns it back on
+      unlockEasterEgg("back-door");
+    }, BACK_DOOR_MS);
+    schedule(() => {
+      antenna.style.removeProperty("--reach-x");
+      antenna.style.removeProperty("--reach-y");
+      retreat(BACK_DOOR_MS);
+    }, BACK_DOOR_MS + scaleWithPace(CONTACT_HOLD_MS, BACK_DOOR_MS));
   }
 
   // Holding the switch on (rather than tapping it) starts a tug-of-war: the
@@ -614,6 +673,18 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
+      if (plate.classList.contains("open")) {
+        // The default off-zone handling below assumes the antenna is aiming
+        // at the rocker's normal (closed-panel) position, which stops being
+        // true once the panel's open — the switch has rotated away with it.
+        // startBackDoorSequence() replaces that handling entirely for this
+        // state rather than stacking with it.
+        if (antenna.classList.contains("blocked")) {
+          blockedPointerId = undefined; // its own pointerup would now no-op anyway
+        }
+        startBackDoorSequence();
+        return;
+      }
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
         unlockEasterEgg("beat-the-antenna");
