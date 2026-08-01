@@ -89,7 +89,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx vite build --base=/ --outDir dist-preview
+      - name: Build preview (single-file, offline-capable bundle)
+        run: npx vite build --base=/ --outDir dist-preview
+        env:
+          PREVIEW_BUILD: "1"
       - name: Prepare preview package
         run: |
           cat > dist-preview/package.json <<EOF
