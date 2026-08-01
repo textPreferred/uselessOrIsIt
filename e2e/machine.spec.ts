@@ -396,6 +396,41 @@ test.describe("useless machine", () => {
     await expect(page.locator(".wall-tape").nth(1)).toHaveText(/isn't it\?/i);
   });
 
+  test("opening the plate reveals mounting holes in the wall where the screws were", async ({
+    page,
+  }) => {
+    // capture each screw's on-screen position before it's backed out, so we
+    // can check the wall hole left behind lines up with it exactly
+    const screwBoxesBefore = Object.fromEntries(
+      await Promise.all(
+        [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"].map(
+          async (corner) => [corner, await page.locator(corner).boundingBox()],
+        ),
+      ),
+    );
+
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    for (const [corner, hole] of [
+      [".screw-tl", ".wall-hole-tl"],
+      [".screw-tr", ".wall-hole-tr"],
+      [".screw-bl", ".wall-hole-bl"],
+      [".screw-br", ".wall-hole-br"],
+    ]) {
+      const before = screwBoxesBefore[corner];
+      if (!before) throw new Error(`${corner} has no bounding box`);
+      const holeBox = await page.locator(hole).boundingBox();
+      if (!holeBox) throw new Error(`${hole} has no bounding box`);
+      expect(Math.abs(holeBox.x - before.x)).toBeLessThan(2);
+      expect(Math.abs(holeBox.y - before.y)).toBeLessThan(2);
+    }
+  });
+
   test("shows the switch as if from behind once the plate is open", async ({
     page,
   }) => {
