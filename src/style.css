@@ -432,6 +432,17 @@ body {
   transform: rotateX(26deg);
 }
 
+/* Ajar, the plate exposes the mechanism's back side — near and far swap, so
+   the paddle's resting relief flips too: OFF now sits proud by default and
+   ON is the pushed-in side, both directions mirrored from the closed view. */
+.plate.open .rocker[aria-checked="false"] .paddle {
+  transform: rotateX(26deg);
+}
+
+.plate.open .rocker[aria-checked="true"] .paddle {
+  transform: rotateX(-26deg);
+}
+
 /* The lit-side gradient lives on its own layer, crossfaded in via opacity
    rather than swapped on `background` directly: browsers don't interpolate
    a gradient's angle (verified — Chromium snaps it instantly even with a

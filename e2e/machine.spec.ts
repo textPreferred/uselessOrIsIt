@@ -392,6 +392,34 @@ test.describe("useless machine", () => {
     await expect(page.locator(".wall-tape").nth(1)).toHaveText(/isn't it\?/i);
   });
 
+  test("shows the switch as if from behind once the plate is open", async ({
+    page,
+  }) => {
+    const paddle = page.locator(".paddle");
+
+    // rotateX tilts the paddle's top edge toward or away from the viewer —
+    // reading the sign of its resulting z tells which side currently
+    // protrudes, regardless of the ancestor perspective used to render it.
+    async function paddleTopZ(): Promise<number> {
+      return paddle.evaluate((el) => {
+        const matrix = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+        return matrix.transformPoint({ x: 0, y: -1, z: 0 }).z;
+      });
+    }
+
+    const closedTopZ = await paddleTopZ();
+
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    const openTopZ = await paddleTopZ();
+    expect(Math.sign(openTopZ)).toBe(-Math.sign(closedTopZ));
+  });
+
   test("re-seating a screw closes the plate again", async ({ page }) => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
