@@ -396,6 +396,28 @@ test.describe("useless machine", () => {
     await expect(page.locator(".wall-tape").nth(1)).toHaveText(/isn't it\?/i);
   });
 
+  test("hides the screws and labels once the plate is open, since a metal plate can't be seen through", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await expect(page.locator(corner)).toHaveCSS("opacity", "0");
+    }
+    await expect(page.locator(".label-tape-on")).toHaveCSS("opacity", "0");
+    await expect(offLabel).toHaveCSS("opacity", "0");
+
+    // re-seating a screw still needs to work from behind
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+    await page.locator(".screw-tl").click();
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
+  });
+
   test("shows the switch as if from behind once the plate is open", async ({
     page,
   }) => {
