@@ -46,33 +46,38 @@ If CI or the smoke job fails, diagnose and re-push automatically, same as
 normal PR babysitting. Only send a message if genuinely blocked on a
 decision only the user can make.
 
-## 2. Preview before building — visual or interactive requests
+## 2. Visual-only tweaks → quick screenshot
 
 Trigger on visual words ("design", "look(s)", "shape", "style", "color")
-or interaction words ("prototype", "demo", "try it", "play with",
-"interactive"). Either way: mock it quickly and skip the TDD convention
-— this is a throwaway preview, not the shipped change.
+for changes with nothing new to interact with — pure styling/layout.
+Mock the change (in the app or otherwise), run it (see the `run` skill),
+and screenshot it. Send via `SendUserFile` (`display: 'render'`) so it
+shows inline in chat, not a side-panel link. Comparing options →
+multiple screenshots in one message, not one artifact with several
+frames. Skip the TDD convention for this — it's a throwaway preview.
 
-- **Visual** → mock the change (in the app or otherwise), run it (see
-  the `run` skill), and screenshot it. Send via `SendUserFile`
-  (`display: 'render'`) so it shows inline in chat, not a side-panel
-  link. Comparing options → multiple screenshots in one message, not
-  one artifact with several frames.
-- **Interactive** → build a self-contained HTML/JS prototype and publish
-  it with the `Artifact` tool so the user can tap around on the phone
-  screen. This is the one case in this skill where the artifact view is
-  the right call, not the exception.
+## 3. Feature or easter egg planned → real PR, live demo
 
-## 3. Preview confirmed → implement for real
+Once a feature or easter egg has been discussed and planned in
+conversation — the shape is agreed, not just "add something fun" — skip
+a throwaway mockup and build it for real:
 
-Once the user confirms a preview or prototype (rule 2) matches what they
-want, don't ship the preview itself:
+1. Implement the change on a feature branch, following the repo's TDD
+   convention (`docs/ENGINEERING.md`) — this is the real code, not a
+   prototype to redo later.
+2. Push and open a PR (rule 1, steps 1–3).
+3. Once the PR's `preview` job finishes, follow the `pr-live-demo` skill
+   to publish its artifact as a live, clickable Claude Artifact and send
+   that link — the user taps the actual running change on their phone,
+   not a screenshot.
+4. That live demo is the confirmation checkpoint. Once the user's happy
+   with it, move to rule 1's "Ship it" one-tap decision to merge.
 
-1. Implement the change properly in the codebase, this time following
-   the repo's TDD convention (rule 1, step 2) — the quick mock was
-   exploration, not production code.
-2. Before offering the "Ship it" one-tap option, show the real, running
-   result once more (a fresh screenshot or prototype) — a quick preview
-   isn't guaranteed to match the TDD'd version exactly, so confirm on
-   the real thing before shipping.
-3. Then proceed with rule 1 as normal.
+If the demo doesn't land, keep pushing fixes to the same PR branch and
+repeat step 3 to refresh the link — same PR, same artifact, new run, not
+a new PR.
+
+Interaction words mid-session ("prototype", "demo", "try it", "play
+with", "interactive") without a concrete feature behind them yet — ask
+what they want built rather than guessing; this rule needs a real plan
+to implement, not just the word "demo."
