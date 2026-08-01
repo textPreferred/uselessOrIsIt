@@ -573,20 +573,28 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-confetti-piece")).toHaveCount(8);
   });
 
-  test("the easter egg collection starts locked and empty", async ({
+  test("the toast shows a visual indicator instead of visible text", async ({
     page,
   }) => {
-    const toggle = page.locator(".egg-collection-toggle");
-    await expect(toggle).toHaveText("0/7");
-    await toggle.click();
-    await expect(page.locator(".egg-collection-item")).toHaveCount(7);
-    await expect(page.locator(".egg-collection-item-found")).toHaveCount(0);
-    await expect(
-      page.locator(".egg-collection-item-locked").first(),
-    ).toHaveText("???");
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // beat the antenna to it
+    await expect(page.locator(".egg-found-icon")).toBeVisible();
+    await expect(page.locator(".egg-title")).toBeHidden();
+    await expect(page.locator(".egg-desc")).toBeHidden();
+    // still present for screen readers, just not shown on screen
+    await expect(page.locator(".egg-title")).toHaveText(
+      /turning it on and off again/i,
+    );
   });
 
-  test("a found easter egg stays viewable in the collection", async ({
+  test("the collection button stays hidden until something is found", async ({
+    page,
+  }) => {
+    await expect(page.locator(".egg-collection-toggle")).toBeHidden();
+  });
+
+  test("a found easter egg reveals the collection button and stays viewable, without spoiling what's still missing", async ({
     page,
   }) => {
     const machineSwitch = page.getByRole("switch");
@@ -599,17 +607,20 @@ test.describe("useless machine", () => {
     await page.locator(".egg-toast").click(); // dismiss
 
     const toggle = page.locator(".egg-collection-toggle");
-    await expect(toggle).toHaveText("1/7");
+    await expect(toggle).toBeVisible();
     await toggle.click();
-    await expect(page.locator(".egg-collection-item-found")).toHaveCount(1);
-    await expect(page.locator(".egg-collection-item-found")).toContainText(
+    await expect(page.locator(".egg-collection-item")).toHaveCount(1);
+    await expect(page.locator(".egg-collection-item")).toContainText(
       /turning it on and off again/i,
     );
+    // no hint of the other six — no count, no locked placeholders
+    await expect(page.locator(".egg-collection-card")).not.toContainText("7");
+    await expect(page.locator(".egg-collection-card")).not.toContainText("???");
 
     // closing and reopening still shows it — it's not a one-time reveal
     await page.locator(".egg-collection-close").click();
     await expect(page.locator(".egg-collection-overlay")).toBeHidden();
     await toggle.click();
-    await expect(page.locator(".egg-collection-item-found")).toHaveCount(1);
+    await expect(page.locator(".egg-collection-item")).toHaveCount(1);
   });
 });
