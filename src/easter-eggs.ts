@@ -10,42 +10,43 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "beat-the-antenna",
     title: "Have you tried turning it on and off again?",
-    description: "Why did you turn it on in the first place?",
+    description: "You did!",
   },
   {
     id: "top-speed",
-    title: "So fast!",
-    description: "You reached a limit.",
+    title: "Terminal Velocity",
+    description: "You kept flipping till the machine couldn't go any faster.",
   },
   {
     id: "tug-of-war",
-    title: "Tug of war",
-    description: "Who is useful, here?",
+    title: "False Retreat",
+    description: "It looked like the machine gave up. It didn't.",
   },
   {
     id: "poked-the-antenna",
-    title: "You're in the way",
-    description: "Why block it if you set it going?",
+    title: "Poke the Bear",
+    description:
+      "You grabbed the machine mid-reach. It didn't take it too well.",
   },
   {
     id: "no-means-no",
-    title: "No means no",
-    description: "And on means on.",
+    title: "No means no - and on means on.",
+    description: "You spun the label blocking",
   },
   {
     id: "behind-the-wall",
     title: "And off they go",
-    description: "Useful label?",
+    description: "You found a really useful label.",
   },
   {
     id: "reverse-psychology",
-    title: "Reverse psychology",
-    description: "OFF said no. Turns out it meant yes.",
+    title: "Reverse Psychology",
+    description: "You pressed off to turn the machine on.",
   },
   {
     id: ANTI_EASTER_EGG_ID,
-    title: "Anti-Easter Egg",
-    description: "Delete all easter eggs, so I can start over.",
+    title: "Tighten the screws",
+    description: "Set or reset - your choice.",
   },
 ];
 
