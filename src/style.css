@@ -157,6 +157,60 @@ body {
   transform: rotate(1.2deg);
 }
 
+/* Mounting holes in the wall itself, directly behind where each screw sits
+   on the plate. Same size/position as .plate-mount and its screws, so a
+   hole lines up exactly under its screw and only becomes visible once the
+   plate swings open on the .screw-tl/tr/bl/br positions above. */
+.wall-mount {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14rem;
+  height: 25rem;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+/* The plate shielded this rectangle of wall from light and dust for years —
+   a faint clean patch is what's left once it swings clear. Kept subtle: a
+   whisper of tone shift plus a hairline edge, not a hard-drawn box. */
+.wall-outline {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.7rem;
+  background: rgb(255 255 255 / 4%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
+}
+
+.wall-hole {
+  position: absolute;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: #1b1c1e;
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 80%);
+}
+
+.wall-hole-tl {
+  top: 0.65rem;
+  left: 0.65rem;
+}
+
+.wall-hole-tr {
+  top: 0.65rem;
+  right: 0.65rem;
+}
+
+.wall-hole-bl {
+  bottom: 0.65rem;
+  left: 0.65rem;
+}
+
+.wall-hole-br {
+  bottom: 0.65rem;
+  right: 0.65rem;
+}
+
 .screw {
   position: absolute;
   width: 0.85rem;
