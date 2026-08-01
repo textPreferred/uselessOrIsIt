@@ -446,20 +446,21 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-title")).toHaveText(/reverse psychology/i);
   });
 
-  test("the antenna reaches toward the switch's shifted position once the plate is open", async ({
+  test("the antenna reaches toward the switch's shifted position, on its ON side, once the plate is open", async ({
     page,
   }) => {
     const antenna = page.getByTestId("arm");
 
-    async function reachOffsetPx(): Promise<string> {
-      return antenna.evaluate((el) =>
-        (el as HTMLElement).style.getPropertyValue("--reach-x"),
-      );
+    async function reachTarget(): Promise<{ x: string; y: string }> {
+      return antenna.evaluate((el) => ({
+        x: (el as HTMLElement).style.getPropertyValue("--reach-x"),
+        y: (el as HTMLElement).style.getPropertyValue("--reach-y"),
+      }));
     }
 
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch); // closed-plate baseline: no offset
-    expect(await reachOffsetPx()).toBe("");
+    expect(await reachTarget()).toEqual({ x: "", y: "" });
     await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
 
     const offLabel = page.locator(".label-tape-off");
@@ -478,10 +479,14 @@ test.describe("useless machine", () => {
     await clickBottom(machineSwitch); // the OFF button turns it on while ajar
     await expect(machineSwitch).toBeChecked();
 
+    const target = await reachTarget();
     // the panel is hinged on the left, so the ajar switch sits well left of
     // its usual centered spot — the antenna's target should follow it there
-    const offsetPx = await reachOffsetPx();
-    expect(parseFloat(offsetPx)).toBeLessThan(-10);
+    expect(parseFloat(target.x)).toBeLessThan(-10);
+    // and since the mirrored paddle now has ON, not OFF, as the live side,
+    // contact needs to land higher up (toward ON) instead of its usual spot
+    // near the bottom (OFF)
+    expect(target.y).toBe("-9.1rem");
   });
 
   test("re-seating a screw closes the plate again", async ({ page }) => {
