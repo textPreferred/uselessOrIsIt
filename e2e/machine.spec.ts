@@ -431,6 +431,27 @@ test.describe("useless machine", () => {
     }
   });
 
+  test("opening the plate reveals a faint outline of its former footprint on the wall", async ({
+    page,
+  }) => {
+    const plateBoxBefore = await page.locator(".plate").boundingBox();
+    if (!plateBoxBefore) throw new Error(".plate has no bounding box");
+
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    const outlineBox = await page.locator(".wall-outline").boundingBox();
+    if (!outlineBox) throw new Error(".wall-outline has no bounding box");
+    expect(Math.abs(outlineBox.x - plateBoxBefore.x)).toBeLessThan(2);
+    expect(Math.abs(outlineBox.y - plateBoxBefore.y)).toBeLessThan(2);
+    expect(Math.abs(outlineBox.width - plateBoxBefore.width)).toBeLessThan(2);
+    expect(Math.abs(outlineBox.height - plateBoxBefore.height)).toBeLessThan(2);
+  });
+
   test("shows the switch as if from behind once the plate is open", async ({
     page,
   }) => {
