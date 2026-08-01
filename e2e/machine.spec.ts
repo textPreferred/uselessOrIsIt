@@ -125,27 +125,19 @@ test.describe("useless machine", () => {
     );
   });
 
-  test("counts down the easter egg toast's dismiss grace period", async ({
+  test("the toast dismisses itself after a second, no click needed", async ({
     page,
   }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // beat the antenna to it
 
-    const hint = page.locator(".egg-hint");
-    await expect(hint).toHaveText(/wait 3s/i);
-
-    // clicking mid-countdown doesn't dismiss it
-    await page.locator(".egg-toast").click();
     await expect(page.locator(".egg-toast")).toBeVisible();
-    await expect(hint).toHaveText(/wait 2s/i);
-
-    // once the countdown reaches zero, it invites a click and honors it
-    await expect(hint).toHaveText(/click anywhere to dismiss/i, {
-      timeout: 4000,
-    });
-    await page.locator(".egg-toast").click();
-    await expect(page.locator(".egg-toast")).toBeHidden();
+    // still there well before the 1s mark — not an instant flash
+    await page.waitForTimeout(500);
+    await expect(page.locator(".egg-toast")).toBeVisible();
+    // gone on its own shortly after, without anyone clicking it
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1000 });
   });
 
   test("releasing before the antenna arrives doesn't rush it off", async ({
@@ -350,7 +342,6 @@ test.describe("useless machine", () => {
       "data-egg-id",
       "anti-easter-egg",
     );
-    await expect(page.locator(".egg-hint")).toBeVisible();
   });
 
   test("dragging the OFF label across a screw backs it loose", async ({
@@ -413,13 +404,9 @@ test.describe("useless machine", () => {
     }
     await expect(page.locator(".plate")).toHaveClass(/open/);
 
-    // the discovery toast covers the screen — dismiss it before reaching
-    // the screw again
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click();
+    // the discovery toast covers the screen briefly — wait it out before
+    // reaching the screw again
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await page.locator(".screw-tl").click();
     await expect(page.locator(".plate")).not.toHaveClass(/open/);
@@ -435,11 +422,7 @@ test.describe("useless machine", () => {
     }
     await expect(page.locator(".plate")).toHaveClass(/open/);
 
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click();
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     // the plate itself, not any one screw, closes everything in one go. A
     // real-coordinate click is unreliable here — the plate is mid-3D-rotation,
@@ -561,14 +544,10 @@ test.describe("useless machine", () => {
       "data-egg-id",
       "beat-the-antenna",
     );
-    // the toast ignores clicks during its dismiss grace period, so wait it
-    // out first — otherwise this click is swallowed and the toast lingers,
-    // blocking every click after it (including the screws below)
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click(); // dismiss
+    // the toast covers the screen until it auto-dismisses, so wait it out
+    // first — otherwise it's still blocking every click after it (including
+    // the screws below)
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await clickScrewsClockwise(page);
     await page
@@ -614,11 +593,7 @@ test.describe("useless machine", () => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // unlock "beat-the-antenna"
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click(); // dismiss
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     const toggle = page.locator(".egg-collection-toggle");
     await expect(toggle).toBeVisible();

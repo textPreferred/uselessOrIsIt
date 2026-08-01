@@ -119,7 +119,7 @@ function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
  * collection view instead of spoiling it on the spot. */
 function buildEggFoundCard(): HTMLDivElement {
   const card = document.createElement("div");
-  card.className = "egg-card";
+  card.className = "egg-card egg-card-minimal";
 
   const icon = document.createElement("div");
   icon.className = "egg-found-icon";
@@ -131,10 +131,9 @@ function buildEggFoundCard(): HTMLDivElement {
   return card;
 }
 
-/** Clicks land within this window of the toast appearing are ignored, so the
- * reflexive click that often follows triggering an egg can't instantly
- * dismiss it before it's been seen. Counted down visibly in the hint text. */
-const DISMISS_GRACE_MS = 3000;
+/** How long the plain discovery toast stays up before it removes itself —
+ * no click needed. */
+const AUTO_DISMISS_MS = 1000;
 
 function showNextToast(): void {
   if (toastShowing) return;
@@ -145,35 +144,14 @@ function showNextToast(): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast";
   overlay.dataset.eggId = egg.id;
+  overlay.append(buildEggFoundCard());
+  document.body.appendChild(overlay);
 
-  const card = buildEggFoundCard();
-
-  const hint = document.createElement("p");
-  hint.className = "egg-hint";
-
-  card.append(hint);
-  overlay.append(card);
-
-  const shownAt = Date.now();
-  function updateHint(): void {
-    const remainingS = Math.max(
-      0,
-      Math.ceil((shownAt + DISMISS_GRACE_MS - Date.now()) / 1000),
-    );
-    hint.textContent =
-      remainingS > 0 ? `Wait ${remainingS}s…` : "Click anywhere to dismiss";
-    if (remainingS <= 0) clearInterval(tickTimer);
-  }
-  updateHint();
-  const tickTimer = setInterval(updateHint, 250);
-
-  overlay.addEventListener("click", () => {
-    if (Date.now() - shownAt < DISMISS_GRACE_MS) return;
+  setTimeout(() => {
     overlay.remove();
     toastShowing = false;
     showNextToast();
-  });
-  document.body.appendChild(overlay);
+  }, AUTO_DISMISS_MS);
 }
 
 /** Unlocks an easter egg (a no-op if already unlocked) and, if newly

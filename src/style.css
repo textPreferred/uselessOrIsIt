@@ -744,8 +744,11 @@ body {
   display: grid;
   place-items: center;
   z-index: 20;
-  cursor: pointer;
   animation: egg-fade-in 0.2s ease;
+}
+
+.egg-collection-overlay {
+  cursor: pointer;
 }
 
 @keyframes egg-fade-in {
@@ -769,6 +772,14 @@ body {
   box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 40%);
   text-align: center;
   animation: egg-pop-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+/* The plain discovery toast has nothing but the found-icon in it — a card
+   sized for paragraphs of text would leave it swimming in empty space. */
+.egg-card-minimal {
+  width: auto;
+  max-width: none;
+  padding: 1.1rem;
 }
 
 @keyframes egg-pop-in {
@@ -803,16 +814,6 @@ body {
   font-size: 0.9rem;
   color: color-mix(in srgb, var(--card-ink) 70%, transparent);
   margin: 0 0 0.9rem;
-}
-
-.egg-hint {
-  font-size: 0.7rem;
-  color: color-mix(in srgb, var(--card-ink) 45%, transparent);
-  margin: 0;
-}
-
-.egg-toast-confirm {
-  cursor: default;
 }
 
 .egg-actions {
@@ -853,7 +854,7 @@ body {
 .egg-found-icon {
   width: 3rem;
   height: 3rem;
-  margin: 0 auto 0.9rem;
+  margin: 0 auto;
   border-radius: 50%;
   position: relative;
   background: linear-gradient(135deg, var(--red), #f0b429, #2a9d8f);
