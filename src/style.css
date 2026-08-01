@@ -578,6 +578,18 @@ body {
   }
 }
 
+/* The plate is opaque metal — from behind, its front-mounted hardware
+   (screws, the printed labels) shouldn't still be paintable through it the
+   way an un-backface-hidden 3D transform otherwise lets it. The rocker is
+   left alone: it's a mechanism that runs through the plate, not stuck to
+   its face, and .plate.open already re-styles it for that back view.
+   Opacity, not visibility/display, so a screw stays clickable in the dark
+   to re-seat and close the plate. */
+.plate.open .screw,
+.plate.open .label-tape {
+  opacity: 0;
+}
+
 /* ---- the antenna, reaching up from below the view ---- */
 
 /* Enters from the bottom edge rather than the right: on a phone held
