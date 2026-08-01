@@ -434,12 +434,8 @@ test.describe("useless machine", () => {
     }
     await expect(page.locator(".plate")).toHaveClass(/open/);
 
-    // dismiss the "behind-the-wall" discovery toast before continuing
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click();
+    // wait out the "behind-the-wall" discovery toast before continuing
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch); // the ON half is now a no-op while off
@@ -447,7 +443,10 @@ test.describe("useless machine", () => {
 
     await clickBottom(machineSwitch); // the OFF half turns it on instead
     await expect(machineSwitch).toBeChecked();
-    await expect(page.locator(".egg-title")).toHaveText(/reverse psychology/i);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "reverse-psychology",
+    );
   });
 
   test("the antenna reaches toward the switch's shifted position, on its ON side, once the plate is open", async ({
@@ -474,11 +473,7 @@ test.describe("useless machine", () => {
     }
     await expect(page.locator(".plate")).toHaveClass(/open/);
 
-    await expect(page.locator(".egg-hint")).toHaveText(
-      /click anywhere to dismiss/i,
-      { timeout: 4000 },
-    );
-    await page.locator(".egg-toast").click();
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await clickBottom(machineSwitch); // the OFF button turns it on while ajar
     await expect(machineSwitch).toBeChecked();

@@ -160,7 +160,7 @@ function showNextToast(): void {
 }
 
 /** Unlocks an easter egg (a no-op if already unlocked) and, if newly
- * unlocked, shows it until the user clicks anywhere on screen. */
+ * unlocked, briefly shows the discovery toast. */
 export function unlockEasterEgg(id: string): void {
   if (unlocked.has(id)) return;
   const egg = EASTER_EGGS.find((e) => e.id === id);
