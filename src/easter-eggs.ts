@@ -67,20 +67,32 @@ const unlocked = loadUnlocked();
 const toastQueue: EasterEgg[] = [];
 let toastShowing = false;
 
-/** Clicks land within this window of the toast appearing are ignored, so the
- * reflexive click that often follows triggering an egg can't instantly
- * dismiss it before it's been seen. Counted down visibly in the hint text. */
-const DISMISS_GRACE_MS = 3000;
+const changeListeners: Array<() => void> = [];
 
-function showNextToast(): void {
-  if (toastShowing) return;
-  const egg = toastQueue.shift();
-  if (!egg) return;
-  toastShowing = true;
+/** Notified whenever an egg is unlocked or the collection is reset, so the
+ * always-visible collection button can keep its count in sync. */
+export function onEggsChanged(listener: () => void): void {
+  changeListeners.push(listener);
+}
 
-  const overlay = document.createElement("div");
-  overlay.className = "egg-toast";
+function notifyChanged(): void {
+  for (const listener of changeListeners) listener();
+}
 
+/** Number of pieces to burst out of a newly-found egg's card. Purely
+ * decorative — CSS positions and colors each one via :nth-child. */
+const CONFETTI_PIECE_COUNT = 8;
+
+function addConfetti(card: HTMLDivElement): void {
+  for (let i = 0; i < CONFETTI_PIECE_COUNT; i++) {
+    const piece = document.createElement("span");
+    piece.className = "egg-confetti-piece";
+    card.appendChild(piece);
+  }
+}
+
+/** Builds the eyebrow/title/desc header shared by every "egg found" card. */
+function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "egg-card";
 
@@ -96,10 +108,31 @@ function showNextToast(): void {
   desc.className = "egg-desc";
   desc.textContent = egg.description;
 
+  card.append(eyebrow, title, desc);
+  addConfetti(card);
+  return card;
+}
+
+/** Clicks land within this window of the toast appearing are ignored, so the
+ * reflexive click that often follows triggering an egg can't instantly
+ * dismiss it before it's been seen. Counted down visibly in the hint text. */
+const DISMISS_GRACE_MS = 3000;
+
+function showNextToast(): void {
+  if (toastShowing) return;
+  const egg = toastQueue.shift();
+  if (!egg) return;
+  toastShowing = true;
+
+  const overlay = document.createElement("div");
+  overlay.className = "egg-toast";
+
+  const card = buildEggCardHeader(egg);
+
   const hint = document.createElement("p");
   hint.className = "egg-hint";
 
-  card.append(eyebrow, title, desc, hint);
+  card.append(hint);
   overlay.append(card);
 
   const shownAt = Date.now();
@@ -134,6 +167,17 @@ export function unlockEasterEgg(id: string): void {
   saveUnlocked(unlocked);
   toastQueue.push(egg);
   showNextToast();
+  notifyChanged();
+}
+
+/** Whether the given egg has been found. */
+export function isEggUnlocked(id: string): boolean {
+  return unlocked.has(id);
+}
+
+/** How many eggs (out of `EASTER_EGGS.length`) have been found so far. */
+export function unlockedEggCount(): number {
+  return unlocked.size;
 }
 
 /** The anti-easter-egg: found by clicking all four screws clockwise from the
@@ -147,20 +191,7 @@ export function offerEasterEggReset(): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast egg-toast-confirm";
 
-  const card = document.createElement("div");
-  card.className = "egg-card";
-
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "egg-eyebrow";
-  eyebrow.textContent = "Easter egg found";
-
-  const title = document.createElement("p");
-  title.className = "egg-title";
-  title.textContent = egg.title;
-
-  const desc = document.createElement("p");
-  desc.className = "egg-desc";
-  desc.textContent = egg.description;
+  const card = buildEggCardHeader(egg);
 
   const actions = document.createElement("div");
   actions.className = "egg-actions";
@@ -172,6 +203,7 @@ export function offerEasterEggReset(): void {
   resetButton.addEventListener("click", () => {
     unlocked.clear();
     saveUnlocked(unlocked);
+    notifyChanged();
     overlay.remove();
   });
 
@@ -186,7 +218,82 @@ export function offerEasterEggReset(): void {
   });
 
   actions.append(resetButton, keepButton);
-  card.append(eyebrow, title, desc, actions);
+  card.append(actions);
   overlay.append(card);
   document.body.appendChild(overlay);
+}
+
+/** Opens the collection view: every egg found so far with its title and
+ * description, and every egg still to find as a locked "???" — so a find
+ * stays visible any time, not just in the toast that announced it. */
+function renderEggCollection(): void {
+  const overlay = document.createElement("div");
+  overlay.className = "egg-toast egg-collection-overlay";
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) overlay.remove();
+  });
+
+  const card = document.createElement("div");
+  card.className = "egg-card egg-collection-card";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "egg-eyebrow";
+  eyebrow.textContent = "Easter eggs";
+
+  const summary = document.createElement("p");
+  summary.className = "egg-title";
+  summary.textContent = `${unlockedEggCount()}/${EASTER_EGGS.length} found`;
+
+  const list = document.createElement("ul");
+  list.className = "egg-collection-list";
+  for (const egg of EASTER_EGGS) {
+    const item = document.createElement("li");
+    const found = isEggUnlocked(egg.id);
+    item.className = found
+      ? "egg-collection-item egg-collection-item-found"
+      : "egg-collection-item egg-collection-item-locked";
+
+    const title = document.createElement("p");
+    title.className = "egg-title";
+    title.textContent = found ? egg.title : "???";
+    item.append(title);
+
+    if (found) {
+      const desc = document.createElement("p");
+      desc.className = "egg-desc";
+      desc.textContent = egg.description;
+      item.append(desc);
+    }
+
+    list.append(item);
+  }
+
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "egg-button egg-button-keep egg-collection-close";
+  closeButton.textContent = "Close";
+  closeButton.addEventListener("click", () => overlay.remove());
+
+  card.append(eyebrow, summary, list, closeButton);
+  overlay.append(card);
+  document.body.appendChild(overlay);
+}
+
+/** Mounts the always-visible "found so far" counter into `parent`; tapping
+ * it opens the collection view. Keeps its own label in sync via
+ * `onEggsChanged` so it never needs to be re-rendered from outside. */
+export function mountEggCollectionButton(parent: HTMLElement): void {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "egg-collection-toggle";
+  button.setAttribute("aria-label", "Easter egg collection");
+
+  function updateLabel(): void {
+    button.textContent = `${unlockedEggCount()}/${EASTER_EGGS.length}`;
+  }
+  updateLabel();
+  onEggsChanged(updateLabel);
+
+  button.addEventListener("click", renderEggCollection);
+  parent.append(button);
 }
