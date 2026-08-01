@@ -130,6 +130,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         <div class="wall-tape wall-tape-2">ISN'T IT?</div>
       </div>
       <div class="wall-mount" aria-hidden="true">
+        <span class="wall-outline"></span>
         <span class="wall-hole wall-hole-tl"></span>
         <span class="wall-hole wall-hole-tr"></span>
         <span class="wall-hole wall-hole-bl"></span>
