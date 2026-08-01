@@ -287,6 +287,7 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
   const icon = document.createElement("span");
   icon.className = "egg-collection-toggle-icon";
   icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "✨";
   button.append(icon);
 
   function updateVisibility(): void {
