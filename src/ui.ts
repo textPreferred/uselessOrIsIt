@@ -129,6 +129,12 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         <div class="wall-tape">USELESS MACHINE,</div>
         <div class="wall-tape wall-tape-2">ISN'T IT?</div>
       </div>
+      <div class="wall-mount" aria-hidden="true">
+        <span class="wall-hole wall-hole-tl"></span>
+        <span class="wall-hole wall-hole-tr"></span>
+        <span class="wall-hole wall-hole-bl"></span>
+        <span class="wall-hole wall-hole-br"></span>
+      </div>
       <div class="plate-mount">
         <div class="plate">
           <span class="hole hole-tl"></span>
