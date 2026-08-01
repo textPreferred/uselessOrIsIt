@@ -882,24 +882,20 @@ body {
   width: 3rem;
   height: 3rem;
   margin: 0 auto;
-  border-radius: 50%;
   position: relative;
-  background: linear-gradient(135deg, var(--red), #f0b429, #2a9d8f);
-  box-shadow:
-    0 0.5rem 1rem rgb(0 0 0 / 25%),
-    inset 0 1px 1px rgb(255 255 255 / 35%);
+  display: grid;
+  place-items: center;
+  font-size: 1.9rem;
+  line-height: 1;
 }
 
-.egg-found-icon::after {
+.egg-found-icon::before {
   content: "";
   position: absolute;
-  left: 34%;
-  top: 42%;
-  width: 0.8rem;
-  height: 0.45rem;
-  border-left: 0.2rem solid #fff;
-  border-bottom: 0.2rem solid #fff;
-  transform: translate(-50%, -50%) rotate(-45deg);
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(240 180 41 / 55%), transparent 70%);
 }
 
 /* ---- confetti burst ---- */

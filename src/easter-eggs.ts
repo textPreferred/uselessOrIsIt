@@ -130,6 +130,7 @@ function buildEggFoundCard(): HTMLDivElement {
   icon.className = "egg-found-icon";
   icon.setAttribute("role", "img");
   icon.setAttribute("aria-label", "Easter egg found");
+  icon.textContent = "✨";
 
   card.append(icon);
   addConfetti(card);
