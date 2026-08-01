@@ -850,21 +850,6 @@ body {
   background: color-mix(in srgb, var(--card-ink) 18%, transparent);
 }
 
-/* Visually hidden but still readable by screen readers — used to keep the
-   plain discovery toast's title/description accessible even though the
-   toast itself shows only a visual indicator. */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 .egg-found-icon {
   width: 3rem;
   height: 3rem;

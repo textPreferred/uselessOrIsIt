@@ -114,31 +114,19 @@ function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
   return card;
 }
 
-/** Builds the plain discovery toast's card: a visual indicator only — the
- * title and description stay out of sight, so the reveal happens later in
- * the collection view instead of spoiling it on the spot. They're still in
- * the DOM as screen-reader-only text, so the announcement stays accessible. */
-function buildEggFoundCard(egg: EasterEgg): HTMLDivElement {
+/** Builds the plain discovery toast's card: a visual indicator only — no
+ * title or description on screen, so the reveal happens later in the
+ * collection view instead of spoiling it on the spot. */
+function buildEggFoundCard(): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "egg-card";
 
   const icon = document.createElement("div");
   icon.className = "egg-found-icon";
-  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("role", "img");
+  icon.setAttribute("aria-label", "Easter egg found");
 
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "egg-eyebrow sr-only";
-  eyebrow.textContent = "Easter egg found";
-
-  const title = document.createElement("p");
-  title.className = "egg-title sr-only";
-  title.textContent = egg.title;
-
-  const desc = document.createElement("p");
-  desc.className = "egg-desc sr-only";
-  desc.textContent = egg.description;
-
-  card.append(icon, eyebrow, title, desc);
+  card.append(icon);
   addConfetti(card);
   return card;
 }
@@ -156,8 +144,9 @@ function showNextToast(): void {
 
   const overlay = document.createElement("div");
   overlay.className = "egg-toast";
+  overlay.dataset.eggId = egg.id;
 
-  const card = buildEggFoundCard(egg);
+  const card = buildEggFoundCard();
 
   const hint = document.createElement("p");
   hint.className = "egg-hint";

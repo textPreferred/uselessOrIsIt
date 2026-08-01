@@ -119,8 +119,9 @@ test.describe("useless machine", () => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // beat the antenna to it
-    await expect(page.locator(".egg-title")).toHaveText(
-      /turning it on and off again/i,
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "beat-the-antenna",
     );
   });
 
@@ -260,7 +261,10 @@ test.describe("useless machine", () => {
     await page.waitForTimeout(BASE_CONTACT_DELAY_MS + 3000);
     await page.mouse.up();
 
-    await expect(page.locator(".egg-title")).toHaveText(/tug of war/i);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "tug-of-war",
+    );
   });
 
   test("blocking the antenna holds the machine on until released", async ({
@@ -302,7 +306,10 @@ test.describe("useless machine", () => {
     await page.waitForTimeout(300); // let it struggle against the block a beat
     await page.mouse.up();
 
-    await expect(page.locator(".egg-title")).toHaveText(/you're in the way/i);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "poked-the-antenna",
+    );
   });
 
   test("clicking the four screws clockwise from the top-left offers to reset easter eggs", async ({
@@ -339,7 +346,10 @@ test.describe("useless machine", () => {
         name: "Don't reset my easter eggs, but collect this one anyway.",
       })
       .click();
-    await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "anti-easter-egg",
+    );
     await expect(page.locator(".egg-hint")).toBeVisible();
   });
 
@@ -385,7 +395,10 @@ test.describe("useless machine", () => {
     await dragOnto(page, offLabel, page.locator(".screw-br"));
 
     await expect(page.locator(".plate")).toHaveClass(/open/);
-    await expect(page.locator(".egg-title")).toHaveText(/and off they go/i);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "behind-the-wall",
+    );
     await expect(page.locator(".wall-tape").nth(0)).toHaveText(
       /useless machine,/i,
     );
@@ -517,7 +530,10 @@ test.describe("useless machine", () => {
     await onLabel.click(); // back to ON
 
     await clickTop(machineSwitch);
-    await expect(page.locator(".egg-title")).toHaveText(/no means no/i);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "no-means-no",
+    );
   });
 
   test("turning the switch on normally, without ever trying while blocked, doesn't unlock that egg", async ({
@@ -541,8 +557,9 @@ test.describe("useless machine", () => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // unlock "beat-the-antenna"
-    await expect(page.locator(".egg-title")).toHaveText(
-      /turning it on and off again/i,
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "beat-the-antenna",
     );
     // the toast ignores clicks during its dismiss grace period, so wait it
     // out first — otherwise this click is swallowed and the toast lingers,
@@ -561,8 +578,9 @@ test.describe("useless machine", () => {
 
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch);
-    await expect(page.locator(".egg-title")).toHaveText(
-      /turning it on and off again/i,
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "beat-the-antenna",
     );
   });
 
@@ -573,19 +591,15 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-confetti-piece")).toHaveCount(8);
   });
 
-  test("the toast shows a visual indicator instead of visible text", async ({
+  test("the toast shows a visual indicator instead of revealing what was found", async ({
     page,
   }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // beat the antenna to it
     await expect(page.locator(".egg-found-icon")).toBeVisible();
-    await expect(page.locator(".egg-title")).toBeHidden();
-    await expect(page.locator(".egg-desc")).toBeHidden();
-    // still present for screen readers, just not shown on screen
-    await expect(page.locator(".egg-title")).toHaveText(
-      /turning it on and off again/i,
-    );
+    await expect(page.locator(".egg-toast .egg-title")).toHaveCount(0);
+    await expect(page.locator(".egg-toast .egg-desc")).toHaveCount(0);
   });
 
   test("the collection button stays hidden until something is found", async ({
