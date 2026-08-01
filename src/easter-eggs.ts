@@ -91,7 +91,8 @@ function addConfetti(card: HTMLDivElement): void {
   }
 }
 
-/** Builds the eyebrow/title/desc header shared by every "egg found" card. */
+/** Builds the eyebrow/title/desc header shared by cards that need the user
+ * to actually read them (the anti-easter-egg's reset confirmation). */
 function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "egg-card";
@@ -113,6 +114,35 @@ function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
   return card;
 }
 
+/** Builds the plain discovery toast's card: a visual indicator only — the
+ * title and description stay out of sight, so the reveal happens later in
+ * the collection view instead of spoiling it on the spot. They're still in
+ * the DOM as screen-reader-only text, so the announcement stays accessible. */
+function buildEggFoundCard(egg: EasterEgg): HTMLDivElement {
+  const card = document.createElement("div");
+  card.className = "egg-card";
+
+  const icon = document.createElement("div");
+  icon.className = "egg-found-icon";
+  icon.setAttribute("aria-hidden", "true");
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "egg-eyebrow sr-only";
+  eyebrow.textContent = "Easter egg found";
+
+  const title = document.createElement("p");
+  title.className = "egg-title sr-only";
+  title.textContent = egg.title;
+
+  const desc = document.createElement("p");
+  desc.className = "egg-desc sr-only";
+  desc.textContent = egg.description;
+
+  card.append(icon, eyebrow, title, desc);
+  addConfetti(card);
+  return card;
+}
+
 /** Clicks land within this window of the toast appearing are ignored, so the
  * reflexive click that often follows triggering an egg can't instantly
  * dismiss it before it's been seen. Counted down visibly in the hint text. */
@@ -127,7 +157,7 @@ function showNextToast(): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast";
 
-  const card = buildEggCardHeader(egg);
+  const card = buildEggFoundCard(egg);
 
   const hint = document.createElement("p");
   hint.className = "egg-hint";
@@ -223,9 +253,10 @@ export function offerEasterEggReset(): void {
   document.body.appendChild(overlay);
 }
 
-/** Opens the collection view: every egg found so far with its title and
- * description, and every egg still to find as a locked "???" — so a find
- * stays visible any time, not just in the toast that announced it. */
+/** Opens the collection view: every egg found so far, with its title and
+ * description finally revealed. Nothing here hints at what's still
+ * missing — no count, no locked placeholders — so a find stays visible any
+ * time, not just in the toast that announced it. */
 function renderEggCollection(): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast egg-collection-overlay";
@@ -238,33 +269,25 @@ function renderEggCollection(): void {
 
   const eyebrow = document.createElement("p");
   eyebrow.className = "egg-eyebrow";
-  eyebrow.textContent = "Easter eggs";
-
-  const summary = document.createElement("p");
-  summary.className = "egg-title";
-  summary.textContent = `${unlockedEggCount()}/${EASTER_EGGS.length} found`;
+  eyebrow.textContent = "Easter eggs found";
 
   const list = document.createElement("ul");
   list.className = "egg-collection-list";
   for (const egg of EASTER_EGGS) {
+    if (!isEggUnlocked(egg.id)) continue;
+
     const item = document.createElement("li");
-    const found = isEggUnlocked(egg.id);
-    item.className = found
-      ? "egg-collection-item egg-collection-item-found"
-      : "egg-collection-item egg-collection-item-locked";
+    item.className = "egg-collection-item";
 
     const title = document.createElement("p");
     title.className = "egg-title";
-    title.textContent = found ? egg.title : "???";
-    item.append(title);
+    title.textContent = egg.title;
 
-    if (found) {
-      const desc = document.createElement("p");
-      desc.className = "egg-desc";
-      desc.textContent = egg.description;
-      item.append(desc);
-    }
+    const desc = document.createElement("p");
+    desc.className = "egg-desc";
+    desc.textContent = egg.description;
 
+    item.append(title, desc);
     list.append(item);
   }
 
@@ -274,25 +297,30 @@ function renderEggCollection(): void {
   closeButton.textContent = "Close";
   closeButton.addEventListener("click", () => overlay.remove());
 
-  card.append(eyebrow, summary, list, closeButton);
+  card.append(eyebrow, list, closeButton);
   overlay.append(card);
   document.body.appendChild(overlay);
 }
 
-/** Mounts the always-visible "found so far" counter into `parent`; tapping
- * it opens the collection view. Keeps its own label in sync via
- * `onEggsChanged` so it never needs to be re-rendered from outside. */
+/** Mounts the collection button into `parent`, hidden until the first egg
+ * is found — an icon only, no count. Tapping it opens the collection view.
+ * Visibility stays in sync via `onEggsChanged`. */
 export function mountEggCollectionButton(parent: HTMLElement): void {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "egg-collection-toggle";
-  button.setAttribute("aria-label", "Easter egg collection");
+  button.setAttribute("aria-label", "View found easter eggs");
 
-  function updateLabel(): void {
-    button.textContent = `${unlockedEggCount()}/${EASTER_EGGS.length}`;
+  const icon = document.createElement("span");
+  icon.className = "egg-collection-toggle-icon";
+  icon.setAttribute("aria-hidden", "true");
+  button.append(icon);
+
+  function updateVisibility(): void {
+    button.hidden = unlockedEggCount() === 0;
   }
-  updateLabel();
-  onEggsChanged(updateLabel);
+  updateVisibility();
+  onEggsChanged(updateVisibility);
 
   button.addEventListener("click", renderEggCollection);
   parent.append(button);
