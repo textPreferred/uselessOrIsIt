@@ -420,6 +420,32 @@ test.describe("useless machine", () => {
     expect(Math.sign(openTopZ)).toBe(-Math.sign(closedTopZ));
   });
 
+  test("pressing the OFF button turns the switch on once the plate is open, and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    // dismiss the "behind-the-wall" discovery toast before continuing
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch); // the ON half is now a no-op while off
+    await expect(machineSwitch).not.toBeChecked();
+
+    await clickBottom(machineSwitch); // the OFF half turns it on instead
+    await expect(machineSwitch).toBeChecked();
+    await expect(page.locator(".egg-title")).toHaveText(/reverse psychology/i);
+  });
+
   test("re-seating a screw closes the plate again", async ({ page }) => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
