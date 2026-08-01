@@ -446,6 +446,44 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-title")).toHaveText(/reverse psychology/i);
   });
 
+  test("the antenna reaches toward the switch's shifted position once the plate is open", async ({
+    page,
+  }) => {
+    const antenna = page.getByTestId("arm");
+
+    async function reachOffsetPx(): Promise<string> {
+      return antenna.evaluate((el) =>
+        (el as HTMLElement).style.getPropertyValue("--reach-x"),
+      );
+    }
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch); // closed-plate baseline: no offset
+    expect(await reachOffsetPx()).toBe("");
+    await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
+
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    await clickBottom(machineSwitch); // the OFF button turns it on while ajar
+    await expect(machineSwitch).toBeChecked();
+
+    // the panel is hinged on the left, so the ajar switch sits well left of
+    // its usual centered spot — the antenna's target should follow it there
+    const offsetPx = await reachOffsetPx();
+    expect(parseFloat(offsetPx)).toBeLessThan(-10);
+  });
+
   test("re-seating a screw closes the plate again", async ({ page }) => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {

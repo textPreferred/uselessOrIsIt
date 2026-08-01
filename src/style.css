@@ -609,8 +609,11 @@ body {
 }
 
 .antenna.reach {
-  /* one continuous move, straight up to the O side */
-  transform: translate(0, -4.1rem);
+  /* one continuous move, straight up to the O side — --reach-x shifts the
+     target sideways to meet the switch where the open plate has actually
+     swung it, set by ui.ts from a live measurement just before this class
+     is applied; 0 when the plate's closed and the switch hasn't moved. */
+  transform: translate(var(--reach-x, 0), -4.1rem);
 }
 
 .antenna.retreat {
@@ -626,23 +629,23 @@ body {
 @keyframes antenna-struggle {
   0%,
   100% {
-    transform: translate(0, -4.1rem);
+    transform: translate(var(--reach-x, 0), -4.1rem);
   }
 
   20% {
-    transform: translate(-0.35rem, -4rem);
+    transform: translate(calc(var(--reach-x, 0) - 0.35rem), -4rem);
   }
 
   40% {
-    transform: translate(0.3rem, -4.15rem);
+    transform: translate(calc(var(--reach-x, 0) + 0.3rem), -4.15rem);
   }
 
   60% {
-    transform: translate(-0.25rem, -3.95rem);
+    transform: translate(calc(var(--reach-x, 0) - 0.25rem), -3.95rem);
   }
 
   80% {
-    transform: translate(0.35rem, -4.1rem);
+    transform: translate(calc(var(--reach-x, 0) + 0.35rem), -4.1rem);
   }
 }
 
