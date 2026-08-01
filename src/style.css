@@ -432,6 +432,17 @@ body {
   transform: rotateX(26deg);
 }
 
+/* Ajar, the plate exposes the mechanism's back side — near and far swap, so
+   the paddle's resting relief flips too: OFF now sits proud by default and
+   ON is the pushed-in side, both directions mirrored from the closed view. */
+.plate.open .rocker[aria-checked="false"] .paddle {
+  transform: rotateX(26deg);
+}
+
+.plate.open .rocker[aria-checked="true"] .paddle {
+  transform: rotateX(-26deg);
+}
+
 /* The lit-side gradient lives on its own layer, crossfaded in via opacity
    rather than swapped on `background` directly: browsers don't interpolate
    a gradient's angle (verified — Chromium snaps it instantly even with a
@@ -598,8 +609,12 @@ body {
 }
 
 .antenna.reach {
-  /* one continuous move, straight up to the O side */
-  transform: translate(0, -4.1rem);
+  /* one continuous move, straight up to the OFF side — --reach-x shifts the
+     target sideways to meet the switch where the open plate has actually
+     swung it, and --reach-y moves contact to the ON side instead once the
+     mirrored paddle makes that the live one; both set by ui.ts just before
+     this class is applied, and both default to the closed-plate case. */
+  transform: translate(var(--reach-x, 0), var(--reach-y, -4.1rem));
 }
 
 .antenna.retreat {
@@ -615,23 +630,35 @@ body {
 @keyframes antenna-struggle {
   0%,
   100% {
-    transform: translate(0, -4.1rem);
+    transform: translate(var(--reach-x, 0), var(--reach-y, -4.1rem));
   }
 
   20% {
-    transform: translate(-0.35rem, -4rem);
+    transform: translate(
+      calc(var(--reach-x, 0) - 0.35rem),
+      calc(var(--reach-y, -4.1rem) + 0.1rem)
+    );
   }
 
   40% {
-    transform: translate(0.3rem, -4.15rem);
+    transform: translate(
+      calc(var(--reach-x, 0) + 0.3rem),
+      calc(var(--reach-y, -4.1rem) - 0.05rem)
+    );
   }
 
   60% {
-    transform: translate(-0.25rem, -3.95rem);
+    transform: translate(
+      calc(var(--reach-x, 0) - 0.25rem),
+      calc(var(--reach-y, -4.1rem) + 0.15rem)
+    );
   }
 
   80% {
-    transform: translate(0.35rem, -4.1rem);
+    transform: translate(
+      calc(var(--reach-x, 0) + 0.35rem),
+      var(--reach-y, -4.1rem)
+    );
   }
 }
 

@@ -348,6 +348,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       `${scaleWithPace(PADDLE_FLIP_MS, durMs)}ms`,
     );
     antenna.classList.remove("retreat");
+    updateReachOffset();
     requestAnimationFrame(() => antenna.classList.add("reach"));
     schedule(
       () => retreat(durMs),
@@ -452,6 +453,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       "--paddle-dur",
       `${scaleWithPace(PADDLE_FLIP_MS, RELEASE_SNAP_MS)}ms`,
     );
+    updateReachOffset();
     settleThenTransition("reach");
     schedule(
       () => retreat(RELEASE_SNAP_MS),
@@ -486,6 +488,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       "--paddle-dur",
       `${scaleWithPace(PADDLE_FLIP_MS, HIT_BACK_MS)}ms`,
     );
+    updateReachOffset();
     requestAnimationFrame(() => antenna.classList.add("reach"));
     schedule(
       () => retreat(HIT_BACK_MS),
@@ -504,6 +507,43 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     schedule(hitBack, BLOCK_RETREAT_MS);
   }
 
+  // Ajar, the paddle's relief is mirrored (see the .plate.open rules in
+  // style.css) — the half that's actually live to a press mirrors right
+  // along with it, so pressing the side that now reads OFF is what turns
+  // the switch on.
+  function isBackside(): boolean {
+    return plate.classList.contains("open");
+  }
+
+  // The antenna only ever reaches while the switch is on, headed toward
+  // turning it off again — so the side it needs to contact is whichever one
+  // is currently live for that: OFF (the CSS default, near the bottom)
+  // normally, ON (mirrored, near the top) once the plate's ajar and the
+  // paddle relief has flipped. Mirrors the -4.1rem default around the
+  // rocker's center rather than deriving it, same hand-tuned contact depth
+  // either way.
+  const REACH_Y_BACKSIDE = "-9.1rem";
+
+  // Ajar, the switch has also visually swung away from its usual centered
+  // rest spot — measured live off the rocker and fed into --reach-x just
+  // before the antenna reaches, so it travels to where the switch actually
+  // is instead of where it used to be. antenna's own rect is unaffected by
+  // its current translateY, so it's a stable stand-in for the closed-plate
+  // target even while retreated off-screen.
+  function updateReachOffset(): void {
+    if (!isBackside()) {
+      antenna.style.removeProperty("--reach-x");
+      antenna.style.removeProperty("--reach-y");
+      return;
+    }
+    const switchBox = rocker.getBoundingClientRect();
+    const restBox = antenna.getBoundingClientRect();
+    const offsetPx =
+      switchBox.left + switchBox.width / 2 - (restBox.left + restBox.width / 2);
+    antenna.style.setProperty("--reach-x", `${offsetPx}px`);
+    antenna.style.setProperty("--reach-y", REACH_Y_BACKSIDE);
+  }
+
   // Applies whatever a press/drag to this Y position should do — turning
   // on, turning off, or nothing if it's already sitting on that side. Used
   // for both the initial pointerdown and every pointermove while pressed,
@@ -511,9 +551,11 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   // freshly pressing at the new position.
   function applyPressAt(clientY: number, pointerId: number): void {
     const rect = rocker.getBoundingClientRect();
-    const clickedTop = clientY - rect.top < rect.height / 2;
+    const rawClickedTop = clientY - rect.top < rect.height / 2;
+    const clickedTop = isBackside() ? !rawClickedTop : rawClickedTop;
     const isOn = machine.state === "on";
-    // only the top half turns it on, only the bottom half turns it off
+    // only the top half turns it on, only the bottom half turns it off —
+    // mirrored while the plate is ajar, per clickedTop above
     if (clickedTop === isOn) return;
     const turningOn = clickedTop && !isOn;
     if (turningOn && onLabelBlocksSwitch()) {
@@ -523,6 +565,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     if (turningOn && attemptedWhileBlocked) {
       attemptedWhileBlocked = false;
       unlockEasterEgg("no-means-no");
+    }
+    if (turningOn && isBackside() && !rawClickedTop) {
+      unlockEasterEgg("reverse-psychology");
     }
     armIdleReset();
     machine.flip();
@@ -595,7 +640,8 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   rocker.addEventListener("click", (event) => {
     if (event.detail !== 0) return; // pointer taps are handled by pointerdown
     const rect = rocker.getBoundingClientRect();
-    const clickedTop = event.clientY - rect.top < rect.height / 2;
+    const rawClickedTop = event.clientY - rect.top < rect.height / 2;
+    const clickedTop = isBackside() ? !rawClickedTop : rawClickedTop;
     const isOn = machine.state === "on";
     if (clickedTop === isOn) return;
     const turningOn = clickedTop && !isOn;
@@ -606,6 +652,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     if (turningOn && attemptedWhileBlocked) {
       attemptedWhileBlocked = false;
       unlockEasterEgg("no-means-no");
+    }
+    if (turningOn && isBackside() && !rawClickedTop) {
+      unlockEasterEgg("reverse-psychology");
     }
     armIdleReset();
     machine.flip();

@@ -38,6 +38,11 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     description: "Useful label?",
   },
   {
+    id: "reverse-psychology",
+    title: "Reverse psychology",
+    description: "OFF said no. Turns out it meant yes.",
+  },
+  {
     id: ANTI_EASTER_EGG_ID,
     title: "Anti-Easter Egg",
     description: "Delete all easter eggs, so I can start over.",

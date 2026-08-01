@@ -396,6 +396,103 @@ test.describe("useless machine", () => {
     await expect(page.locator(".wall-tape").nth(1)).toHaveText(/isn't it\?/i);
   });
 
+  test("shows the switch as if from behind once the plate is open", async ({
+    page,
+  }) => {
+    const paddle = page.locator(".paddle");
+
+    // rotateX tilts the paddle's top edge toward or away from the viewer —
+    // reading the sign of its resulting z tells which side currently
+    // protrudes, regardless of the ancestor perspective used to render it.
+    async function paddleTopZ(): Promise<number> {
+      return paddle.evaluate((el) => {
+        const matrix = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+        return matrix.transformPoint({ x: 0, y: -1, z: 0 }).z;
+      });
+    }
+
+    const closedTopZ = await paddleTopZ();
+
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    const openTopZ = await paddleTopZ();
+    expect(Math.sign(openTopZ)).toBe(-Math.sign(closedTopZ));
+  });
+
+  test("pressing the OFF button turns the switch on once the plate is open, and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    // dismiss the "behind-the-wall" discovery toast before continuing
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch); // the ON half is now a no-op while off
+    await expect(machineSwitch).not.toBeChecked();
+
+    await clickBottom(machineSwitch); // the OFF half turns it on instead
+    await expect(machineSwitch).toBeChecked();
+    await expect(page.locator(".egg-title")).toHaveText(/reverse psychology/i);
+  });
+
+  test("the antenna reaches toward the switch's shifted position, on its ON side, once the plate is open", async ({
+    page,
+  }) => {
+    const antenna = page.getByTestId("arm");
+
+    async function reachTarget(): Promise<{ x: string; y: string }> {
+      return antenna.evaluate((el) => ({
+        x: (el as HTMLElement).style.getPropertyValue("--reach-x"),
+        y: (el as HTMLElement).style.getPropertyValue("--reach-y"),
+      }));
+    }
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch); // closed-plate baseline: no offset
+    expect(await reachTarget()).toEqual({ x: "", y: "" });
+    await expect(machineSwitch).not.toBeChecked({ timeout: 5000 });
+
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click();
+
+    await clickBottom(machineSwitch); // the OFF button turns it on while ajar
+    await expect(machineSwitch).toBeChecked();
+
+    const target = await reachTarget();
+    // the panel is hinged on the left, so the ajar switch sits well left of
+    // its usual centered spot — the antenna's target should follow it there
+    expect(parseFloat(target.x)).toBeLessThan(-10);
+    // and since the mirrored paddle now has ON, not OFF, as the live side,
+    // contact needs to land higher up (toward ON) instead of its usual spot
+    // near the bottom (OFF)
+    expect(target.y).toBe("-9.1rem");
+  });
+
   test("re-seating a screw closes the plate again", async ({ page }) => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
