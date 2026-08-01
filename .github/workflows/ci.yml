@@ -77,7 +77,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
       pull-requests: write
+    env:
+      PREVIEW_PACKAGE: "@textpreferred/useless-machine-preview"
+      PREVIEW_VERSION: 0.0.0-pr${{ github.event.number }}.${{ github.run_number }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -86,28 +90,45 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build --base=/ --outDir dist-preview
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+      - name: Prepare preview package
+        run: |
+          cat > dist-preview/package.json <<EOF
+          {
+            "name": "${PREVIEW_PACKAGE}",
+            "version": "${PREVIEW_VERSION}",
+            "private": false
+          }
+          EOF
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          name: pr-preview-${{ github.event.number }}
-          path: dist-preview
-          retention-days: 7
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: "@textpreferred"
+      - name: Publish preview package
+        working-directory: dist-preview
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
-            const marker = "<!-- pr-preview-artifact -->";
-            const artifactName = `pr-preview-${context.issue.number}`;
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const marker = "<!-- pr-preview-package -->";
+            const pkg = process.env.PREVIEW_PACKAGE;
+            const version = process.env.PREVIEW_VERSION;
+            const tarball = `${pkg.replace("@", "").replace("/", "-")}-${version}.tgz`;
             const body = [
               marker,
-              "### 📦 Preview build",
+              "### 📦 Preview package",
               "",
-              `Download the \`${artifactName}\` artifact from [this run](${runUrl}), unzip it, then serve it locally, e.g.:`,
+              `Published \`${pkg}@${version}\` to GitHub Packages. Fetch and serve it locally, e.g.:`,
               "",
               "```",
-              `npx serve ${artifactName}`,
+              `npm pack ${pkg}@${version} --registry=https://npm.pkg.github.com`,
+              `tar -xzf ${tarball}`,
+              "npx serve package",
               "```",
               "",
-              "and open the printed URL.",
+              "(requires a GitHub token with `read:packages` scope configured for npm — see [Installing a package](https://docs.github.com/packages/learn-github-packages/installing-a-package))",
             ].join("\n");
 
             const comments = await github.rest.issues.listComments({
