@@ -309,6 +309,6 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
   onEggsChanged(updateVisibility);
 
   button.addEventListener("click", renderEggCollection);
-  wrapper.append(count, button);
+  wrapper.append(button, count);
   parent.append(wrapper);
 }

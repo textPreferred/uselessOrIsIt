@@ -689,8 +689,9 @@ test.describe("useless machine", () => {
 
     await expect(page.locator(".egg-collection-count")).toHaveText("1");
     // count sits to the right of the button, not the left
-    await expect(page.locator(".egg-collection-toggle + .egg-collection-count"))
-      .toHaveCount(1);
+    await expect(
+      page.locator(".egg-collection-toggle + .egg-collection-count"),
+    ).toHaveCount(1);
   });
 
   test("a found easter egg reveals the collection button and stays viewable, without spoiling what's still missing", async ({
