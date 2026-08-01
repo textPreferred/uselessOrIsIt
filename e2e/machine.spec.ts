@@ -679,6 +679,17 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-collection-toggle")).toBeHidden();
   });
 
+  test("the collection button shows how many eggs have been found so far", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await expect(page.locator(".egg-collection-count")).toHaveText("1");
+  });
+
   test("a found easter egg reveals the collection button and stays viewable, without spoiling what's still missing", async ({
     page,
   }) => {
