@@ -19,7 +19,10 @@ function stripGoogleFonts(): Plugin {
     transformIndexHtml(html) {
       return html
         .replace(/\s*<link rel="preconnect"[^>]*>/g, "")
-        .replace(/\s*<link\s+href="https:\/\/fonts\.googleapis\.com[^>]*\/>/gs, "")
+        .replace(
+          /\s*<link\s+href="https:\/\/fonts\.googleapis\.com[^>]*\/>/gs,
+          "",
+        )
         .replace(
           /\s*<link\s+href="https:\/\/fonts\.googleapis\.com[\s\S]*?rel="stylesheet"\s*\/?>/g,
           "",
