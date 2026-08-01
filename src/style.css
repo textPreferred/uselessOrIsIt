@@ -771,8 +771,11 @@ body {
   display: grid;
   place-items: center;
   z-index: 20;
-  cursor: pointer;
   animation: egg-fade-in 0.2s ease;
+}
+
+.egg-collection-overlay {
+  cursor: pointer;
 }
 
 @keyframes egg-fade-in {
@@ -796,6 +799,14 @@ body {
   box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 40%);
   text-align: center;
   animation: egg-pop-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+/* The plain discovery toast has nothing but the found-icon in it — a card
+   sized for paragraphs of text would leave it swimming in empty space. */
+.egg-card-minimal {
+  width: auto;
+  max-width: none;
+  padding: 1.1rem;
 }
 
 @keyframes egg-pop-in {
@@ -830,16 +841,6 @@ body {
   font-size: 0.9rem;
   color: color-mix(in srgb, var(--card-ink) 70%, transparent);
   margin: 0 0 0.9rem;
-}
-
-.egg-hint {
-  font-size: 0.7rem;
-  color: color-mix(in srgb, var(--card-ink) 45%, transparent);
-  margin: 0;
-}
-
-.egg-toast-confirm {
-  cursor: default;
 }
 
 .egg-actions {
@@ -877,9 +878,217 @@ body {
   background: color-mix(in srgb, var(--card-ink) 18%, transparent);
 }
 
+.egg-found-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto;
+  position: relative;
+  display: grid;
+  place-items: center;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.egg-found-icon::before {
+  content: "";
+  position: absolute;
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(240 180 41 / 55%), transparent 70%);
+}
+
+/* ---- confetti burst ---- */
+
+.egg-card {
+  position: relative;
+  overflow: visible;
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(var(--card), var(--card)),
+    linear-gradient(135deg, var(--red), #f0b429, #2a9d8f, var(--red));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  animation: egg-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.egg-confetti-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.4rem;
+  height: 0.9rem;
+  border-radius: 0.15rem;
+  opacity: 0;
+  pointer-events: none;
+  animation: egg-confetti-burst 0.7s ease-out both;
+  animation-delay: 0.05s;
+}
+
+.egg-confetti-piece:nth-of-type(1) {
+  --confetti-x: -5.5rem;
+  --confetti-y: -3rem;
+  --confetti-rot: -140deg;
+  background: var(--red);
+}
+
+.egg-confetti-piece:nth-of-type(2) {
+  --confetti-x: -3rem;
+  --confetti-y: -5.5rem;
+  --confetti-rot: 90deg;
+  background: #f0b429;
+}
+
+.egg-confetti-piece:nth-of-type(3) {
+  --confetti-x: 0.5rem;
+  --confetti-y: -6rem;
+  --confetti-rot: -40deg;
+  background: #2a9d8f;
+}
+
+.egg-confetti-piece:nth-of-type(4) {
+  --confetti-x: 4rem;
+  --confetti-y: -5rem;
+  --confetti-rot: 160deg;
+  background: var(--red);
+}
+
+.egg-confetti-piece:nth-of-type(5) {
+  --confetti-x: 5.8rem;
+  --confetti-y: -2rem;
+  --confetti-rot: 60deg;
+  background: #2a9d8f;
+}
+
+.egg-confetti-piece:nth-of-type(6) {
+  --confetti-x: 4.5rem;
+  --confetti-y: 3.5rem;
+  --confetti-rot: -100deg;
+  background: #f0b429;
+}
+
+.egg-confetti-piece:nth-of-type(7) {
+  --confetti-x: -4rem;
+  --confetti-y: 4rem;
+  --confetti-rot: 30deg;
+  background: var(--red);
+}
+
+.egg-confetti-piece:nth-of-type(8) {
+  --confetti-x: -6rem;
+  --confetti-y: 0.5rem;
+  --confetti-rot: -20deg;
+  background: #f0b429;
+}
+
+@keyframes egg-confetti-burst {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--confetti-x)),
+        calc(-50% + var(--confetti-y))
+      )
+      rotate(var(--confetti-rot));
+  }
+}
+
+/* ---- easter egg collection ---- */
+
+.egg-collection-toggle {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 10;
+  appearance: none;
+  border: 0;
+  border-radius: 50%;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 30%);
+  cursor: pointer;
+}
+
+.egg-collection-toggle[hidden] {
+  display: none;
+}
+
+.egg-collection-toggle:hover {
+  background: rgb(0 0 0 / 45%);
+}
+
+.egg-collection-toggle-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.egg-collection-toggle-icon::before {
+  content: "";
+  position: absolute;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(240 180 41 / 55%), transparent 70%);
+}
+
+.egg-collection-card {
+  max-width: 24rem;
+  text-align: left;
+}
+
+.egg-collection-card .egg-eyebrow {
+  text-align: center;
+}
+
+.egg-collection-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.egg-collection-item {
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  background: color-mix(in srgb, var(--card-ink) 6%, transparent);
+}
+
+.egg-collection-item .egg-title {
+  font-size: 0.9rem;
+  margin: 0 0 0.15rem;
+}
+
+.egg-collection-item .egg-desc {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.egg-collection-close {
+  width: 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .egg-toast,
-  .egg-card {
+  .egg-card,
+  .egg-confetti-piece {
     animation: none;
+  }
+
+  .egg-confetti-piece {
+    display: none;
   }
 }

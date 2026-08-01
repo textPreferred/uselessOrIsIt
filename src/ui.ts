@@ -1,4 +1,8 @@
-import { offerEasterEggReset, unlockEasterEgg } from "./easter-eggs";
+import {
+  mountEggCollectionButton,
+  offerEasterEggReset,
+  unlockEasterEgg,
+} from "./easter-eggs";
 import type { Machine } from "./machine";
 
 /** Dashes between letter/digit runs so the build's commit SHA reads like a
@@ -160,6 +164,8 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
   const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
   const plate = mustFind<HTMLDivElement>(root, ".plate");
+  const stage = mustFind<HTMLDivElement>(root, ".stage");
+  mountEggCollectionButton(stage);
 
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
