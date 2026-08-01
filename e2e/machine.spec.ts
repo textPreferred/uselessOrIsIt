@@ -565,4 +565,51 @@ test.describe("useless machine", () => {
       /turning it on and off again/i,
     );
   });
+
+  test("the easter egg toast bursts with confetti", async ({ page }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // beat the antenna to it
+    await expect(page.locator(".egg-confetti-piece")).toHaveCount(8);
+  });
+
+  test("the easter egg collection starts locked and empty", async ({
+    page,
+  }) => {
+    const toggle = page.locator(".egg-collection-toggle");
+    await expect(toggle).toHaveText("0/7");
+    await toggle.click();
+    await expect(page.locator(".egg-collection-item")).toHaveCount(7);
+    await expect(page.locator(".egg-collection-item-found")).toHaveCount(0);
+    await expect(
+      page.locator(".egg-collection-item-locked").first(),
+    ).toHaveText("???");
+  });
+
+  test("a found easter egg stays viewable in the collection", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-hint")).toHaveText(
+      /click anywhere to dismiss/i,
+      { timeout: 4000 },
+    );
+    await page.locator(".egg-toast").click(); // dismiss
+
+    const toggle = page.locator(".egg-collection-toggle");
+    await expect(toggle).toHaveText("1/7");
+    await toggle.click();
+    await expect(page.locator(".egg-collection-item-found")).toHaveCount(1);
+    await expect(page.locator(".egg-collection-item-found")).toContainText(
+      /turning it on and off again/i,
+    );
+
+    // closing and reopening still shows it — it's not a one-time reveal
+    await page.locator(".egg-collection-close").click();
+    await expect(page.locator(".egg-collection-overlay")).toBeHidden();
+    await toggle.click();
+    await expect(page.locator(".egg-collection-item-found")).toHaveCount(1);
+  });
 });
