@@ -308,7 +308,7 @@ test.describe("useless machine", () => {
     page,
   }) => {
     await clickScrewsClockwise(page);
-    await expect(page.locator(".egg-title")).toHaveText(/anti-easter egg/i);
+    await expect(page.locator(".egg-title")).toHaveText(/tighten the screws/i);
     await expect(
       page.getByRole("button", { name: "Yes, reset my easter eggs" }),
     ).toBeVisible();
