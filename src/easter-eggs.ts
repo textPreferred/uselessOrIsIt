@@ -14,23 +14,23 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   },
   {
     id: "top-speed",
-    title: "Terminal Velocity",
+    title: "Terminal velocity",
     description: "You kept flipping till the machine couldn't go any faster.",
   },
   {
     id: "tug-of-war",
-    title: "False Retreat",
+    title: "False retreat",
     description: "It looked like the machine gave up. It didn't.",
   },
   {
     id: "poked-the-antenna",
-    title: "Poke the Bear",
+    title: "Poke the bear",
     description:
       "You grabbed the machine mid-reach. It didn't take it too well.",
   },
   {
     id: "no-means-no",
-    title: "No means no - and on means on.",
+    title: "No means no — and on means on.",
     description: "You spun the label blocking",
   },
   {
@@ -40,13 +40,13 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   },
   {
     id: "reverse-psychology",
-    title: "Reverse Psychology",
+    title: "Reverse psychology",
     description: "You pressed off to turn the machine on.",
   },
   {
     id: ANTI_EASTER_EGG_ID,
     title: "Tighten the screws",
-    description: "Set or reset - your choice.",
+    description: "Set or reset — your choice.",
   },
 ];
 
