@@ -609,11 +609,12 @@ body {
 }
 
 .antenna.reach {
-  /* one continuous move, straight up to the O side — --reach-x shifts the
+  /* one continuous move, straight up to the OFF side — --reach-x shifts the
      target sideways to meet the switch where the open plate has actually
-     swung it, set by ui.ts from a live measurement just before this class
-     is applied; 0 when the plate's closed and the switch hasn't moved. */
-  transform: translate(var(--reach-x, 0), -4.1rem);
+     swung it, and --reach-y moves contact to the ON side instead once the
+     mirrored paddle makes that the live one; both set by ui.ts just before
+     this class is applied, and both default to the closed-plate case. */
+  transform: translate(var(--reach-x, 0), var(--reach-y, -4.1rem));
 }
 
 .antenna.retreat {
@@ -629,23 +630,35 @@ body {
 @keyframes antenna-struggle {
   0%,
   100% {
-    transform: translate(var(--reach-x, 0), -4.1rem);
+    transform: translate(var(--reach-x, 0), var(--reach-y, -4.1rem));
   }
 
   20% {
-    transform: translate(calc(var(--reach-x, 0) - 0.35rem), -4rem);
+    transform: translate(
+      calc(var(--reach-x, 0) - 0.35rem),
+      calc(var(--reach-y, -4.1rem) + 0.1rem)
+    );
   }
 
   40% {
-    transform: translate(calc(var(--reach-x, 0) + 0.3rem), -4.15rem);
+    transform: translate(
+      calc(var(--reach-x, 0) + 0.3rem),
+      calc(var(--reach-y, -4.1rem) - 0.05rem)
+    );
   }
 
   60% {
-    transform: translate(calc(var(--reach-x, 0) - 0.25rem), -3.95rem);
+    transform: translate(
+      calc(var(--reach-x, 0) - 0.25rem),
+      calc(var(--reach-y, -4.1rem) + 0.15rem)
+    );
   }
 
   80% {
-    transform: translate(calc(var(--reach-x, 0) + 0.35rem), -4.1rem);
+    transform: translate(
+      calc(var(--reach-x, 0) + 0.35rem),
+      var(--reach-y, -4.1rem)
+    );
   }
 }
 

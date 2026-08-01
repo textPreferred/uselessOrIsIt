@@ -509,15 +509,25 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     return plate.classList.contains("open");
   }
 
-  // Ajar, the switch has visually swung away from its usual centered rest
-  // spot — measured live off the rocker and fed into --reach-x just before
-  // the antenna reaches, so it travels to where the switch actually is
-  // instead of where it used to be. antenna's own rect is unaffected by its
-  // current translateY, so it's a stable stand-in for the closed-plate
+  // The antenna only ever reaches while the switch is on, headed toward
+  // turning it off again — so the side it needs to contact is whichever one
+  // is currently live for that: OFF (the CSS default, near the bottom)
+  // normally, ON (mirrored, near the top) once the plate's ajar and the
+  // paddle relief has flipped. Mirrors the -4.1rem default around the
+  // rocker's center rather than deriving it, same hand-tuned contact depth
+  // either way.
+  const REACH_Y_BACKSIDE = "-9.1rem";
+
+  // Ajar, the switch has also visually swung away from its usual centered
+  // rest spot — measured live off the rocker and fed into --reach-x just
+  // before the antenna reaches, so it travels to where the switch actually
+  // is instead of where it used to be. antenna's own rect is unaffected by
+  // its current translateY, so it's a stable stand-in for the closed-plate
   // target even while retreated off-screen.
   function updateReachOffset(): void {
     if (!isBackside()) {
       antenna.style.removeProperty("--reach-x");
+      antenna.style.removeProperty("--reach-y");
       return;
     }
     const switchBox = rocker.getBoundingClientRect();
@@ -525,6 +535,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     const offsetPx =
       switchBox.left + switchBox.width / 2 - (restBox.left + restBox.width / 2);
     antenna.style.setProperty("--reach-x", `${offsetPx}px`);
+    antenna.style.setProperty("--reach-y", REACH_Y_BACKSIDE);
   }
 
   // Applies whatever a press/drag to this Y position should do — turning
