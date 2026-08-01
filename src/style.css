@@ -999,11 +999,28 @@ body {
 
 /* ---- easter egg collection ---- */
 
-.egg-collection-toggle {
+.egg-collection-widget {
   position: absolute;
   top: 0.9rem;
   right: 0.9rem;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.egg-collection-widget[hidden] {
+  display: none;
+}
+
+.egg-collection-count {
+  color: #eeeeec;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 60%);
+}
+
+.egg-collection-toggle {
   appearance: none;
   border: 0;
   border-radius: 50%;
@@ -1014,10 +1031,6 @@ body {
   place-items: center;
   background: rgb(0 0 0 / 30%);
   cursor: pointer;
-}
-
-.egg-collection-toggle[hidden] {
-  display: none;
 }
 
 .egg-collection-toggle:hover {

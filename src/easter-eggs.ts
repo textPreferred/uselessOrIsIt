@@ -276,14 +276,22 @@ function renderEggCollection(): void {
   document.body.appendChild(overlay);
 }
 
-/** Mounts the collection button into `parent`, hidden until the first egg
- * is found — an icon only, no count. Tapping it opens the collection view.
- * Visibility stays in sync via `onEggsChanged`. */
+/** Mounts the collection button (and its found-count) into `parent`, hidden
+ * until the first egg is found. The count shows how many have been found so
+ * far only — never the total out of `EASTER_EGGS.length` — so it doesn't
+ * spoil how many are still out there. Tapping the button opens the
+ * collection view. Visibility and count stay in sync via `onEggsChanged`. */
 export function mountEggCollectionButton(parent: HTMLElement): void {
+  const wrapper = document.createElement("div");
+  wrapper.className = "egg-collection-widget";
+
+  const count = document.createElement("span");
+  count.className = "egg-collection-count";
+  count.setAttribute("aria-hidden", "true");
+
   const button = document.createElement("button");
   button.type = "button";
   button.className = "egg-collection-toggle";
-  button.setAttribute("aria-label", "View found easter eggs");
 
   const icon = document.createElement("span");
   icon.className = "egg-collection-toggle-icon";
@@ -292,11 +300,15 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
   button.append(icon);
 
   function updateVisibility(): void {
-    button.hidden = unlockedEggCount() === 0;
+    const found = unlockedEggCount();
+    wrapper.hidden = found === 0;
+    count.textContent = String(found);
+    button.setAttribute("aria-label", `View found easter eggs (${found})`);
   }
   updateVisibility();
   onEggsChanged(updateVisibility);
 
   button.addEventListener("click", renderEggCollection);
-  parent.append(button);
+  wrapper.append(count, button);
+  parent.append(wrapper);
 }
