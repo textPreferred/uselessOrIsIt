@@ -997,6 +997,24 @@ body {
   }
 }
 
+/* Kicks in once the plain toast has had its beat: instead of just
+   vanishing, the icon flies and shrinks toward the collection button
+   (computed in JS from the two elements' actual positions), so the find
+   visibly lands in the place it'll live from now on. */
+.egg-toast-morphing {
+  background-color: transparent;
+  transition: background-color 0.3s ease;
+}
+
+.egg-card-morph {
+  transform: translate(var(--morph-x, 0), var(--morph-y, 0))
+    scale(var(--morph-scale, 1));
+  opacity: 0;
+  transition:
+    transform 0.3s cubic-bezier(0.3, 0.7, 0.3, 1),
+    opacity 0.3s ease;
+}
+
 /* ---- easter egg collection ---- */
 
 .egg-collection-widget {

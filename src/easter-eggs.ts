@@ -142,6 +142,40 @@ function buildEggFoundCard(): HTMLDivElement {
  * no click needed. */
 const AUTO_DISMISS_MS = 1000;
 
+/** How long the toast takes to fly and shrink into the collection button.
+ * Must match the transition duration on `.egg-card-morph` in style.css. */
+const MORPH_DURATION_MS = 300;
+
+/** Sends the toast's card flying and shrinking toward the collection
+ * button rather than just vanishing, so the find visibly lands where it'll
+ * live from now on. Skipped (returns false) under reduced motion, or if the
+ * button isn't in the DOM yet for some reason — either way the caller just
+ * dismisses the toast immediately instead. */
+function morphIntoCollectionButton(
+  overlay: HTMLDivElement,
+  card: HTMLDivElement,
+): boolean {
+  const target = document.querySelector(".egg-collection-toggle");
+  if (!target || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return false;
+  }
+
+  const from = card.getBoundingClientRect();
+  const to = target.getBoundingClientRect();
+  card.style.setProperty(
+    "--morph-x",
+    `${to.left + to.width / 2 - (from.left + from.width / 2)}px`,
+  );
+  card.style.setProperty(
+    "--morph-y",
+    `${to.top + to.height / 2 - (from.top + from.height / 2)}px`,
+  );
+  card.style.setProperty("--morph-scale", `${to.width / from.width}`);
+  card.classList.add("egg-card-morph");
+  overlay.classList.add("egg-toast-morphing");
+  return true;
+}
+
 function showNextToast(): void {
   if (toastShowing) return;
   const egg = toastQueue.shift();
@@ -151,13 +185,20 @@ function showNextToast(): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast";
   overlay.dataset.eggId = egg.id;
-  overlay.append(buildEggFoundCard());
+  const card = buildEggFoundCard();
+  overlay.append(card);
   document.body.appendChild(overlay);
 
   setTimeout(() => {
-    overlay.remove();
-    toastShowing = false;
-    showNextToast();
+    const morphing = morphIntoCollectionButton(overlay, card);
+    setTimeout(
+      () => {
+        overlay.remove();
+        toastShowing = false;
+        showNextToast();
+      },
+      morphing ? MORPH_DURATION_MS : 0,
+    );
   }, AUTO_DISMISS_MS);
 }
 
