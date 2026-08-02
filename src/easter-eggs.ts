@@ -142,6 +142,40 @@ function buildEggFoundCard(): HTMLDivElement {
  * no click needed. */
 const AUTO_DISMISS_MS = 1000;
 
+/** How long the toast takes to fly and shrink into the collection button.
+ * Must match the transition duration on `.egg-card-morph` in style.css. */
+const MORPH_DURATION_MS = 300;
+
+/** Sends the toast's card flying and shrinking toward the collection
+ * button rather than just vanishing, so the find visibly lands where it'll
+ * live from now on. Skipped (returns false) under reduced motion, or if the
+ * button isn't in the DOM yet for some reason — either way the caller just
+ * dismisses the toast immediately instead. */
+function morphIntoCollectionButton(
+  overlay: HTMLDivElement,
+  card: HTMLDivElement,
+): boolean {
+  const target = document.querySelector(".egg-collection-toggle");
+  if (!target || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return false;
+  }
+
+  const from = card.getBoundingClientRect();
+  const to = target.getBoundingClientRect();
+  card.style.setProperty(
+    "--morph-x",
+    `${to.left + to.width / 2 - (from.left + from.width / 2)}px`,
+  );
+  card.style.setProperty(
+    "--morph-y",
+    `${to.top + to.height / 2 - (from.top + from.height / 2)}px`,
+  );
+  card.style.setProperty("--morph-scale", `${to.width / from.width}`);
+  card.classList.add("egg-card-morph");
+  overlay.classList.add("egg-toast-morphing");
+  return true;
+}
+
 function showNextToast(): void {
   if (toastShowing) return;
   const egg = toastQueue.shift();
@@ -151,13 +185,24 @@ function showNextToast(): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast";
   overlay.dataset.eggId = egg.id;
-  overlay.append(buildEggFoundCard());
+  const card = buildEggFoundCard();
+  overlay.append(card);
   document.body.appendChild(overlay);
 
   setTimeout(() => {
-    overlay.remove();
-    toastShowing = false;
-    showNextToast();
+    const morphing = morphIntoCollectionButton(overlay, card);
+    setTimeout(
+      () => {
+        overlay.remove();
+        toastShowing = false;
+        // fires only once the toast has visibly landed on the collection
+        // button, so it appears (and its count ticks up) right as the find
+        // arrives there instead of popping in at the start
+        notifyChanged();
+        showNextToast();
+      },
+      morphing ? MORPH_DURATION_MS : 0,
+    );
   }, AUTO_DISMISS_MS);
 }
 
@@ -171,7 +216,6 @@ export function unlockEasterEgg(id: string): void {
   saveUnlocked(unlocked);
   toastQueue.push(egg);
   showNextToast();
-  notifyChanged();
 }
 
 /** Whether the given egg has been found. */
@@ -276,14 +320,22 @@ function renderEggCollection(): void {
   document.body.appendChild(overlay);
 }
 
-/** Mounts the collection button into `parent`, hidden until the first egg
- * is found — an icon only, no count. Tapping it opens the collection view.
- * Visibility stays in sync via `onEggsChanged`. */
+/** Mounts the collection button (and its found-count) into `parent`, hidden
+ * until the first egg is found. The count shows how many have been found so
+ * far only — never the total out of `EASTER_EGGS.length` — so it doesn't
+ * spoil how many are still out there. Tapping the button opens the
+ * collection view. Visibility and count stay in sync via `onEggsChanged`. */
 export function mountEggCollectionButton(parent: HTMLElement): void {
+  const wrapper = document.createElement("div");
+  wrapper.className = "egg-collection-widget";
+
+  const count = document.createElement("span");
+  count.className = "egg-collection-count";
+  count.setAttribute("aria-hidden", "true");
+
   const button = document.createElement("button");
   button.type = "button";
   button.className = "egg-collection-toggle";
-  button.setAttribute("aria-label", "View found easter eggs");
 
   const icon = document.createElement("span");
   icon.className = "egg-collection-toggle-icon";
@@ -292,11 +344,15 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
   button.append(icon);
 
   function updateVisibility(): void {
-    button.hidden = unlockedEggCount() === 0;
+    const found = unlockedEggCount();
+    wrapper.classList.toggle("egg-collection-widget-revealed", found > 0);
+    count.textContent = String(found);
+    button.setAttribute("aria-label", `View found easter eggs (${found})`);
   }
   updateVisibility();
   onEggsChanged(updateVisibility);
 
   button.addEventListener("click", renderEggCollection);
-  parent.append(button);
+  wrapper.append(button, count);
+  parent.append(wrapper);
 }

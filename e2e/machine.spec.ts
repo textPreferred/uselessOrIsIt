@@ -140,6 +140,21 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1000 });
   });
 
+  test("the discovery toast morphs into the collection button instead of just vanishing", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // beat the antenna to it
+
+    // shortly after the plain-toast beat, it starts flying toward the button
+    await expect(page.locator(".egg-toast .egg-card")).toHaveClass(
+      /egg-card-morph/,
+      { timeout: 1200 },
+    );
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1600 });
+  });
+
   test("releasing before the antenna arrives doesn't rush it off", async ({
     page,
   }) => {
@@ -755,6 +770,39 @@ test.describe("useless machine", () => {
     page,
   }) => {
     await expect(page.locator(".egg-collection-toggle")).toBeHidden();
+  });
+
+  test("the collection button shows how many eggs have been found so far", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await expect(page.locator(".egg-collection-count")).toHaveText("1");
+    // count sits to the right of the button, not the left
+    await expect(
+      page.locator(".egg-collection-toggle + .egg-collection-count"),
+    ).toHaveCount(1);
+  });
+
+  test("the collection button waits for the toast to land before appearing", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+
+    // toast is still up, mid-flight — the button hasn't landed yet
+    await page.waitForTimeout(600);
+    await expect(page.locator(".egg-toast")).toBeVisible();
+    await expect(page.locator(".egg-collection-toggle")).toBeHidden();
+
+    // once the toast is fully gone, the button (and its count) are there
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1000 });
+    await expect(page.locator(".egg-collection-toggle")).toBeVisible();
+    await expect(page.locator(".egg-collection-count")).toHaveText("1");
   });
 
   test("a found easter egg reveals the collection button and stays viewable, without spoiling what's still missing", async ({
