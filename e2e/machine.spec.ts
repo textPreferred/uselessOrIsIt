@@ -56,6 +56,12 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).not.toBeChecked();
   });
 
+  test("shows a feedback button wired to the Tally form", async ({ page }) => {
+    const feedbackButton = page.getByRole("button", { name: "Give feedback" });
+    await expect(feedbackButton).toBeVisible();
+    await expect(feedbackButton).toHaveAttribute("data-tally-open", "0Qz2gP");
+  });
+
   test("turns on when the top half is clicked", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
