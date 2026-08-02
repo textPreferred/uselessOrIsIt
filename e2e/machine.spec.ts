@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { EASTER_EGGS, STORAGE_KEY } from "../src/easter-eggs";
 import { BASE_CONTACT_DELAY_MS } from "../src/ui";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
@@ -781,10 +782,25 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await expect(page.locator(".egg-collection-count")).toHaveText("1");
-    // count sits to the right of the button, not the left
+    // count immediately follows the button in the markup
     await expect(
       page.locator(".egg-collection-toggle + .egg-collection-count"),
     ).toHaveCount(1);
+  });
+
+  test("the count sits below the button, not beside it", async ({ page }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const buttonBox = await page
+      .locator(".egg-collection-toggle")
+      .boundingBox();
+    const countBox = await page.locator(".egg-collection-count").boundingBox();
+    if (!buttonBox || !countBox) throw new Error("missing bounding box");
+
+    expect(countBox.y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height);
   });
 
   test("the collection button waits for the toast to land before appearing", async ({
@@ -829,5 +845,26 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-collection-overlay")).toBeHidden();
     await toggle.click();
     await expect(page.locator(".egg-collection-item")).toHaveCount(1);
+  });
+
+  test("once every easter egg is found, the badge says so instead of a count", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ key, ids }) => localStorage.setItem(key, JSON.stringify(ids)),
+      { key: STORAGE_KEY, ids: EASTER_EGGS.map((egg) => egg.id) },
+    );
+    await page.goto("./");
+
+    await expect(page.locator(".egg-collection-count")).toHaveText("All found");
+    await expect(page.locator(".egg-collection-toggle")).toHaveAttribute(
+      "aria-label",
+      /all found/i,
+    );
+
+    await page.locator(".egg-collection-toggle").click();
+    await expect(page.locator(".egg-collection-card")).toContainText(
+      "All found!",
+    );
   });
 });

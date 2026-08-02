@@ -1093,8 +1093,9 @@ body {
   right: 0.9rem;
   z-index: 10;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   opacity: 0;
   visibility: hidden;
   transform: scale(0.6);
@@ -1118,6 +1119,12 @@ body {
   font-size: 0.9rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.egg-collection-count-complete {
+  background: rgb(240 180 41 / 85%);
+  color: #1a1200;
 }
 
 .egg-collection-toggle {
@@ -1161,6 +1168,13 @@ body {
 
 .egg-collection-card .egg-eyebrow {
   text-align: center;
+}
+
+.egg-all-found {
+  margin: -0.3rem 0 1rem;
+  text-align: center;
+  font-weight: 700;
+  color: #f0b429;
 }
 
 .egg-collection-list {

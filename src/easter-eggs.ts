@@ -50,7 +50,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   },
 ];
 
-const STORAGE_KEY = "uselessMachine.easterEggs";
+export const STORAGE_KEY = "uselessMachine.easterEggs";
 
 function loadUnlocked(): Set<string> {
   try {
@@ -289,6 +289,15 @@ function renderEggCollection(): void {
   eyebrow.className = "egg-eyebrow";
   eyebrow.textContent = "Easter eggs found";
 
+  if (unlockedEggCount() === EASTER_EGGS.length) {
+    const allFound = document.createElement("p");
+    allFound.className = "egg-all-found";
+    allFound.textContent = "All found!";
+    card.append(eyebrow, allFound);
+  } else {
+    card.append(eyebrow);
+  }
+
   const list = document.createElement("ul");
   list.className = "egg-collection-list";
   for (const egg of EASTER_EGGS) {
@@ -315,15 +324,17 @@ function renderEggCollection(): void {
   closeButton.textContent = "Close";
   closeButton.addEventListener("click", () => overlay.remove());
 
-  card.append(eyebrow, list, closeButton);
+  card.append(list, closeButton);
   overlay.append(card);
   document.body.appendChild(overlay);
 }
 
 /** Mounts the collection button (and its found-count) into `parent`, hidden
- * until the first egg is found. The count shows how many have been found so
- * far only — never the total out of `EASTER_EGGS.length` — so it doesn't
- * spoil how many are still out there. Tapping the button opens the
+ * until the first egg is found. Before every egg is found, the count shows
+ * how many have been found so far only — never the total out of
+ * `EASTER_EGGS.length` — so it doesn't spoil how many are still out there.
+ * Once the last one lands, there's nothing left to spoil, so the badge
+ * switches to "All found" instead of a number. Tapping the button opens the
  * collection view. Visibility and count stay in sync via `onEggsChanged`. */
 export function mountEggCollectionButton(parent: HTMLElement): void {
   const wrapper = document.createElement("div");
@@ -345,9 +356,16 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
 
   function updateVisibility(): void {
     const found = unlockedEggCount();
+    const allFound = found === EASTER_EGGS.length;
     wrapper.classList.toggle("egg-collection-widget-revealed", found > 0);
-    count.textContent = String(found);
-    button.setAttribute("aria-label", `View found easter eggs (${found})`);
+    count.classList.toggle("egg-collection-count-complete", allFound);
+    count.textContent = allFound ? "All found" : String(found);
+    button.setAttribute(
+      "aria-label",
+      allFound
+        ? "View found easter eggs (all found)"
+        : `View found easter eggs (${found})`,
+    );
   }
   updateVisibility();
   onEggsChanged(updateVisibility);
