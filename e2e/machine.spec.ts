@@ -140,6 +140,21 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1000 });
   });
 
+  test("the discovery toast morphs into the collection button instead of just vanishing", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // beat the antenna to it
+
+    // shortly after the plain-toast beat, it starts flying toward the button
+    await expect(page.locator(".egg-toast .egg-card")).toHaveClass(
+      /egg-card-morph/,
+      { timeout: 1200 },
+    );
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1600 });
+  });
+
   test("releasing before the antenna arrives doesn't rush it off", async ({
     page,
   }) => {
