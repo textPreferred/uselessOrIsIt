@@ -1017,6 +1017,10 @@ body {
 
 /* ---- easter egg collection ---- */
 
+/* Stays laid out (never `display:none`) even before the first find, so its
+   on-screen position is always there for the discovery toast to morph
+   toward — only opacity/visibility hide it until `-revealed` is added,
+   which happens the instant the toast finishes landing on it. */
 .egg-collection-widget {
   position: absolute;
   top: 0.9rem;
@@ -1025,10 +1029,19 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.6);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.3, 1.4, 0.4, 1),
+    visibility 0.25s;
 }
 
-.egg-collection-widget[hidden] {
-  display: none;
+.egg-collection-widget-revealed {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
 }
 
 .egg-collection-count {

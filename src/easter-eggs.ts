@@ -195,6 +195,10 @@ function showNextToast(): void {
       () => {
         overlay.remove();
         toastShowing = false;
+        // fires only once the toast has visibly landed on the collection
+        // button, so it appears (and its count ticks up) right as the find
+        // arrives there instead of popping in at the start
+        notifyChanged();
         showNextToast();
       },
       morphing ? MORPH_DURATION_MS : 0,
@@ -212,7 +216,6 @@ export function unlockEasterEgg(id: string): void {
   saveUnlocked(unlocked);
   toastQueue.push(egg);
   showNextToast();
-  notifyChanged();
 }
 
 /** Whether the given egg has been found. */
@@ -342,7 +345,7 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
 
   function updateVisibility(): void {
     const found = unlockedEggCount();
-    wrapper.hidden = found === 0;
+    wrapper.classList.toggle("egg-collection-widget-revealed", found > 0);
     count.textContent = String(found);
     button.setAttribute("aria-label", `View found easter eggs (${found})`);
   }
