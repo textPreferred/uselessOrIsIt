@@ -50,7 +50,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   },
 ];
 
-const STORAGE_KEY = "uselessMachine.easterEggs";
+export const STORAGE_KEY = "uselessMachine.easterEggs";
 
 function loadUnlocked(): Set<string> {
   try {

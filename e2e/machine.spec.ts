@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { EASTER_EGGS, STORAGE_KEY } from "../src/easter-eggs";
 import { BASE_CONTACT_DELAY_MS } from "../src/ui";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
@@ -829,5 +830,26 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-collection-overlay")).toBeHidden();
     await toggle.click();
     await expect(page.locator(".egg-collection-item")).toHaveCount(1);
+  });
+
+  test("once every easter egg is found, the badge says so instead of a count", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ key, ids }) => localStorage.setItem(key, JSON.stringify(ids)),
+      { key: STORAGE_KEY, ids: EASTER_EGGS.map((egg) => egg.id) },
+    );
+    await page.goto("./");
+
+    await expect(page.locator(".egg-collection-count")).toHaveText("All found");
+    await expect(page.locator(".egg-collection-toggle")).toHaveAttribute(
+      "aria-label",
+      /all found/i,
+    );
+
+    await page.locator(".egg-collection-toggle").click();
+    await expect(page.locator(".egg-collection-card")).toContainText(
+      "All found!",
+    );
   });
 });
