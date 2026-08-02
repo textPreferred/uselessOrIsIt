@@ -1087,6 +1087,27 @@ body {
    on-screen position is always there for the discovery toast to morph
    toward — only opacity/visibility hide it until `-revealed` is added,
    which happens the instant the toast finishes landing on it. */
+.feedback-button {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 10;
+  appearance: none;
+  border: 0;
+  border-radius: 1.4rem;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgb(0 0 0 / 30%);
+  cursor: pointer;
+}
+
+.feedback-button:hover {
+  background: rgb(0 0 0 / 45%);
+}
+
 .egg-collection-widget {
   position: absolute;
   top: 0.9rem;
