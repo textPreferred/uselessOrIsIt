@@ -163,6 +163,17 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       <div class="antenna" data-testid="arm" aria-hidden="true">
         <span class="seg-1"></span><span class="seg-2"></span><span class="seg-3"></span><span class="knob"></span>
       </div>
+      <button
+        type="button"
+        class="feedback-button"
+        data-tally-open="0Qz2gP"
+        data-tally-hide-title="1"
+        data-tally-emoji-text="💬"
+        data-tally-emoji-animation="wave"
+        aria-label="Give feedback"
+      >
+        💬
+      </button>
     </div>
   `;
 

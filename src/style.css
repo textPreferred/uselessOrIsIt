@@ -1081,6 +1081,32 @@ body {
     opacity 0.3s ease;
 }
 
+/* ---- feedback button ---- */
+
+.feedback-button {
+  position: absolute;
+  bottom: 0.9rem;
+  right: 0.9rem;
+  z-index: 10;
+  appearance: none;
+  border: 0;
+  border-radius: 50%;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #fff;
+  background: rgb(0 0 0 / 30%);
+  cursor: pointer;
+}
+
+.feedback-button:hover {
+  background: rgb(0 0 0 / 45%);
+}
+
 /* ---- easter egg collection ---- */
 
 /* Stays laid out (never `display:none`) even before the first find, so its
