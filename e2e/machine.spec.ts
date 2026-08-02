@@ -782,10 +782,25 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await expect(page.locator(".egg-collection-count")).toHaveText("1");
-    // count sits to the right of the button, not the left
+    // count immediately follows the button in the markup
     await expect(
       page.locator(".egg-collection-toggle + .egg-collection-count"),
     ).toHaveCount(1);
+  });
+
+  test("the count sits below the button, not beside it", async ({ page }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const buttonBox = await page
+      .locator(".egg-collection-toggle")
+      .boundingBox();
+    const countBox = await page.locator(".egg-collection-count").boundingBox();
+    if (!buttonBox || !countBox) throw new Error("missing bounding box");
+
+    expect(countBox.y).toBeGreaterThanOrEqual(buttonBox.y + buttonBox.height);
   });
 
   test("the collection button waits for the toast to land before appearing", async ({
