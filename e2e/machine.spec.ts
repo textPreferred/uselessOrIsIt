@@ -709,6 +709,24 @@ test.describe("useless machine", () => {
     ).toHaveCount(1);
   });
 
+  test("the collection button waits for the toast to land before appearing", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+
+    // toast is still up, mid-flight — the button hasn't landed yet
+    await page.waitForTimeout(600);
+    await expect(page.locator(".egg-toast")).toBeVisible();
+    await expect(page.locator(".egg-collection-toggle")).toBeHidden();
+
+    // once the toast is fully gone, the button (and its count) are there
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1000 });
+    await expect(page.locator(".egg-collection-toggle")).toBeVisible();
+    await expect(page.locator(".egg-collection-count")).toHaveText("1");
+  });
+
   test("a found easter egg reveals the collection button and stays viewable, without spoiling what's still missing", async ({
     page,
   }) => {
