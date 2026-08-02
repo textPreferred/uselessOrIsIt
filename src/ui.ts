@@ -172,7 +172,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         data-tally-emoji-animation="wave"
         aria-label="Give feedback"
       >
-        💬 Feedback
+        💬
       </button>
     </div>
   `;
