@@ -23,6 +23,11 @@ All work happens through PRs — designed to be driveable entirely from a phone:
 
 Dependabot opens grouped hourly update PRs that auto-merge once the pipeline passes.
 
+A `changes` job at the start of the pipeline diffs the PR/push against its
+base and skips `check`, `test`, `preview`, and `deploy` entirely when every
+changed file is `**/*.md`, `docs/**`, or `.agents/**` — docs-only changes
+merge straight through without a build or test run.
+
 ### TDD convention
 
 Development is strict red/green/refactor with one commit per state:
