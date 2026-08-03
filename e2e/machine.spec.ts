@@ -72,6 +72,48 @@ test.describe("useless machine", () => {
     );
   });
 
+  test("prefills the Tally form's browser-string field with the user agent", async ({
+    page,
+  }) => {
+    const feedbackButton = page.getByRole("button", { name: "Give feedback" });
+    const userAgent = await page.evaluate(() => navigator.userAgent);
+    await expect(feedbackButton).toHaveAttribute(
+      "data-tally-hidden-browser-string",
+      userAgent,
+    );
+  });
+
+  test("prefills the Tally form's operating-system field", async ({ page }) => {
+    const feedbackButton = page.getByRole("button", { name: "Give feedback" });
+    const userAgent = await page.evaluate(() => navigator.userAgent);
+    const expectedOs = /Android/.test(userAgent)
+      ? "Android"
+      : /iPhone|iPad|iPod/.test(userAgent)
+        ? "iOS"
+        : /Windows/.test(userAgent)
+          ? "Windows"
+          : /Macintosh|Mac OS X/.test(userAgent)
+            ? "Mac"
+            : /Linux/.test(userAgent)
+              ? "Linux"
+              : "Unknown";
+    await expect(feedbackButton).toHaveAttribute(
+      "data-tally-hidden-operating-system",
+      expectedOs,
+    );
+  });
+
+  test("prefills the Tally form's language-preferences field", async ({
+    page,
+  }) => {
+    const feedbackButton = page.getByRole("button", { name: "Give feedback" });
+    const languages = await page.evaluate(() => navigator.languages.join(", "));
+    await expect(feedbackButton).toHaveAttribute(
+      "data-tally-hidden-language-preferences",
+      languages,
+    );
+  });
+
   test("shows a build version on the nameplate below the serial number", async ({
     page,
   }) => {
