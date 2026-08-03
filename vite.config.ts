@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { defineConfig, type Plugin } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
+import { appVersion } from "./scripts/version.mjs";
 
 function commitSha(): string {
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
@@ -10,24 +10,6 @@ function commitSha(): string {
   } catch {
     return "unknown";
   }
-}
-
-// major.minor is bumped by hand in package.json — a minor per shipped
-// feature, a major only for a big, possibly disruptive change in game
-// experience. The patch is never bumped by hand: it's every commit on
-// main, so it climbs on its own with each build.
-function appVersion(): string {
-  const { version } = JSON.parse(
-    readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
-  ) as { version: string };
-  const [major, minor] = version.split(".");
-  let patch = "0";
-  try {
-    patch = execSync("git rev-list --count HEAD").toString().trim();
-  } catch {
-    // no git history available — leave patch at 0 rather than fail the build
-  }
-  return `v${major}.${minor}.${patch}`;
 }
 
 // Drops the Google Fonts <link> tags so the PR preview build never makes an
