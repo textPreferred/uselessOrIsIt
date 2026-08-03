@@ -62,6 +62,16 @@ test.describe("useless machine", () => {
     await expect(feedbackButton).toHaveAttribute("data-tally-open", "0Qz2gP");
   });
 
+  test("prefills the Tally form's version-number field with the app version", async ({
+    page,
+  }) => {
+    const feedbackButton = page.getByRole("button", { name: "Give feedback" });
+    await expect(feedbackButton).toHaveAttribute(
+      "data-tally-hidden-version-number",
+      /^v\d+\.\d+\.\d+$/,
+    );
+  });
+
   test("shows a build version on the nameplate below the serial number", async ({
     page,
   }) => {
