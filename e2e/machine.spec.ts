@@ -67,7 +67,7 @@ test.describe("useless machine", () => {
   }) => {
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     await expect(feedbackButton).toHaveAttribute(
-      "data-tally-hidden-version-number",
+      "data-version-number",
       /^v\d+\.\d+\.\d+$/,
     );
   });
@@ -78,7 +78,7 @@ test.describe("useless machine", () => {
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     const userAgent = await page.evaluate(() => navigator.userAgent);
     await expect(feedbackButton).toHaveAttribute(
-      "data-tally-hidden-browser-string",
+      "data-browser-string",
       userAgent,
     );
   });
@@ -98,7 +98,7 @@ test.describe("useless machine", () => {
               ? "Linux"
               : "Unknown";
     await expect(feedbackButton).toHaveAttribute(
-      "data-tally-hidden-operating-system",
+      "data-operating-system",
       expectedOs,
     );
   });
@@ -109,7 +109,7 @@ test.describe("useless machine", () => {
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     const languages = await page.evaluate(() => navigator.languages.join(", "));
     await expect(feedbackButton).toHaveAttribute(
-      "data-tally-hidden-language-preferences",
+      "data-language-preferences",
       languages,
     );
   });
