@@ -46,3 +46,5 @@ Development is strict red/green/refactor with one commit per state:
 - `src/main.ts` — wiring only.
 
 The switch is a real `role="switch"` button, so tests assert on semantics (`aria-checked`), not CSS internals.
+
+<!-- docs-only test commit for CI bypass verification -->
