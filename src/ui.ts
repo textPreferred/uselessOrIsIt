@@ -159,6 +159,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       <div class="nameplate" aria-hidden="true">
         <span class="nameplate-model">Useless Machine <span class="nameplate-mark">?</span></span>
         <span class="nameplate-serial">S/N ${serialize(__COMMIT_SHA__)}</span>
+        <span class="nameplate-version">${__APP_VERSION__}</span>
       </div>
       <div class="antenna" data-testid="arm" aria-hidden="true">
         <span class="seg-1"></span><span class="seg-2"></span><span class="seg-3"></span><span class="knob"></span>
