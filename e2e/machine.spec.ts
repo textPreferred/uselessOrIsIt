@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { EASTER_EGGS, STORAGE_KEY } from "../src/easter-eggs";
+import { EASTER_EGGS, SEEN_STORAGE_KEY, STORAGE_KEY } from "../src/easter-eggs";
 import { BASE_CONTACT_DELAY_MS } from "../src/ui";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
@@ -779,7 +779,7 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-collection-toggle")).toBeHidden();
   });
 
-  test("the collection button shows how many eggs have been found so far", async ({
+  test("the collection button shows a pending +N badge for a freshly found egg, not yet folded into the count", async ({
     page,
   }) => {
     const machineSwitch = page.getByRole("switch");
@@ -787,7 +787,7 @@ test.describe("useless machine", () => {
     await clickBottom(machineSwitch); // unlock "beat-the-antenna"
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
-    await expect(page.locator(".egg-collection-count")).toHaveText("1");
+    await expect(page.locator(".egg-collection-count")).toHaveText("+1");
     // count immediately follows the button in the markup
     await expect(
       page.locator(".egg-collection-toggle + .egg-collection-count"),
@@ -824,7 +824,7 @@ test.describe("useless machine", () => {
     // once the toast is fully gone, the button (and its count) are there
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1000 });
     await expect(page.locator(".egg-collection-toggle")).toBeVisible();
-    await expect(page.locator(".egg-collection-count")).toHaveText("1");
+    await expect(page.locator(".egg-collection-count")).toHaveText("+1");
   });
 
   test("a found easter egg reveals the collection button and stays viewable, without spoiling what's still missing", async ({
@@ -856,9 +856,18 @@ test.describe("useless machine", () => {
   test("once every easter egg is found, the badge says so instead of a count", async ({
     page,
   }) => {
+    // seeded as already-viewed, not a pile of unseen finds — that's its own
+    // "+N" badge, covered separately below
     await page.addInitScript(
-      ({ key, ids }) => localStorage.setItem(key, JSON.stringify(ids)),
-      { key: STORAGE_KEY, ids: EASTER_EGGS.map((egg) => egg.id) },
+      ({ storageKey, seenKey, ids }) => {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+        localStorage.setItem(seenKey, JSON.stringify(ids));
+      },
+      {
+        storageKey: STORAGE_KEY,
+        seenKey: SEEN_STORAGE_KEY,
+        ids: EASTER_EGGS.map((egg) => egg.id),
+      },
     );
     await page.goto("./");
 
@@ -871,6 +880,89 @@ test.describe("useless machine", () => {
     await page.locator(".egg-collection-toggle").click();
     await expect(page.locator(".egg-collection-card")).toContainText(
       "All found!",
+    );
+  });
+
+  /** Backs out of the four-screw sequence with a decline, unlocking the
+   * anti-easter-egg without wiping the collection — a second, distinct egg
+   * that's quick to trigger without any waits of its own. */
+  async function collectAntiEasterEgg(page: Page): Promise<void> {
+    await clickScrewsClockwise(page);
+    await page
+      .getByRole("button", {
+        name: "Don't reset my easter eggs, but collect this one anyway.",
+      })
+      .click();
+  }
+
+  test("a second egg found before viewing the collection bumps the pending badge to +2", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const count = page.locator(".egg-collection-count");
+    await expect(count).toHaveText("+1");
+    await expect(count).toHaveClass(/egg-collection-count-pending/);
+
+    await collectAntiEasterEgg(page);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await expect(count).toHaveText("+2");
+  });
+
+  test("closing the collection settles the pending badge into a plain count, until the next new find", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const count = page.locator(".egg-collection-count");
+    await page.locator(".egg-collection-toggle").click();
+    await page.locator(".egg-collection-close").click();
+
+    await expect(count).toHaveText("1");
+    await expect(count).not.toHaveClass(/egg-collection-count-pending/);
+
+    await collectAntiEasterEgg(page);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await expect(count).toHaveText("+1");
+  });
+
+  test("the collection view puts newly found eggs on top and highlighted, until it's closed", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const toggle = page.locator(".egg-collection-toggle");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    // view and close it, so this first egg is no longer "new" by the time
+    // the second one is found
+    await toggle.click();
+    await page.locator(".egg-collection-close").click();
+
+    await collectAntiEasterEgg(page);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await toggle.click();
+    const items = page.locator(".egg-collection-item");
+    await expect(items).toHaveCount(2);
+    await expect(items.first()).toContainText(/tighten the screws/i);
+    await expect(items.first()).toHaveClass(/egg-collection-item-new/);
+    await expect(items.last()).not.toHaveClass(/egg-collection-item-new/);
+
+    // closing marks it seen — reopening no longer highlights it
+    await page.locator(".egg-collection-close").click();
+    await toggle.click();
+    await expect(page.locator(".egg-collection-item").first()).not.toHaveClass(
+      /egg-collection-item-new/,
     );
   });
 });
