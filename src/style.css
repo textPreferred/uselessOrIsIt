@@ -1153,6 +1153,23 @@ body {
   color: #1a1200;
 }
 
+.egg-collection-count-pending {
+  background: var(--red);
+  color: #fff;
+  animation: egg-count-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes egg-count-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.12);
+  }
+}
+
 .egg-collection-toggle {
   appearance: none;
   border: 0;
@@ -1218,6 +1235,12 @@ body {
   border-radius: 0.6rem;
   padding: 0.55rem 0.7rem;
   background: color-mix(in srgb, var(--card-ink) 6%, transparent);
+  border: 1px solid transparent;
+}
+
+.egg-collection-item-new {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  border-color: color-mix(in srgb, var(--red) 40%, transparent);
 }
 
 .egg-collection-item .egg-title {
@@ -1237,7 +1260,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .egg-toast,
   .egg-card,
-  .egg-confetti-piece {
+  .egg-confetti-piece,
+  .egg-collection-count-pending {
     animation: none;
   }
 

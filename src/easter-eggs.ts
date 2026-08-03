@@ -51,27 +51,52 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
 ];
 
 export const STORAGE_KEY = "uselessMachine.easterEggs";
+export const SEEN_STORAGE_KEY = "uselessMachine.easterEggsSeen";
 
-function loadUnlocked(): Set<string> {
+function loadIds(key: string): Set<string> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? new Set(JSON.parse(raw)) : new Set();
   } catch {
     return new Set(); // storage unavailable — easter eggs just won't persist
   }
 }
 
-function saveUnlocked(ids: Set<string>): void {
+function saveIds(key: string, ids: Set<string>): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+    localStorage.setItem(key, JSON.stringify([...ids]));
   } catch {
     /* storage unavailable — still works for this session */
   }
 }
 
-const unlocked = loadUnlocked();
+const unlocked = loadIds(STORAGE_KEY);
+// Found eggs the collection view has already shown and been closed on —
+// the complement within `unlocked` is what's still "new" and drives the
+// "+N" badge instead of the running total.
+const seen = loadIds(SEEN_STORAGE_KEY);
 const toastQueue: EasterEgg[] = [];
 let toastShowing = false;
+
+function pendingIds(): string[] {
+  return [...unlocked].filter((id) => !seen.has(id));
+}
+
+/** How many found eggs haven't been viewed in the collection list yet. */
+export function pendingEggCount(): number {
+  return pendingIds().length;
+}
+
+/** Marks every currently-pending egg as seen, collapsing the "+N" badge
+ * back into a plain count. Called when the collection view closes, not
+ * when it opens, so new eggs stay highlighted for as long as it's open. */
+function markPendingSeen(): void {
+  const ids = pendingIds();
+  if (ids.length === 0) return;
+  for (const id of ids) seen.add(id);
+  saveIds(SEEN_STORAGE_KEY, seen);
+  notifyChanged();
+}
 
 const changeListeners: Array<() => void> = [];
 
@@ -213,7 +238,7 @@ export function unlockEasterEgg(id: string): void {
   const egg = EASTER_EGGS.find((e) => e.id === id);
   if (!egg) return;
   unlocked.add(id);
-  saveUnlocked(unlocked);
+  saveIds(STORAGE_KEY, unlocked);
   toastQueue.push(egg);
   showNextToast();
 }
@@ -250,7 +275,9 @@ export function offerEasterEggReset(): void {
   resetButton.textContent = "Yes, reset my easter eggs";
   resetButton.addEventListener("click", () => {
     unlocked.clear();
-    saveUnlocked(unlocked);
+    seen.clear();
+    saveIds(STORAGE_KEY, unlocked);
+    saveIds(SEEN_STORAGE_KEY, seen);
     notifyChanged();
     overlay.remove();
   });
@@ -276,10 +303,21 @@ export function offerEasterEggReset(): void {
  * missing — no count, no locked placeholders — so a find stays visible any
  * time, not just in the toast that announced it. */
 function renderEggCollection(): void {
+  // Snapshotted once up front: eggs found since the view was last closed
+  // stay on top and highlighted for this whole viewing, even once closing
+  // it marks them seen for next time.
+  const newIds = new Set(pendingIds());
+
   const overlay = document.createElement("div");
   overlay.className = "egg-toast egg-collection-overlay";
+
+  function closeCollection(): void {
+    markPendingSeen();
+    overlay.remove();
+  }
+
   overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) overlay.remove();
+    if (event.target === overlay) closeCollection();
   });
 
   const card = document.createElement("div");
@@ -300,11 +338,15 @@ function renderEggCollection(): void {
 
   const list = document.createElement("ul");
   list.className = "egg-collection-list";
-  for (const egg of EASTER_EGGS) {
-    if (!isEggUnlocked(egg.id)) continue;
-
+  const found = EASTER_EGGS.filter((egg) => isEggUnlocked(egg.id));
+  const ordered = [
+    ...found.filter((egg) => newIds.has(egg.id)),
+    ...found.filter((egg) => !newIds.has(egg.id)),
+  ];
+  for (const egg of ordered) {
     const item = document.createElement("li");
     item.className = "egg-collection-item";
+    item.classList.toggle("egg-collection-item-new", newIds.has(egg.id));
 
     const title = document.createElement("p");
     title.className = "egg-title";
@@ -322,7 +364,7 @@ function renderEggCollection(): void {
   closeButton.type = "button";
   closeButton.className = "egg-button egg-button-keep egg-collection-close";
   closeButton.textContent = "Close";
-  closeButton.addEventListener("click", () => overlay.remove());
+  closeButton.addEventListener("click", closeCollection);
 
   card.append(list, closeButton);
   overlay.append(card);
@@ -334,8 +376,11 @@ function renderEggCollection(): void {
  * how many have been found so far only — never the total out of
  * `EASTER_EGGS.length` — so it doesn't spoil how many are still out there.
  * Once the last one lands, there's nothing left to spoil, so the badge
- * switches to "All found" instead of a number. Tapping the button opens the
- * collection view. Visibility and count stay in sync via `onEggsChanged`. */
+ * switches to "All found" instead of a number — unless eggs are still
+ * pending (found but not yet viewed in the collection), in which case the
+ * badge shows "+N" for those instead, regardless of the total. Tapping the
+ * button opens the collection view; closing it settles "+N" back into a
+ * plain count. Visibility and count stay in sync via `onEggsChanged`. */
 export function mountEggCollectionButton(parent: HTMLElement): void {
   const wrapper = document.createElement("div");
   wrapper.className = "egg-collection-widget";
@@ -356,15 +401,23 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
 
   function updateVisibility(): void {
     const found = unlockedEggCount();
+    const pending = pendingEggCount();
     const allFound = found === EASTER_EGGS.length;
     wrapper.classList.toggle("egg-collection-widget-revealed", found > 0);
-    count.classList.toggle("egg-collection-count-complete", allFound);
-    count.textContent = allFound ? "All found" : String(found);
+    count.classList.toggle(
+      "egg-collection-count-complete",
+      allFound && pending === 0,
+    );
+    count.classList.toggle("egg-collection-count-pending", pending > 0);
+    count.textContent =
+      pending > 0 ? `+${pending}` : allFound ? "All found" : String(found);
     button.setAttribute(
       "aria-label",
-      allFound
-        ? "View found easter eggs (all found)"
-        : `View found easter eggs (${found})`,
+      pending > 0
+        ? `View found easter eggs (${pending} new)`
+        : allFound
+          ? "View found easter eggs (all found)"
+          : `View found easter eggs (${found})`,
     );
   }
   updateVisibility();
