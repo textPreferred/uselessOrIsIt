@@ -168,6 +168,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         type="button"
         class="feedback-button"
         data-tally-open="0Qz2gP"
+        data-tally-hidden-version-number="${__APP_VERSION__}"
         data-tally-hide-title="1"
         data-tally-emoji-text="💬"
         data-tally-emoji-animation="wave"
