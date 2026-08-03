@@ -77,7 +77,10 @@ test.describe("useless machine", () => {
   }) => {
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     const userAgent = await page.evaluate(() => navigator.userAgent);
-    await expect(feedbackButton).toHaveAttribute("data-browser-string", userAgent);
+    await expect(feedbackButton).toHaveAttribute(
+      "data-browser-string",
+      userAgent,
+    );
   });
 
   test("prefills the Tally form's operating-system field", async ({ page }) => {
@@ -94,7 +97,10 @@ test.describe("useless machine", () => {
             : /Linux/.test(userAgent)
               ? "Linux"
               : "Unknown";
-    await expect(feedbackButton).toHaveAttribute("data-operating-system", expectedOs);
+    await expect(feedbackButton).toHaveAttribute(
+      "data-operating-system",
+      expectedOs,
+    );
   });
 
   test("prefills the Tally form's language-preferences field", async ({
