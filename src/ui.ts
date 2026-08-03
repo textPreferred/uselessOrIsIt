@@ -34,6 +34,18 @@ function scaleWithPace(msAtBasePace: number, durMs: number): number {
   return (msAtBasePace / BASE_CONTACT_DELAY_MS) * durMs;
 }
 
+/** Short OS name parsed from a user agent string, for the feedback form's
+ * hidden fields — order matters since Android UAs also match /Linux/ and
+ * iOS UAs also match /like Mac OS X/. */
+function detectOperatingSystem(userAgent: string): string {
+  if (/Android/.test(userAgent)) return "Android";
+  if (/iPhone|iPad|iPod/.test(userAgent)) return "iOS";
+  if (/Windows/.test(userAgent)) return "Windows";
+  if (/Macintosh|Mac OS X/.test(userAgent)) return "Mac";
+  if (/Linux/.test(userAgent)) return "Linux";
+  return "Unknown";
+}
+
 /** How long the antenna quietly presses against a held switch before it
  * starts visibly struggling. */
 const PUSH_MS = 1300;
@@ -169,6 +181,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         class="feedback-button"
         data-tally-open="0Qz2gP"
         data-tally-hidden-version-number="${__APP_VERSION__}"
+        data-tally-hidden-browser-string="${navigator.userAgent}"
+        data-tally-hidden-operating-system="${detectOperatingSystem(navigator.userAgent)}"
+        data-tally-hidden-language-preferences="${navigator.languages.join(", ")}"
         data-tally-hide-title="1"
         data-tally-emoji-text="💬"
         data-tally-emoji-animation="wave"
