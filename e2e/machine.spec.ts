@@ -62,6 +62,14 @@ test.describe("useless machine", () => {
     await expect(feedbackButton).toHaveAttribute("data-tally-open", "0Qz2gP");
   });
 
+  test("shows a build version on the nameplate below the serial number", async ({
+    page,
+  }) => {
+    const version = page.locator(".nameplate-version");
+    await expect(version).toBeVisible();
+    await expect(version).toHaveText(/^v\d+\.\d+\.\d+$/);
+  });
+
   test("turns on when the top half is clicked", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
