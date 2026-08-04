@@ -49,6 +49,11 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     description: "You juggled some symbols.",
   },
   {
+    id: "over-the-top",
+    title: "Over the top",
+    description: "You literally stood in the way.",
+  },
+  {
     id: ANTI_EASTER_EGG_ID,
     title: "Tighten the screws",
     description: "Set or reset — your choice.",

@@ -379,6 +379,38 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).not.toBeChecked({ timeout: 3000 });
   });
 
+  test("blocking the antenna's path, without touching it, sends a second arm in from the top", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickTop(machineSwitch);
+
+    // early in its approach, so there's still a real gap between its tip
+    // and the switch to plant a finger in
+    await page.waitForTimeout(300);
+    const armBox = await arm.boundingBox();
+    const switchBox = await machineSwitch.boundingBox();
+    if (!armBox || !switchBox) throw new Error("missing bounding box");
+
+    const gapY = (armBox.y + switchBox.y + switchBox.height) / 2;
+    await page.mouse.move(switchBox.x + switchBox.width / 2, gapY);
+    await page.mouse.down();
+
+    // held mid-gap, never touching the arm itself — still on, blocking the
+    // path holds the machine exactly like a direct block does
+    await page.waitForTimeout(300);
+    await expect(machineSwitch).toBeChecked();
+
+    // let go: it gives up on that path and comes in from the top instead
+    await page.mouse.up();
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "over-the-top",
+    );
+    await expect(machineSwitch).not.toBeChecked({ timeout: 2000 });
+  });
+
   test("provoking the antenna by blocking it unlocks an easter egg", async ({
     page,
   }) => {
