@@ -98,8 +98,9 @@ export function pendingEggCount(): number {
 }
 
 /** Marks every currently-pending egg as seen, collapsing the "+N" badge
- * back into a plain count. Called when the collection view closes, not
- * when it opens, so new eggs stay highlighted for as long as it's open. */
+ * back into the found/total fraction. Called when the collection view
+ * closes, not when it opens, so new eggs stay highlighted for as long as
+ * it's open. */
 function markPendingSeen(): void {
   const ids = pendingIds();
   if (ids.length === 0) return;
@@ -132,15 +133,18 @@ function addConfetti(card: HTMLDivElement): void {
   }
 }
 
-/** Builds the eyebrow/title/desc header shared by cards that need the user
- * to actually read them (the anti-easter-egg's reset confirmation). */
+/** Builds the eyebrow/title/desc header for the anti-easter-egg's reset
+ * confirmation. Its eyebrow reads "Secret found", not "Easter egg found" —
+ * finding the screw sequence only surfaces this offer, it doesn't unlock
+ * the egg. That happens only if the user picks "collect this one anyway"
+ * instead of resetting. */
 function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "egg-card";
 
   const eyebrow = document.createElement("p");
   eyebrow.className = "egg-eyebrow";
-  eyebrow.textContent = "Easter egg found";
+  eyebrow.textContent = "Secret found";
 
   const title = document.createElement("p");
   title.className = "egg-title";
@@ -383,14 +387,14 @@ function renderEggCollection(): void {
 
 /** Mounts the collection button (and its found-count) into `parent`, hidden
  * until the first egg is found. Before every egg is found, the count shows
- * how many have been found so far only — never the total out of
- * `EASTER_EGGS.length` — so it doesn't spoil how many are still out there.
- * Once the last one lands, there's nothing left to spoil, so the badge
- * switches to "All found" instead of a number — unless eggs are still
- * pending (found but not yet viewed in the collection), in which case the
- * badge shows "+N" for those instead, regardless of the total. Tapping the
- * button opens the collection view; closing it settles "+N" back into a
- * plain count. Visibility and count stay in sync via `onEggsChanged`. */
+ * the found/total fraction, e.g. "2/8" — unless eggs are still pending
+ * (found but not yet viewed in the collection), in which case the badge
+ * shows "+N" for those instead. Once the last egg lands, the badge switches
+ * to "All found" immediately, overriding any still-pending "+N" — there's
+ * nothing left to reveal by opening the collection, so no reason to make
+ * that wait. Tapping the button opens the collection view; closing it
+ * settles "+N" back into the fraction. Visibility and count stay in sync
+ * via `onEggsChanged`. */
 export function mountEggCollectionButton(parent: HTMLElement): void {
   const wrapper = document.createElement("div");
   wrapper.className = "egg-collection-widget";
@@ -412,22 +416,26 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
   function updateVisibility(): void {
     const found = unlockedEggCount();
     const pending = pendingEggCount();
-    const allFound = found === EASTER_EGGS.length;
+    const total = EASTER_EGGS.length;
+    const allFound = found === total;
     wrapper.classList.toggle("egg-collection-widget-revealed", found > 0);
+    count.classList.toggle("egg-collection-count-complete", allFound);
     count.classList.toggle(
-      "egg-collection-count-complete",
-      allFound && pending === 0,
+      "egg-collection-count-pending",
+      pending > 0 && !allFound,
     );
-    count.classList.toggle("egg-collection-count-pending", pending > 0);
-    count.textContent =
-      pending > 0 ? `+${pending}` : allFound ? "All found" : String(found);
+    count.textContent = allFound
+      ? "All found"
+      : pending > 0
+        ? `+${pending}`
+        : `${found}/${total}`;
     button.setAttribute(
       "aria-label",
-      pending > 0
-        ? `View found easter eggs (${pending} new)`
-        : allFound
-          ? "View found easter eggs (all found)"
-          : `View found easter eggs (${found})`,
+      allFound
+        ? "View found easter eggs (all found)"
+        : pending > 0
+          ? `View found easter eggs (${pending} new)`
+          : `View found easter eggs (${found} of ${total})`,
     );
   }
   updateVisibility();
