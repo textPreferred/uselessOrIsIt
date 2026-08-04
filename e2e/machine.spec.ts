@@ -476,6 +476,16 @@ test.describe("useless machine", () => {
     ).toBeVisible();
   });
 
+  test("the reset offer doesn't claim an easter egg was found before it's collected", async ({
+    page,
+  }) => {
+    await clickScrewsClockwise(page);
+    await expect(page.locator(".egg-eyebrow")).toHaveText("Secret found");
+    await expect(page.locator(".egg-eyebrow")).not.toHaveText(
+      "Easter egg found",
+    );
+  });
+
   test("clicking screws out of order doesn't offer to reset", async ({
     page,
   }) => {
@@ -1060,13 +1070,64 @@ test.describe("useless machine", () => {
     await page.locator(".egg-collection-toggle").click();
     await page.locator(".egg-collection-close").click();
 
-    await expect(count).toHaveText("1");
+    await expect(count).toHaveText(`1/${EASTER_EGGS.length}`);
     await expect(count).not.toHaveClass(/egg-collection-count-pending/);
 
     await collectAntiEasterEgg(page);
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await expect(count).toHaveText("+1");
+  });
+
+  test("the settled badge shows the found/total fraction, not just the found count", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ storageKey, seenKey, ids }) => {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+        localStorage.setItem(seenKey, JSON.stringify(ids));
+      },
+      {
+        storageKey: STORAGE_KEY,
+        seenKey: SEEN_STORAGE_KEY,
+        ids: EASTER_EGGS.slice(0, 3).map((egg) => egg.id),
+      },
+    );
+    await page.goto("./");
+
+    await expect(page.locator(".egg-collection-count")).toHaveText(
+      `3/${EASTER_EGGS.length}`,
+    );
+  });
+
+  test("finding the last egg shows All found immediately, even though it's still pending", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ storageKey, seenKey, ids }) => {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+        localStorage.setItem(seenKey, JSON.stringify(ids));
+      },
+      {
+        storageKey: STORAGE_KEY,
+        seenKey: SEEN_STORAGE_KEY,
+        ids: EASTER_EGGS.filter((egg) => egg.id !== "beat-the-antenna").map(
+          (egg) => egg.id,
+        ),
+      },
+    );
+    await page.goto("./");
+
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock the last remaining egg
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const count = page.locator(".egg-collection-count");
+    await expect(count).toHaveText("All found");
+    await expect(count).not.toHaveText("+1");
+    await expect(count).toHaveClass(/egg-collection-count-complete/);
+    await expect(count).not.toHaveClass(/egg-collection-count-pending/);
   });
 
   test("the collection view puts newly found eggs on top and highlighted, until it's closed", async ({
