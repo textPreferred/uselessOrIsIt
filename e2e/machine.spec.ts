@@ -471,7 +471,7 @@ test.describe("useless machine", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("button", {
-        name: "Don't reset my easter eggs, but collect this one anyway.",
+        name: "Don't reset my easter eggs.",
       }),
     ).toBeVisible();
   });
@@ -502,7 +502,7 @@ test.describe("useless machine", () => {
     await clickScrewsClockwise(page);
     await page
       .getByRole("button", {
-        name: "Don't reset my easter eggs, but collect this one anyway.",
+        name: "Don't reset my easter eggs.",
       })
       .click();
     await expect(page.locator(".egg-toast")).toHaveAttribute(
@@ -1035,7 +1035,7 @@ test.describe("useless machine", () => {
     await clickScrewsClockwise(page);
     await page
       .getByRole("button", {
-        name: "Don't reset my easter eggs, but collect this one anyway.",
+        name: "Don't reset my easter eggs.",
       })
       .click();
   }

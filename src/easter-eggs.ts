@@ -299,8 +299,7 @@ export function offerEasterEggReset(): void {
   const keepButton = document.createElement("button");
   keepButton.type = "button";
   keepButton.className = "egg-button egg-button-keep";
-  keepButton.textContent =
-    "Don't reset my easter eggs, but collect this one anyway.";
+  keepButton.textContent = "Don't reset my easter eggs.";
   keepButton.addEventListener("click", () => {
     overlay.remove();
     unlockEasterEgg(ANTI_EASTER_EGG_ID);
