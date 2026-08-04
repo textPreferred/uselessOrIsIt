@@ -122,6 +122,20 @@ test.describe("useless machine", () => {
     await expect(version).toHaveText(/^v\d+\.\d+\.\d+$/);
   });
 
+  test("clicking the nameplate's question mark twice cycles it and unlocks an easter egg", async ({
+    page,
+  }) => {
+    const mark = page.locator(".nameplate-mark");
+    await expect(mark).toHaveText("?");
+    await mark.click();
+    await expect(mark).not.toHaveText("?");
+    await mark.click();
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "questioning-the-question",
+    );
+  });
+
   test("turns on when the top half is clicked", async ({ page }) => {
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
