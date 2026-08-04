@@ -63,6 +63,16 @@ const BLOCK_RETREAT_MS = 200;
  * it's coming back annoyed rather than just trying again. */
 const HIT_BACK_MS = 120;
 
+/** How long the main antenna's pull-back takes after its path (not the
+ * antenna itself) was blocked, before the second arm comes in from the top. */
+const PATH_BLOCK_RETREAT_MS = 200;
+/** How long the top arm's descent takes — always the same, since unlike the
+ * main antenna it isn't racing anyone. */
+const TOP_ARM_DESCENT_MS = 260;
+/** How far outside the switch's own width a path-block press still counts,
+ * so a slightly-off finger still registers. */
+const PATH_GAP_MARGIN_PX = 24;
+
 // Clicking the four mounting screws clockwise, starting from the top-left,
 // offers to reset every unlocked easter egg. A pause between clicks resets
 // progress — this is a click pattern, not a race against the clock.
@@ -194,6 +204,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       <div class="antenna" data-testid="arm" aria-hidden="true">
         <span class="seg-1"></span><span class="seg-2"></span><span class="seg-3"></span><span class="knob"></span>
       </div>
+      <div class="top-arm" aria-hidden="true">
+        <span class="top-arm-seg"></span><span class="top-arm-knob"></span>
+      </div>
       <button
         type="button"
         class="feedback-button"
@@ -214,6 +227,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
 
   const rocker = mustFind<HTMLButtonElement>(root, "[role=switch]");
   const antenna = mustFind<HTMLDivElement>(root, "[data-testid=arm]");
+  const topArm = mustFind<HTMLDivElement>(root, ".top-arm");
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
   const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
   const plate = mustFind<HTMLDivElement>(root, ".plate");
@@ -530,10 +544,18 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   // the same way a held switch does), then once released it backs off
   // annoyed and strikes back with a fast, aggressive approach. Blocking that
   // retaliatory approach again just repeats the cycle.
+  //
+  // Blocking its *path* instead — a press that lands between the antenna's
+  // current tip and the switch without touching the antenna itself — freezes
+  // it the same way, but it doesn't bother retrying the same gap: released,
+  // it backs off and the second arm above the housing comes down instead,
+  // which always lands.
   let blockedPointerId: number | undefined;
+  let blockedViaPath = false;
 
-  function beginBlock(pointerId: number): void {
+  function beginBlock(pointerId: number, viaPath: boolean): void {
     blockedPointerId = pointerId;
+    blockedViaPath = viaPath;
     machine.hold();
     cancelSequence(); // cancel whatever retreat/hit-back was scheduled next
     settleThenTransition("blocked", (frozenTransform) => {
@@ -559,15 +581,62 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     );
   }
 
+  function topArmDescend(): void {
+    unlockEasterEgg("over-the-top");
+    topArm.classList.remove("retreat");
+    topArm.style.setProperty("--dur", `${TOP_ARM_DESCENT_MS}ms`);
+    rocker.style.setProperty(
+      "--paddle-dur",
+      `${scaleWithPace(PADDLE_FLIP_MS, TOP_ARM_DESCENT_MS)}ms`,
+    );
+    requestAnimationFrame(() => topArm.classList.add("reach"));
+    schedule(() => {
+      topArm.classList.remove("reach");
+      topArm.classList.add("retreat");
+      schedule(() => topArm.classList.remove("retreat"), TOP_ARM_DESCENT_MS);
+    }, TOP_ARM_DESCENT_MS + scaleWithPace(CONTACT_HOLD_MS, TOP_ARM_DESCENT_MS));
+  }
+
   function endBlock(): void {
     if (blockedPointerId === undefined) return;
     blockedPointerId = undefined;
+    if (blockedViaPath) {
+      // Arm the real switch-off for when the top arm's descent actually
+      // lands, same idea as endHold()'s RELEASE_SNAP_MS timing.
+      machine.release(PATH_BLOCK_RETREAT_MS + TOP_ARM_DESCENT_MS);
+      antenna.style.setProperty("--dur", `${PATH_BLOCK_RETREAT_MS}ms`);
+      settleThenTransition("retreat");
+      schedule(topArmDescend, PATH_BLOCK_RETREAT_MS);
+      return;
+    }
     // Arm the real switch-off for when the retaliatory strike actually
     // lands, same idea as endHold()'s RELEASE_SNAP_MS timing.
     machine.release(BLOCK_RETREAT_MS + HIT_BACK_MS);
     antenna.style.setProperty("--dur", `${BLOCK_RETREAT_MS}ms`);
     settleThenTransition("retreat");
     schedule(hitBack, BLOCK_RETREAT_MS);
+  }
+
+  // Whether a press at this point falls in the open gap between the
+  // antenna's current tip and the switch it's headed for — close enough
+  // in x to the switch, and between the two in y — without landing on the
+  // antenna itself (that's the direct-grab block above instead). Scoped to
+  // the normal (closed-plate) approach; the mirrored backside case isn't
+  // covered.
+  function withinPathGap(clientX: number, clientY: number): boolean {
+    if (!antenna.classList.contains("reach")) return false;
+    if (isBackside()) return false;
+    const antennaRect = antenna.getBoundingClientRect();
+    const rockerRect = rocker.getBoundingClientRect();
+    if (
+      clientX < rockerRect.left - PATH_GAP_MARGIN_PX ||
+      clientX > rockerRect.right + PATH_GAP_MARGIN_PX
+    ) {
+      return false;
+    }
+    const top = Math.min(rockerRect.bottom, antennaRect.top);
+    const bottom = Math.max(rockerRect.bottom, antennaRect.top);
+    return clientY >= top && clientY <= bottom;
   }
 
   // Ajar, the paddle's relief is mirrored (see the .plate.open rules in
@@ -691,7 +760,17 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     if (blockedPointerId !== undefined) return; // already blocked
     if (holdPointerId !== undefined || engaged) return; // switch-hold in control
     if (!antenna.classList.contains("reach")) return; // only mid-approach
-    beginBlock(event.pointerId);
+    beginBlock(event.pointerId, false);
+  });
+  stage.addEventListener("pointerdown", (event) => {
+    if (blockedPointerId !== undefined) return; // already blocked
+    if (holdPointerId !== undefined || engaged) return; // switch-hold in control
+    // the antenna and rocker handle presses on themselves elsewhere — this
+    // is only for a press that lands in the open gap between them
+    if (antenna.contains(event.target as Node)) return;
+    if (rocker.contains(event.target as Node)) return;
+    if (!withinPathGap(event.clientX, event.clientY)) return;
+    beginBlock(event.pointerId, true);
   });
   window.addEventListener("pointerup", (event) => {
     if (event.pointerId === blockedPointerId) endBlock();

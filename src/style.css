@@ -830,10 +830,68 @@ body {
   box-shadow: 0 -2px 3px rgb(0 0 0 / 25%);
 }
 
+/* ---- the second arm: pops from a hatch above the housing when the main
+   antenna's path is blocked without the antenna itself being touched, and
+   always lands — see beginBlock(pointerId, viaPath) in ui.ts for the
+   gesture that triggers it. Mirrors .antenna's own hidden-rest/reach math
+   above, sign flipped, since this one hides above the stage's clip
+   instead of below it. */
+.top-arm {
+  position: absolute;
+  left: calc(50% - 0.8rem);
+  top: calc(50% - 6.6rem - 8rem);
+  width: 1.6rem;
+  height: 8rem;
+  visibility: hidden;
+  --dur: 260ms;
+  transform: translateY(calc(-1 * (min(100dvh, 44rem) / 2 - 6.6rem + 1rem)));
+  transition: transform var(--dur) linear;
+  z-index: 3;
+}
+
+.top-arm.reach,
+.top-arm.retreat {
+  visibility: visible;
+}
+
+.top-arm.reach {
+  transform: translateY(4.1rem);
+}
+
+.top-arm.retreat {
+  transform: translateY(calc(-1 * (min(100dvh, 44rem) / 2 - 6.6rem + 1rem)));
+}
+
+.top-arm span {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.top-arm-knob {
+  bottom: 0;
+  left: 0.1rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 70%, #f0f2f4, #82878f 75%);
+  box-shadow: 0 -2px 4px rgb(0 0 0 / 30%);
+}
+
+.top-arm-seg {
+  bottom: 1.1rem;
+  left: 0.325rem;
+  height: 6.9rem;
+  width: 0.95rem;
+  background: linear-gradient(0deg, #7b8087, #e8ebee 45%, #8d929a);
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 2px rgb(0 0 0 / 20%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .paddle,
   .paddle::before,
-  .antenna {
+  .antenna,
+  .top-arm {
     transition: none;
   }
 
