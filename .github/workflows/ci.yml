@@ -98,7 +98,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
       - name: Drop unrelated apt sources
         run: |
-          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list 2>/dev/null || true)
+          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true)
           if [ -n "$files" ]; then
             sudo rm -f $files
           fi
@@ -231,7 +231,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
       - name: Drop unrelated apt sources
         run: |
-          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list 2>/dev/null || true)
+          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true)
           if [ -n "$files" ]; then
             sudo rm -f $files
           fi
