@@ -388,6 +388,14 @@ body {
   text-shadow: none;
 }
 
+/* Clicking the mark cycles it through punctuation and, for forms with no
+   dedicated upside-down glyph in Unicode, this flips the glyph itself
+   180deg instead — same hand-scratched tilt, just spun the rest of the
+   way around. */
+.nameplate-mark-flip {
+  transform: translate(0.05em, 0.14em) rotate(171deg);
+}
+
 .nameplate-serial {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 1.08rem;
