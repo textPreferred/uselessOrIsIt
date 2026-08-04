@@ -44,6 +44,21 @@ async function dragOnto(page: Page, from: Locator, to: Locator): Promise<void> {
   await page.waitForTimeout(350);
 }
 
+/** Presses down in the open gap between the antenna's current tip and the
+ * switch, without landing on the antenna itself. */
+async function beginPathBlock(
+  page: Page,
+  arm: Locator,
+  machineSwitch: Locator,
+): Promise<void> {
+  const armBox = await arm.boundingBox();
+  const switchBox = await machineSwitch.boundingBox();
+  if (!armBox || !switchBox) throw new Error("missing bounding box");
+  const gapY = (armBox.y + switchBox.y + switchBox.height) / 2;
+  await page.mouse.move(switchBox.x + switchBox.width / 2, gapY);
+  await page.mouse.down();
+}
+
 test.describe("useless machine", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("./");
@@ -377,6 +392,52 @@ test.describe("useless machine", () => {
     // let go, and it eventually finishes the job
     await page.mouse.up();
     await expect(machineSwitch).not.toBeChecked({ timeout: 3000 });
+  });
+
+  test("outlasting a path block makes the antenna give up on its own and send a second arm in from the top", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickTop(machineSwitch);
+
+    // early in its approach, so there's still a real gap between its tip
+    // and the switch to plant a finger in
+    await page.waitForTimeout(300);
+    await beginPathBlock(page, arm, machineSwitch);
+
+    // held mid-gap, never touching the arm itself — still on, blocking the
+    // path holds the machine exactly like a direct block does, at first
+    await page.waitForTimeout(300);
+    await expect(machineSwitch).toBeChecked();
+
+    // still holding — it gives up on its own regardless, and the top arm
+    // lands anyway
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "over-the-top",
+      { timeout: 2000 },
+    );
+    await expect(machineSwitch).not.toBeChecked({ timeout: 2000 });
+
+    await page.mouse.up(); // released after the fact — shouldn't do anything
+  });
+
+  test("releasing a path block early lets the antenna finish fast instead of triggering the top arm", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickTop(machineSwitch);
+
+    await page.waitForTimeout(300);
+    await beginPathBlock(page, arm, machineSwitch);
+
+    await page.waitForTimeout(200); // well short of the give-up timer
+    await page.mouse.up();
+
+    await expect(machineSwitch).not.toBeChecked({ timeout: 1000 });
+    await expect(page.locator(".top-arm")).not.toHaveClass(/reach/);
   });
 
   test("provoking the antenna by blocking it unlocks an easter egg", async ({
