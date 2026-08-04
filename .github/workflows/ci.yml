@@ -96,6 +96,12 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Drop unrelated apt sources
+        run: |
+          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            sudo rm -f $files
+          fi
       - run: npx playwright install chromium --with-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: npx playwright install-deps chromium
@@ -223,6 +229,12 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+      - name: Drop unrelated apt sources
+        run: |
+          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            sudo rm -f $files
+          fi
       - run: npx playwright install chromium --with-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: npx playwright install-deps chromium
