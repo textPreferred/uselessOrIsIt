@@ -81,6 +81,24 @@ const SCREW_TOUCH_RADIUS_TOUCHSCREEN_PX = 40;
 // fast enough to see it as an interruption.
 const LABEL_PEEK_DELAY_MS = 3200;
 
+// Cycled by clicking the nameplate's "?". Mixed rather than grouped
+// upright-then-inverted, so clicking through it doesn't telegraph a
+// pattern. The percontation point (a mirrored "?", used historically for
+// rhetorical questions) has no dedicated upside-down glyph in Unicode, so
+// its inverted slot reuses the same character and flips it visually via
+// CSS instead of switching glyphs like the others do.
+const QUESTION_MARK_FORMS: ReadonlyArray<{ char: string; flipped?: boolean }> =
+  [
+    { char: "?" },
+    { char: "¡" },
+    { char: "⸮" },
+    { char: "¿" },
+    { char: "!" },
+    { char: "⸮", flipped: true },
+    { char: "⸘" },
+    { char: "‽" },
+  ];
+
 const SCREWS_STORAGE_KEY = "uselessMachine.plateScrews";
 const ALL_FASTENED: Record<Corner, boolean> = {
   tl: true,
@@ -201,6 +219,16 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
   mountEggCollectionButton(stage);
+
+  const nameplateMark = mustFind<HTMLSpanElement>(root, ".nameplate-mark");
+  let markClicks = 0;
+  nameplateMark.addEventListener("click", () => {
+    markClicks++;
+    const form = QUESTION_MARK_FORMS[markClicks % QUESTION_MARK_FORMS.length];
+    nameplateMark.textContent = form.char;
+    nameplateMark.classList.toggle("nameplate-mark-flip", !!form.flipped);
+    if (markClicks >= 2) unlockEasterEgg("questioning-the-question");
+  });
 
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
