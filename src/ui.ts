@@ -63,8 +63,13 @@ const BLOCK_RETREAT_MS = 200;
  * it's coming back annoyed rather than just trying again. */
 const HIT_BACK_MS = 120;
 
-/** How long the main antenna's pull-back takes after its path (not the
- * antenna itself) was blocked, before the second arm comes in from the top. */
+/** How long a path block can be held before the antenna gives up on that
+ * gap by itself — regardless of whether it's still being held — and sends
+ * the top arm in instead. Shorter than the held-switch struggle: blocking
+ * the path outright is a more direct provocation than just holding on. */
+const PATH_BLOCK_GIVEUP_MS = 1000;
+/** How long the main antenna's pull-back takes once it's given up on its
+ * path, before the second arm comes in from the top. */
 const PATH_BLOCK_RETREAT_MS = 200;
 /** How long the top arm's descent takes — always the same, since unlike the
  * main antenna it isn't racing anyone. */
@@ -547,11 +552,15 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   //
   // Blocking its *path* instead — a press that lands between the antenna's
   // current tip and the switch without touching the antenna itself — freezes
-  // it the same way, but it doesn't bother retrying the same gap: released,
-  // it backs off and the second arm above the housing comes down instead,
-  // which always lands.
+  // it the same way at first, but it doesn't wait on you: outlast
+  // PATH_BLOCK_GIVEUP_MS and it gives up on that gap by itself, no matter
+  // whether you're still holding it, and the second arm above the housing
+  // comes down instead — a route your finger isn't in. Let go before then
+  // and it's the opposite of giving up: the gap's open now, so it finishes
+  // fast through it, same snap as letting go of a held switch.
   let blockedPointerId: number | undefined;
   let blockedViaPath = false;
+  let pathBlockGiveUpTimer: ReturnType<typeof setTimeout> | undefined;
 
   function beginBlock(pointerId: number, viaPath: boolean): void {
     blockedPointerId = pointerId;
@@ -563,6 +572,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       antenna.style.setProperty("--block-x", `${x}px`);
       antenna.style.setProperty("--block-y", `${y}px`);
     });
+    if (viaPath) {
+      pathBlockGiveUpTimer = setTimeout(pathBlockGiveUp, PATH_BLOCK_GIVEUP_MS);
+    }
   }
 
   function hitBack(): void {
@@ -597,16 +609,37 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     }, TOP_ARM_DESCENT_MS + scaleWithPace(CONTACT_HOLD_MS, TOP_ARM_DESCENT_MS));
   }
 
+  // Fires on its own once a path-block has been held past
+  // PATH_BLOCK_GIVEUP_MS — the pointer may well still be down, but that no
+  // longer matters: this resolves the block unconditionally, the same way
+  // an actual release would, so a later pointerup for it is a no-op.
+  function pathBlockGiveUp(): void {
+    blockedPointerId = undefined;
+    machine.release(PATH_BLOCK_RETREAT_MS + TOP_ARM_DESCENT_MS);
+    antenna.style.setProperty("--dur", `${PATH_BLOCK_RETREAT_MS}ms`);
+    settleThenTransition("retreat");
+    schedule(topArmDescend, PATH_BLOCK_RETREAT_MS);
+  }
+
   function endBlock(): void {
     if (blockedPointerId === undefined) return;
     blockedPointerId = undefined;
     if (blockedViaPath) {
-      // Arm the real switch-off for when the top arm's descent actually
-      // lands, same idea as endHold()'s RELEASE_SNAP_MS timing.
-      machine.release(PATH_BLOCK_RETREAT_MS + TOP_ARM_DESCENT_MS);
-      antenna.style.setProperty("--dur", `${PATH_BLOCK_RETREAT_MS}ms`);
-      settleThenTransition("retreat");
-      schedule(topArmDescend, PATH_BLOCK_RETREAT_MS);
+      clearTimeout(pathBlockGiveUpTimer);
+      // Released before giving up on its own — the gap's open now, so it
+      // finishes fast through it, exactly like letting go of a held switch.
+      machine.release(RELEASE_SNAP_MS);
+      antenna.style.setProperty("--dur", `${RELEASE_SNAP_MS}ms`);
+      rocker.style.setProperty(
+        "--paddle-dur",
+        `${scaleWithPace(PADDLE_FLIP_MS, RELEASE_SNAP_MS)}ms`,
+      );
+      updateReachOffset();
+      settleThenTransition("reach");
+      schedule(
+        () => retreat(RELEASE_SNAP_MS),
+        RELEASE_SNAP_MS + scaleWithPace(CONTACT_HOLD_MS, RELEASE_SNAP_MS),
+      );
       return;
     }
     // Arm the real switch-off for when the retaliatory strike actually
@@ -823,6 +856,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
         unlockEasterEgg("beat-the-antenna");
       } else if (antenna.classList.contains("blocked")) {
         blockedPointerId = undefined; // its own pointerup would now no-op anyway
+        clearTimeout(pathBlockGiveUpTimer); // switch is off already — no belated top-arm strike
         const durMs = currentContactDelayMs();
         antenna.style.setProperty("--dur", `${durMs}ms`);
         settleThenTransition("retreat"); // "blocked" is an animation, not a
