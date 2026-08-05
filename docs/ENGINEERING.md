@@ -8,10 +8,10 @@ Vite + TypeScript (no framework), [Biome](https://biomejs.dev) for lint + format
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Dev server with hot reload |
-| `npm run check` | Everything CI runs: lint, typecheck, build, e2e tests |
-| `npm run lint:fix` | Auto-fix formatting and lint issues |
-| `npm test` | Playwright e2e tests against a production build |
+| `pnpm dev` | Dev server with hot reload |
+| `pnpm check` | Everything CI runs: lint, typecheck, build, e2e tests |
+| `pnpm lint:fix` | Auto-fix formatting and lint issues |
+| `pnpm test` | Playwright e2e tests against a production build |
 
 ## Workflow
 
