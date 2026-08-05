@@ -867,6 +867,12 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
       // it looked like it had backed off for good, but it was still right
       // there — the machine still gets the last word
       unlockEasterEgg("tug-of-war");
+    } else if (plate.classList.contains("open")) {
+      // the whole point of peeking behind the wall was watching the switch
+      // get flipped back — once that's happened there's nothing left to do
+      // in there, so the plate closes itself instead of staying ajar
+      for (const c of SCREW_SEQUENCE) fastened[c] = true;
+      renderScrews();
     }
   });
 }
