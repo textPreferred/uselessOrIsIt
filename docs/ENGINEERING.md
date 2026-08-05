@@ -2,16 +2,16 @@
 
 ## Stack
 
-Vite + TypeScript (no framework), [Biome](https://biomejs.dev) for lint + format, [Playwright](https://playwright.dev) for e2e tests, GitHub Actions for CI/CD to GitHub Pages.
+Vite + TypeScript (no framework), [Biome](https://biomejs.dev) for lint + format, [Playwright](https://playwright.dev) for e2e tests, [bun](https://bun.sh) as package manager and script runner, GitHub Actions for CI/CD to GitHub Pages.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `pnpm dev` | Dev server with hot reload |
-| `pnpm check` | Everything CI runs: lint, typecheck, build, e2e tests |
-| `pnpm lint:fix` | Auto-fix formatting and lint issues |
-| `pnpm test` | Playwright e2e tests against a production build |
+| `bun run dev` | Dev server with hot reload |
+| `bun run check` | Everything CI runs: lint, typecheck, build, e2e tests |
+| `bun run lint:fix` | Auto-fix formatting and lint issues |
+| `bun run test` | Playwright e2e tests against a production build |
 
 ## Workflow
 
