@@ -12,7 +12,7 @@ interaction accordingly.
 Apply the workflow below silently — don't announce "I'm in phone mode,"
 just behave accordingly.
 
-## Workflow: discuss → build → preview or ship
+## Workflow: discuss → build → preview → user ships
 
 1. **Discuss first.** Before touching code, talk through the intended
    behavior in conversation.
@@ -40,27 +40,22 @@ just behave accordingly.
    PR template first) — automatically, no confirmation prompt, as soon
    as the first implementation is pushed.
 
-4. **Auto-preview, then one-click result.** Once the PR's checks (on
-   GitHub, not a local rerun) are passing, don't wait to be asked —
-   immediately run the
-   `pr-live-demo` skill: wait for the PR's `preview` job, publish its
+4. **Auto-preview, then hand off.** Once the PR's checks (on GitHub, not
+   a local rerun) are passing, don't wait to be asked — immediately run
+   the `pr-live-demo` skill: wait for the PR's `preview` job, publish its
    artifact as a live Claude Artifact, and send the link. The user should
    be tapping the actual running change on their phone, not a
-   screenshot, before they're asked to decide anything. Only then offer
-   the one-tap decision:
-   - "Ship it" — merge to `main` (once CI is green). Merging auto-
-     deploys to GitHub Pages — this is the standing authorization for
-     the merge and the deploy it triggers, no separate confirmation
-     needed. Watch the post-merge **smoke** job (re-runs `@smoke`
-     against the live site); treat a red smoke job like a CI failure:
-     diagnose and fix. Reply with just the PR/merge link, one line.
-   - "Keep iterating" — refine on the same PR/branch
+   screenshot, before deciding anything.
 
-   Shipping doesn't retire the preview — the user can keep iterating,
-   and each push warrants re-running the publish step to refresh the
-   link (same PR, same artifact, new run, not a new PR) even after an
-   initial preview already went out.
+   Merging is the user's call and their action, not this workflow's.
+   The user checks the pipelines and merges the PR themselves — don't
+   merge, don't offer a merge option, and don't watch the post-merge
+   **smoke** job. Send the preview link and stop there.
 
-If CI or the smoke job fails at any point, diagnose and re-push
+   If the user keeps iterating on the same PR/branch after the preview
+   went out, each push still warrants re-running the publish step to
+   refresh the link (same PR, same artifact, new run, not a new PR).
+
+If CI fails at any point before merge, diagnose and re-push
 automatically. Only send a message if genuinely blocked on a decision
 only the user can make.
