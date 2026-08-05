@@ -32,13 +32,13 @@ export default defineConfig({
   ],
   webServer: smokeUrl
     ? undefined
-    : // CI already ran `npm run build` as a separate step (so build failures
+    : // CI already ran `bun run build` as a separate step (so build failures
       // surface before the slower browser install/test steps); avoid building
       // the app twice by only building here for local runs.
       {
         command: process.env.CI
-          ? "npm run preview"
-          : "npm run build && npm run preview",
+          ? "bun run preview"
+          : "bun run build && bun run preview",
         url: "http://localhost:4173/uselessOrIsIt/",
         reuseExistingServer: !process.env.CI,
       },
