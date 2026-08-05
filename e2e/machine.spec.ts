@@ -1105,6 +1105,25 @@ test.describe("useless machine", () => {
     );
   });
 
+  test("a stale egg ID from a retired egg doesn't push the found count past the total", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ storageKey, seenKey, ids }) => {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+        localStorage.setItem(seenKey, JSON.stringify(ids));
+      },
+      {
+        storageKey: STORAGE_KEY,
+        seenKey: SEEN_STORAGE_KEY,
+        ids: [...EASTER_EGGS.map((egg) => egg.id), "a-retired-easter-egg"],
+      },
+    );
+    await page.goto("./");
+
+    await expect(page.locator(".egg-collection-count")).toHaveText("All found");
+  });
+
   test("finding the last egg shows All found immediately, even though it's still pending", async ({
     page,
   }) => {
