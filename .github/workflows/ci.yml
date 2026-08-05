@@ -207,6 +207,25 @@ jobs:
               });
             }
 
+  # TEMPORARY: measures whether building a custom node:20-slim +
+  # `playwright install --with-deps` image, uncached, beats the
+  # apt-pkgs-action + playwright-install steps it would replace.
+  # Remove once the timing question is settled either way.
+  test-dockerfile-build-experiment:
+    needs: [changes, check]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Write experiment Dockerfile
+        run: |
+          cat <<'EOF' > Dockerfile.experiment
+          FROM node:20-slim
+          RUN npx playwright install --with-deps chromium
+          EOF
+      - name: Build image (cold, no layer cache)
+        run: time docker build --no-cache -f Dockerfile.experiment -t playwright-experiment .
+
   smoke:
     needs: deploy
     runs-on: ubuntu-latest
