@@ -80,11 +80,29 @@ function saveIds(key: string, ids: Set<string>): void {
   }
 }
 
-const unlocked = loadIds(STORAGE_KEY);
+const KNOWN_EGG_IDS = new Set(EASTER_EGGS.map((egg) => egg.id));
+
+/** Drops IDs that no longer name a current easter egg (e.g. one retired in
+ * a later release) and persists the trim. Without this, a stale ID from an
+ * old version stays in `unlocked` forever, pushing the found count above
+ * `EASTER_EGGS.length` and producing a nonsensical fraction like "10/9". */
+function pruneUnknownIds(key: string, ids: Set<string>): Set<string> {
+  let changed = false;
+  for (const id of ids) {
+    if (!KNOWN_EGG_IDS.has(id)) {
+      ids.delete(id);
+      changed = true;
+    }
+  }
+  if (changed) saveIds(key, ids);
+  return ids;
+}
+
+const unlocked = pruneUnknownIds(STORAGE_KEY, loadIds(STORAGE_KEY));
 // Found eggs the collection view has already shown and been closed on —
 // the complement within `unlocked` is what's still "new" and drives the
 // "+N" badge instead of the running total.
-const seen = loadIds(SEEN_STORAGE_KEY);
+const seen = pruneUnknownIds(SEEN_STORAGE_KEY, loadIds(SEEN_STORAGE_KEY));
 const toastQueue: EasterEgg[] = [];
 let toastShowing = false;
 
