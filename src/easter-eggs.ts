@@ -53,11 +53,10 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   },
 ];
 
-/** Title/description for the reset offer's confirmation card. Not an
- * `EasterEgg` — the offer is UI chrome, not a collectible, so it stays out
- * of `EASTER_EGGS` and never touches the unlocked/seen sets. */
+/** Description for the reset offer's confirmation card. Not an `EasterEgg`
+ * — the offer is UI chrome, not a collectible, so it stays out of
+ * `EASTER_EGGS` and never touches the unlocked/seen sets. */
 const RESET_OFFER = {
-  title: "Tighten the screws",
   description: "Set or reset — your choice.",
 };
 
@@ -134,27 +133,18 @@ function addConfetti(card: HTMLDivElement): void {
   }
 }
 
-/** Builds the eyebrow/title/desc header for the reset offer's confirmation
- * card. Its eyebrow reads "Secret found", not "Easter egg found" — this is
- * a plain confirmation prompt, not a collectible, so there's no confetti
- * and neither button below ever unlocks anything. */
+/** Builds the reset offer's confirmation card: description only, no eyebrow
+ * or title — it's a plain confirmation prompt, not a collectible, so
+ * there's no confetti and neither button below ever unlocks anything. */
 function buildResetOfferHeader(): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "egg-card";
-
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "egg-eyebrow";
-  eyebrow.textContent = "Secret found";
-
-  const title = document.createElement("p");
-  title.className = "egg-title";
-  title.textContent = RESET_OFFER.title;
 
   const desc = document.createElement("p");
   desc.className = "egg-desc";
   desc.textContent = RESET_OFFER.description;
 
-  card.append(eyebrow, title, desc);
+  card.append(desc);
   return card;
 }
 

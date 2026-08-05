@@ -465,7 +465,9 @@ test.describe("useless machine", () => {
     page,
   }) => {
     await clickScrewsClockwise(page);
-    await expect(page.locator(".egg-title")).toHaveText(/tighten the screws/i);
+    await expect(page.locator(".egg-toast-confirm .egg-desc")).toHaveText(
+      /set or reset/i,
+    );
     await expect(
       page.getByRole("button", { name: "Yes, reset my easter eggs" }),
     ).toBeVisible();
@@ -476,14 +478,14 @@ test.describe("useless machine", () => {
     ).toBeVisible();
   });
 
-  test("the reset offer doesn't claim an easter egg was found before it's collected", async ({
+  test("the reset offer has no eyebrow or title — it's not dressed up as an easter egg", async ({
     page,
   }) => {
     await clickScrewsClockwise(page);
-    await expect(page.locator(".egg-eyebrow")).toHaveText("Secret found");
-    await expect(page.locator(".egg-eyebrow")).not.toHaveText(
-      "Easter egg found",
+    await expect(page.locator(".egg-toast-confirm .egg-eyebrow")).toHaveCount(
+      0,
     );
+    await expect(page.locator(".egg-toast-confirm .egg-title")).toHaveCount(0);
   });
 
   test("clicking screws out of order doesn't offer to reset", async ({
@@ -511,7 +513,9 @@ test.describe("useless machine", () => {
 
   test("the reset offer isn't part of the collection's total or list", () => {
     expect(
-      EASTER_EGGS.find((egg) => egg.title === "Tighten the screws"),
+      EASTER_EGGS.find(
+        (egg) => egg.description === "Set or reset — your choice.",
+      ),
     ).toBeUndefined();
   });
 
