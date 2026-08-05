@@ -6,6 +6,8 @@ name: CI (bun experiment)
 # pnpm-vs-bun decision is made.
 
 on:
+  push:
+    branches: [claude/bun-pipeline-speed-cpo870]
   workflow_dispatch:
 
 permissions:
