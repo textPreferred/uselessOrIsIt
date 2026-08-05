@@ -94,16 +94,13 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
-      - name: Drop unrelated apt sources
-        run: |
-          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true)
-          if [ -n "$files" ]; then
-            sudo rm -f $files
-          fi
-      - run: bunx playwright install chromium --with-deps
+      - uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+        with:
+          packages: fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable xfonts-utils
+          version: playwright-chromium-fonts-noble-1
+          execute_install_scripts: true
+      - run: bunx playwright install chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - run: bunx playwright install-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
       - run: bunx playwright test --shard=${{ matrix.shard }}/6
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
@@ -224,16 +221,13 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
-      - name: Drop unrelated apt sources
-        run: |
-          files=$(grep -l -E 'packages\.microsoft\.com|dl\.google\.com' /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true)
-          if [ -n "$files" ]; then
-            sudo rm -f $files
-          fi
-      - run: bunx playwright install chromium --with-deps
+      - uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+        with:
+          packages: fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable xfonts-utils
+          version: playwright-chromium-fonts-noble-1
+          execute_install_scripts: true
+      - run: bunx playwright install chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - run: bunx playwright install-deps chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
       - run: bun run test
         env:
           SMOKE_URL: ${{ needs.deploy.outputs.page_url }}
