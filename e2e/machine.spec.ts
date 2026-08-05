@@ -496,7 +496,7 @@ test.describe("useless machine", () => {
     await expect(page.locator(".egg-toast")).toBeHidden();
   });
 
-  test("declining the reset collects the anti-easter-egg like any other", async ({
+  test("declining the reset doesn't collect anything — the offer is just UI, not an egg", async ({
     page,
   }) => {
     await clickScrewsClockwise(page);
@@ -505,10 +505,14 @@ test.describe("useless machine", () => {
         name: "Don't reset my easter eggs.",
       })
       .click();
-    await expect(page.locator(".egg-toast")).toHaveAttribute(
-      "data-egg-id",
-      "anti-easter-egg",
-    );
+    await expect(page.locator(".egg-toast")).toBeHidden();
+    await expect(page.locator(".egg-collection-toggle")).toBeHidden();
+  });
+
+  test("the reset offer isn't part of the collection's total or list", () => {
+    expect(
+      EASTER_EGGS.find((egg) => egg.title === "Tighten the screws"),
+    ).toBeUndefined();
   });
 
   test("dragging the OFF label across a screw backs it loose", async ({
@@ -1028,16 +1032,13 @@ test.describe("useless machine", () => {
     );
   });
 
-  /** Backs out of the four-screw sequence with a decline, unlocking the
-   * anti-easter-egg without wiping the collection — a second, distinct egg
-   * that's quick to trigger without any waits of its own. */
-  async function collectAntiEasterEgg(page: Page): Promise<void> {
-    await clickScrewsClockwise(page);
-    await page
-      .getByRole("button", {
-        name: "Don't reset my easter eggs.",
-      })
-      .click();
+  /** Double-clicks the nameplate's question mark to unlock
+   * "questioning-the-question" — a second, distinct egg that's quick to
+   * trigger without any waits of its own. */
+  async function collectQuestioningTheQuestion(page: Page): Promise<void> {
+    const mark = page.locator(".nameplate-mark");
+    await mark.click();
+    await mark.click();
   }
 
   test("a second egg found before viewing the collection bumps the pending badge to +2", async ({
@@ -1052,7 +1053,7 @@ test.describe("useless machine", () => {
     await expect(count).toHaveText("+1");
     await expect(count).toHaveClass(/egg-collection-count-pending/);
 
-    await collectAntiEasterEgg(page);
+    await collectQuestioningTheQuestion(page);
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await expect(count).toHaveText("+2");
@@ -1073,7 +1074,7 @@ test.describe("useless machine", () => {
     await expect(count).toHaveText(`1/${EASTER_EGGS.length}`);
     await expect(count).not.toHaveClass(/egg-collection-count-pending/);
 
-    await collectAntiEasterEgg(page);
+    await collectQuestioningTheQuestion(page);
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await expect(count).toHaveText("+1");
@@ -1144,7 +1145,7 @@ test.describe("useless machine", () => {
     await toggle.click();
     await page.locator(".egg-collection-close").click();
 
-    await collectAntiEasterEgg(page);
+    await collectQuestioningTheQuestion(page);
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await toggle.click();
