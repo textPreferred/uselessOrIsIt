@@ -780,6 +780,31 @@ test.describe("useless machine", () => {
     }
   });
 
+  test("flipping the switch and watching the machine respond closes the plate on its own", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+      await expect(page.locator(corner)).toHaveClass(/loose/);
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const machineSwitch = page.getByRole("switch");
+    await clickBottom(machineSwitch); // the OFF button turns it on while ajar
+    await expect(machineSwitch).toBeChecked();
+
+    await expect(machineSwitch).not.toBeChecked({
+      timeout: BASE_CONTACT_DELAY_MS + 1000,
+    });
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await expect(page.locator(corner)).not.toHaveClass(/loose/);
+    }
+  });
+
   test("the open plate stays open across a reload", async ({ page }) => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
