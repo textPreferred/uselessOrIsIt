@@ -33,10 +33,10 @@ Boundaries: code/commits/PRs written normal.
   first — even if an earlier change this session was committed directly.
   Default to a branch + PR; only push straight to `main` once the user has
   explicitly said yes for that specific change.
-- This does not apply to merging a PR once its CI is green — that's the
-  normal shipping path (see `.agents/skills/phone-workflow/SKILL.md` rule
-  1, "Ship it"), already reviewable and revertable via the PR itself, and
-  doesn't need a second confirmation beyond the one that started it.
+- Merging is the user's own action, not this agent's — see
+  `.agents/skills/phone-workflow/SKILL.md` step 4. The agent opens and
+  pushes to PRs but never merges them; the user checks pipelines and
+  merges themselves.
 
 ## Repo-specific notes
 
