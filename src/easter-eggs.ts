@@ -4,8 +4,6 @@ export interface EasterEgg {
   description: string;
 }
 
-export const ANTI_EASTER_EGG_ID = "anti-easter-egg";
-
 export const EASTER_EGGS: readonly EasterEgg[] = [
   {
     id: "beat-the-antenna",
@@ -53,12 +51,14 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     title: "Over the top",
     description: "You literally stood in the way.",
   },
-  {
-    id: ANTI_EASTER_EGG_ID,
-    title: "Tighten the screws",
-    description: "Set or reset — your choice.",
-  },
 ];
+
+/** Description for the reset offer's confirmation card. Not an `EasterEgg`
+ * — the offer is UI chrome, not a collectible, so it stays out of
+ * `EASTER_EGGS` and never touches the unlocked/seen sets. */
+const RESET_OFFER = {
+  description: "Set or reset — your choice.",
+};
 
 export const STORAGE_KEY = "uselessMachine.easterEggs";
 export const SEEN_STORAGE_KEY = "uselessMachine.easterEggsSeen";
@@ -133,29 +133,18 @@ function addConfetti(card: HTMLDivElement): void {
   }
 }
 
-/** Builds the eyebrow/title/desc header for the anti-easter-egg's reset
- * confirmation. Its eyebrow reads "Secret found", not "Easter egg found" —
- * finding the screw sequence only surfaces this offer, it doesn't unlock
- * the egg. That happens only if the user picks "collect this one anyway"
- * instead of resetting. */
-function buildEggCardHeader(egg: EasterEgg): HTMLDivElement {
+/** Builds the reset offer's confirmation card: description only, no eyebrow
+ * or title — it's a plain confirmation prompt, not a collectible, so
+ * there's no confetti and neither button below ever unlocks anything. */
+function buildResetOfferHeader(): HTMLDivElement {
   const card = document.createElement("div");
   card.className = "egg-card";
 
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "egg-eyebrow";
-  eyebrow.textContent = "Secret found";
-
-  const title = document.createElement("p");
-  title.className = "egg-title";
-  title.textContent = egg.title;
-
   const desc = document.createElement("p");
   desc.className = "egg-desc";
-  desc.textContent = egg.description;
+  desc.textContent = RESET_OFFER.description;
 
-  card.append(eyebrow, title, desc);
-  addConfetti(card);
+  card.append(desc);
   return card;
 }
 
@@ -267,18 +256,14 @@ export function unlockedEggCount(): number {
   return unlocked.size;
 }
 
-/** The anti-easter-egg: found by clicking all four screws clockwise from the
- * top-left. Offers to wipe every unlocked egg (this one included) so they're
- * all up for grabs again, rather than just unlocking on discovery like the
- * others — declining collects it normally instead. */
+/** Found by clicking all four screws clockwise from the top-left. Offers to
+ * wipe every unlocked egg so they're all up for grabs again. Neither button
+ * unlocks anything — this offer is UI chrome, not an egg of its own. */
 export function offerEasterEggReset(): void {
-  const egg = EASTER_EGGS.find((e) => e.id === ANTI_EASTER_EGG_ID);
-  if (!egg) return;
-
   const overlay = document.createElement("div");
   overlay.className = "egg-toast egg-toast-confirm";
 
-  const card = buildEggCardHeader(egg);
+  const card = buildResetOfferHeader();
 
   const actions = document.createElement("div");
   actions.className = "egg-actions";
@@ -302,7 +287,6 @@ export function offerEasterEggReset(): void {
   keepButton.textContent = "Don't reset my easter eggs.";
   keepButton.addEventListener("click", () => {
     overlay.remove();
-    unlockEasterEgg(ANTI_EASTER_EGG_ID);
   });
 
   actions.append(resetButton, keepButton);
