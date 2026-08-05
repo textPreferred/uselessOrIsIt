@@ -1151,7 +1151,7 @@ test.describe("useless machine", () => {
     await toggle.click();
     const items = page.locator(".egg-collection-item");
     await expect(items).toHaveCount(2);
-    await expect(items.first()).toContainText(/tighten the screws/i);
+    await expect(items.first()).toContainText(/questioning the question/i);
     await expect(items.first()).toHaveClass(/egg-collection-item-new/);
     await expect(items.last()).not.toHaveClass(/egg-collection-item-new/);
 
