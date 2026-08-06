@@ -97,7 +97,7 @@ test.describe("useless machine", () => {
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     await expect(feedbackButton).toHaveAttribute(
       "data-version-number",
-      /^v\d+\.\d+\.\d+$/,
+      /^v\d+\.\d+\.\d+ \(\d{8}\)$/,
     );
   });
 
@@ -148,7 +148,7 @@ test.describe("useless machine", () => {
   }) => {
     const version = page.locator(".nameplate-version");
     await expect(version).toBeVisible();
-    await expect(version).toHaveText(/^v\d+\.\d+\.\d+$/);
+    await expect(version).toHaveText(/^v\d+\.\d+\.\d+ \(\d{8}\)$/);
   });
 
   test("clicking the nameplate's question mark twice cycles it and unlocks an easter egg", async ({
