@@ -805,6 +805,36 @@ test.describe("useless machine", () => {
     }
   });
 
+  test("waits for the antenna to leave the screen before closing the plate, so they don't collide", async ({
+    page,
+  }) => {
+    const offLabel = page.locator(".label-tape-off");
+    for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
+      await dragOnto(page, offLabel, page.locator(corner));
+    }
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickBottom(machineSwitch); // the OFF button turns it on while ajar
+    await expect(machineSwitch).toBeChecked();
+
+    // the switch flips back off the instant the antenna makes contact — the
+    // antenna itself is still visibly retreating at that exact moment, and
+    // the plate must not have swung shut on top of it yet
+    await expect(machineSwitch).not.toBeChecked({
+      timeout: BASE_CONTACT_DELAY_MS + 1000,
+    });
+    await expect(arm).toBeVisible();
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+
+    // only once the antenna has actually left does the plate close — it
+    // still has its own full retreat to play out from here
+    await expect(arm).toBeHidden({ timeout: 2 * BASE_CONTACT_DELAY_MS + 1000 });
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
+  });
+
   test("the open plate stays open across a reload", async ({ page }) => {
     const offLabel = page.locator(".label-tape-off");
     for (const corner of [".screw-tl", ".screw-tr", ".screw-bl", ".screw-br"]) {
