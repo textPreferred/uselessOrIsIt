@@ -3,4 +3,5 @@ dist/
 dist-preview/
 test-results/
 playwright-report/
+.ci-trends/
 *.local
