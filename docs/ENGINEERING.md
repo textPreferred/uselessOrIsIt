@@ -12,6 +12,7 @@ Vite + TypeScript (no framework), [Biome](https://biomejs.dev) for lint + format
 | `bun run check` | Everything CI runs: lint, typecheck, build, e2e tests |
 | `bun run lint:fix` | Auto-fix formatting and lint issues |
 | `bun run test` | Playwright e2e tests against a production build |
+| `bun run ci:trends` | Fetch `main` CI run history and write a zoomable HTML trend report to `.ci-trends/` (see `scripts/ci-trends.mjs --help`) |
 
 ## Workflow
 
