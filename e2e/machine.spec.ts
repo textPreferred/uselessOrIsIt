@@ -71,6 +71,20 @@ test.describe("useless machine", () => {
     await expect(machineSwitch).not.toBeChecked();
   });
 
+  test("keeps the plate fully visible on short landscape viewports", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 740, height: 360 });
+    await page.goto("./");
+    const stageBox = await page.locator(".stage").boundingBox();
+    const plateBox = await page.locator(".plate-mount").boundingBox();
+    if (!stageBox || !plateBox) throw new Error("missing bounding box");
+    expect(plateBox.y).toBeGreaterThanOrEqual(stageBox.y);
+    expect(plateBox.y + plateBox.height).toBeLessThanOrEqual(
+      stageBox.y + stageBox.height,
+    );
+  });
+
   test("shows a feedback button wired to the Tally form", async ({ page }) => {
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     await expect(feedbackButton).toBeVisible();
