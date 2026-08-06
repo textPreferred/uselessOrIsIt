@@ -16,7 +16,22 @@ export function appVersion() {
   } catch {
     // no git history available — leave patch at 0 rather than fail the build
   }
-  return `v${major}.${minor}.${patch}`;
+  return `v${major}.${minor}.${patch} (${berlinBuildTimestamp()})`;
+}
+
+// MMDDHHmm in Europe/Berlin, so the build time is legible without a year
+// blowing up the version string's length.
+function berlinBuildTimestamp() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Berlin",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((part) => part.type === type)?.value;
+  return `${get("month")}${get("day")}${get("hour")}${get("minute")}`;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
