@@ -264,9 +264,6 @@ jobs:
     if: github.event_name == 'pull_request' && needs.changes.outputs.docs_only != 'true'
     needs: [changes, lint, typecheck, build]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -284,47 +281,6 @@ jobs:
           name: pr-preview-${{ github.event.number }}
           path: dist-preview
           retention-days: 7
-      - uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
-        with:
-          script: |
-            const marker = "<!-- pr-preview-artifact -->";
-            const artifactName = `pr-preview-${context.issue.number}`;
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = [
-              marker,
-              "### 📦 Preview build",
-              "",
-              `Download the \`${artifactName}\` artifact from [this run](${runUrl}) and unzip it — it's a single self-contained \`index.html\`, no build assets alongside it. Serve it locally, e.g.:`,
-              "",
-              "```",
-              `npx serve ${artifactName}`,
-              "```",
-              "",
-              "and open the printed URL.",
-            ].join("\n");
-
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.data.find((c) => c.body?.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
 
   smoke:
     needs: deploy
