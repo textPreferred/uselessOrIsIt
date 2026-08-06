@@ -18,6 +18,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Nearly every size and offset in this file is in rem, including the
+   antenna's hand-tuned approach distances — so shrinking the rem base
+   itself (rather than scaling individual elements) keeps the whole scene,
+   animation math included, proportionally consistent. Below 27rem of
+   viewport height (the 25rem plate plus a little breathing room — shorter
+   than a landscape phone typically offers), it stays capped at the usual
+   16px and nothing below shrinks. */
+html {
+  font-size: min(16px, calc(100dvh / 27));
+}
+
 body {
   margin: 0;
   min-height: 100dvh;
