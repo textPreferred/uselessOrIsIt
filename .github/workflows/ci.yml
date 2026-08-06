@@ -48,7 +48,31 @@ jobs:
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
           fi
 
-  check:
+  lint:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+
+  typecheck:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+
+  build:
     needs: changes
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
@@ -62,8 +86,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Print version
         run: bun scripts/version.mjs
-      - run: bun run lint
-      - run: bun run typecheck
       - run: bun run build
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -71,8 +93,39 @@ jobs:
           path: dist/
           retention-days: 1
 
+  # Primes the Playwright browser cache and the apt fonts cache once, before
+  # the 6 parallel `test` shards below start reading them. Without this, all
+  # 6 shards hit the same cache keys at once on a cold/evicted cache, and
+  # GitHub's cache backend has been observed to serve an inconsistent
+  # hit/miss across concurrent readers of the same key - one shard eats a
+  # ~50s uncached apt install while its siblings finish in ~15s, and since
+  # `deploy` waits on every shard, that one straggler becomes the critical
+  # path. Warming here settles both caches before the matrix fans out.
+  warm-test-cache:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - run: bun install --frozen-lockfile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
+      - uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+        with:
+          packages: fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable xfonts-utils
+          version: playwright-chromium-fonts-noble-1
+          execute_install_scripts: true
+      - run: bunx playwright install chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
   test:
-    needs: [changes, check]
+    needs: [changes, build, warm-test-cache]
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -111,7 +164,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main' && needs.changes.outputs.docs_only != 'true'
-    needs: [changes, check, test]
+    needs: [changes, lint, typecheck, build, test]
     runs-on: ubuntu-latest
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
@@ -143,7 +196,7 @@ jobs:
 
   preview:
     if: github.event_name == 'pull_request' && needs.changes.outputs.docs_only != 'true'
-    needs: [changes, check]
+    needs: [changes, lint, typecheck, build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
