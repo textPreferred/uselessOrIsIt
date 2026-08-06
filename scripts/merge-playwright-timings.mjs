@@ -2,8 +2,8 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // Flattens a (possibly sharded) set of Playwright JSON reports into a single
-// { [specId]: { title, file, durationMs } } map, keyed by each spec's stable
-// id so results from different shards/runs merge cleanly.
+// { [specId]: { title, file, line, durationMs } } map, keyed by each spec's
+// stable id so results from different shards/runs merge cleanly.
 function collectSpecs(suite, out) {
   for (const spec of suite.specs ?? []) {
     const result = spec.tests?.[0]?.results?.at(-1);
@@ -11,6 +11,7 @@ function collectSpecs(suite, out) {
     out[spec.id] = {
       title: spec.title,
       file: spec.file,
+      line: spec.line,
       durationMs: result.duration,
     };
   }
