@@ -289,6 +289,11 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   }
   renderScrews(); // reflect whatever was loaded before any interaction
 
+  function closePlate(): void {
+    for (const c of SCREW_SEQUENCE) fastened[c] = true;
+    renderScrews();
+  }
+
   function popScrew(corner: Corner): void {
     const el = screwEls[corner];
     el.classList.remove("pop");
@@ -334,8 +339,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   plate.addEventListener("click", (event) => {
     if (!plate.classList.contains("open")) return;
     if (event.target !== plate) return;
-    for (const c of SCREW_SEQUENCE) fastened[c] = true;
-    renderScrews();
+    closePlate();
   });
 
   // Dragging the peeled OFF label across a screw backs it out — the label
@@ -410,15 +414,38 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     timers.push(setTimeout(fn, delayMs));
   }
 
+  // Set when an auto-off lands while the plate is ajar: the machine's own
+  // switch-off timer fires the instant the antenna makes contact, well
+  // before the antenna's own retreat clears the screen, so the plate can't
+  // close right then without swinging shut through it. Deferred here until
+  // retreat() below reports the antenna has actually settled.
+  let closePlateOnceSettled = false;
+
   function cancelSequence(): void {
     for (const timer of timers) clearTimeout(timer);
     timers = [];
+    closePlateOnceSettled = false;
+  }
+
+  function antennaSettled(): boolean {
+    return (
+      !antenna.classList.contains("reach") &&
+      !antenna.classList.contains("retreat") &&
+      !antenna.classList.contains("struggle") &&
+      !antenna.classList.contains("blocked")
+    );
   }
 
   function retreat(durMs: number): void {
     antenna.classList.remove("reach");
     antenna.classList.add("retreat");
-    schedule(() => antenna.classList.remove("retreat"), durMs);
+    schedule(() => {
+      antenna.classList.remove("retreat");
+      if (closePlateOnceSettled) {
+        closePlateOnceSettled = false;
+        if (plate.classList.contains("open")) closePlate();
+      }
+    }, durMs);
   }
 
   function startSequence(): void {
@@ -870,9 +897,16 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     } else if (plate.classList.contains("open")) {
       // the whole point of peeking behind the wall was watching the switch
       // get flipped back — once that's happened there's nothing left to do
-      // in there, so the plate closes itself instead of staying ajar
-      for (const c of SCREW_SEQUENCE) fastened[c] = true;
-      renderScrews();
+      // in there, so the plate closes itself instead of staying ajar. This
+      // event fires the instant the antenna makes contact, not once it's
+      // actually left again, so closing right away would have the plate
+      // swing shut through it — wait for antennaSettled() unless it already
+      // is (a real collision, physically, needs the antenna gone first).
+      if (antennaSettled()) {
+        closePlate();
+      } else {
+        closePlateOnceSettled = true;
+      }
     }
   });
 }
