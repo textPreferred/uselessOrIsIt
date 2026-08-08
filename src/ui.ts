@@ -258,7 +258,7 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     ".nameplate-version",
   );
   const VERSION_PATCH_PATTERN = /^(v\d+\.\d+\.)(\d+)(.*)$/;
-  const VERSION_DRAG_STEP_PX = 18;
+  const VERSION_DRAG_STEP_PX = 5;
   let versionDragPointerId: number | undefined;
   let versionDragStartX = 0;
   let versionOriginalText = "";
