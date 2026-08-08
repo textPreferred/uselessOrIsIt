@@ -53,7 +53,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
   },
   {
     id: "no-bending-of-space-time",
-    title: "No bending of space-time",
+    title: "Don't mess with space-time.",
     description: "You tried to travel in time.",
   },
 ];
