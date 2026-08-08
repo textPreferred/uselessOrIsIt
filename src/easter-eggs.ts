@@ -51,6 +51,11 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     title: "Over the top",
     description: "You literally stood in the way.",
   },
+  {
+    id: "no-bending-of-space-time",
+    title: "Don't mess with space-time.",
+    description: "You tried to travel in time.",
+  },
 ];
 
 /** Description for the reset offer's confirmation card. Not an `EasterEgg`

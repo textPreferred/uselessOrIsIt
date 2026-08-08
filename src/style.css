@@ -424,11 +424,27 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* Draggable: scrubs its own patch digits left/right, always snapping back
+   to the real version on release — see the pointer handlers in ui.ts. */
 .nameplate-version {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 0.8rem;
   letter-spacing: 0.04em;
   opacity: 0.75;
+  touch-action: none;
+  cursor: grab;
+  transition:
+    opacity 0.15s,
+    color 0.15s;
+}
+
+/* While scrubbed, the digits burn brighter and redder — a dial spinning
+   hot, not a static label that quietly happens to be draggable. */
+.nameplate-version.grabbed {
+  cursor: grabbing;
+  opacity: 1;
+  color: var(--red-hi);
+  font-weight: 700;
 }
 
 /* ---- the rocker switch ---- */
