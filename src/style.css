@@ -424,11 +424,19 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* Draggable: scrubs its own patch digits left/right, always snapping back
+   to the real version on release — see the pointer handlers in ui.ts. */
 .nameplate-version {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 0.8rem;
   letter-spacing: 0.04em;
   opacity: 0.75;
+  touch-action: none;
+  cursor: grab;
+}
+
+.nameplate-version.grabbed {
+  cursor: grabbing;
 }
 
 /* ---- the rocker switch ---- */

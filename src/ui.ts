@@ -249,6 +249,57 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
     if (markClicks >= 2) unlockEasterEgg("questioning-the-question");
   });
 
+  // Dragging the version number scrubs its patch digits up/down like an
+  // odometer, purely visual — it always snaps back to the real version the
+  // instant it's released, and that snap-back (not the drag itself) is what
+  // unlocks the egg: you tried to bend the version, time corrected itself.
+  const nameplateVersion = mustFind<HTMLSpanElement>(
+    root,
+    ".nameplate-version",
+  );
+  const VERSION_PATCH_PATTERN = /^(v\d+\.\d+\.)(\d+)(.*)$/;
+  const VERSION_DRAG_STEP_PX = 18;
+  let versionDragPointerId: number | undefined;
+  let versionDragStartX = 0;
+  let versionOriginalText = "";
+  let versionPrefix = "";
+  let versionSuffix = "";
+  let versionOriginalPatch = 0;
+  let versionChanged = false;
+  nameplateVersion.addEventListener("pointerdown", (event) => {
+    const match = nameplateVersion.textContent?.match(VERSION_PATCH_PATTERN);
+    if (!match) return;
+    versionDragPointerId = event.pointerId;
+    versionDragStartX = event.clientX;
+    versionOriginalText = nameplateVersion.textContent ?? "";
+    versionPrefix = match[1];
+    versionOriginalPatch = Number(match[2]);
+    versionSuffix = match[3];
+    versionChanged = false;
+    nameplateVersion.setPointerCapture(event.pointerId);
+    nameplateVersion.classList.add("grabbed");
+  });
+  nameplateVersion.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== versionDragPointerId) return;
+    const steps = Math.trunc(
+      (event.clientX - versionDragStartX) / VERSION_DRAG_STEP_PX,
+    );
+    if (steps !== 0) versionChanged = true;
+    const patch = Math.max(0, versionOriginalPatch + steps);
+    nameplateVersion.textContent = `${versionPrefix}${patch}${versionSuffix}`;
+  });
+  function endVersionDrag(event: PointerEvent): void {
+    if (event.pointerId !== versionDragPointerId) return;
+    versionDragPointerId = undefined;
+    nameplateVersion.classList.remove("grabbed");
+    if (versionChanged) {
+      nameplateVersion.textContent = versionOriginalText;
+      unlockEasterEgg("no-bending-of-space-time");
+    }
+  }
+  nameplateVersion.addEventListener("pointerup", endVersionDrag);
+  nameplateVersion.addEventListener("pointercancel", endVersionDrag);
+
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
   // — and blocks the switch to match. Four clicks (360deg) is back to ON,
