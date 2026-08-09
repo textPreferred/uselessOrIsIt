@@ -214,7 +214,12 @@ body {
    earlier in the DOM — so the tape covers it (until peeled) the same way
    the closed plate covers the whole wall layer, no visibility toggling
    needed either time. Once peeled it's swiped left/right to cycle the
-   mechanism photo; --panel-drag-x is purely visual feedback while held. */
+   mechanism photo; --panel-drag-x is purely visual feedback while held.
+   No overflow/crop here — that's .wall-panel-glass below — so this stays
+   the drag hit target *and* the metal rim, sized a bit larger than the
+   glass it frames. Same --bezel trio the machine's own bezel uses (see
+   .plate-mount), so the "hole in the wall" reads as the same brushed
+   metal as the machine itself, not a separate material. */
 .wall-panel {
   position: absolute;
   top: 50%;
@@ -223,19 +228,52 @@ body {
   height: 6rem;
   transform: translate(calc(-50% + var(--panel-drag-x, 0px)), -50%);
   transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
-  border-radius: 0.4rem;
-  overflow: hidden;
+  border-radius: 50%;
   z-index: 0;
   touch-action: none;
   cursor: grab;
+  background-image:
+    radial-gradient(circle 3px at 12% 18%, var(--bezel-hi), var(--bezel-lo) 70%),
+    radial-gradient(circle 3px at 88% 18%, var(--bezel-hi), var(--bezel-lo) 70%),
+    radial-gradient(circle 3px at 12% 82%, var(--bezel-hi), var(--bezel-lo) 70%),
+    radial-gradient(circle 3px at 88% 82%, var(--bezel-hi), var(--bezel-lo) 70%),
+    linear-gradient(160deg, var(--bezel-hi), var(--bezel) 45%, var(--bezel-lo));
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 10%),
-    0 0.3rem 0.6rem rgb(0 0 0 / 35%);
+    inset 0 0.15rem 0.2rem rgb(255 255 255 / 12%),
+    inset 0 -0.2rem 0.35rem rgb(0 0 0 / 60%),
+    0 0.35rem 0.7rem rgb(0 0 0 / 40%);
 }
 
 .wall-panel.grabbed {
   transition: none;
   cursor: grabbing;
+}
+
+/* The recessed opening itself: sits inside the rim above, cropping the
+   photo to an oval so it reads as something seen *through* the port
+   rather than a photo pinned to the wall. */
+.wall-panel-glass {
+  position: absolute;
+  inset: 0.55rem;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0.35rem 0.6rem rgb(0 0 0 / 70%),
+    inset 0 -0.15rem 0.3rem rgb(0 0 0 / 40%),
+    inset 0 0 0 1px rgb(0 0 0 / 80%);
+}
+
+/* Darkens toward the rim so the photo itself falls away into the cavity
+   instead of stopping flat at the crop edge. */
+.wall-panel-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgb(0 0 0 / 55%) 100%
+  );
 }
 
 .wall-panel-img {

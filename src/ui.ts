@@ -226,7 +226,9 @@ export function renderMachine(
   root.innerHTML = `
     <div class="stage">
       <div class="wall-panel" aria-hidden="true">
-        <img class="wall-panel-img" alt="" src="${mechanisms[0].url}" data-mechanism="${mechanisms[0].id}" />
+        <div class="wall-panel-glass">
+          <img class="wall-panel-img" alt="" src="${mechanisms[0].url}" data-mechanism="${mechanisms[0].id}" />
+        </div>
       </div>
       <div class="wall-tape-group" aria-hidden="true">
         <div class="wall-tape">USELESS MACHINE,</div>
