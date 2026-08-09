@@ -47,14 +47,18 @@ test.describe("useless machine — wall label", () => {
     const panel = page.locator(".wall-panel");
     const img = page.locator(".wall-panel-img");
     await expect(img).toHaveAttribute("data-mechanism", "cables");
-    await dragBy(page, panel, 80, 0);
-    await expect(img).toHaveAttribute("data-mechanism", "gears");
-    await dragBy(page, panel, 80, 0);
-    await expect(img).toHaveAttribute("data-mechanism", "circuit");
-    await dragBy(page, panel, 80, 0);
-    await expect(img).toHaveAttribute("data-mechanism", "pipes");
-    await dragBy(page, panel, 80, 0); // loops back around
-    await expect(img).toHaveAttribute("data-mechanism", "cables");
+    for (const id of [
+      "gears",
+      "circuit",
+      "pipes",
+      "levers",
+      "conveyor",
+      "drive",
+      "cables", // loops back around
+    ]) {
+      await dragBy(page, panel, 80, 0);
+      await expect(img).toHaveAttribute("data-mechanism", id);
+    }
   });
 
   test("the peeled state and current mechanism persist across a reload", async ({
