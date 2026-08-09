@@ -113,6 +113,10 @@ const LABEL_PEEK_DELAY_MS = 3200;
 // good, more like backing out a screw. Same order of magnitude as the
 // screw catch radii above.
 const WALL_LABEL_PEEL_THRESHOLD_PX = 70;
+// Once peeled, swiping the revealed panel just cycles to the next mechanism
+// photo — a much smaller ask than fully peeling the tape, since there's
+// nothing left to spring back to either way a swipe goes.
+const PANEL_SWIPE_THRESHOLD_PX = 40;
 
 // Cycled by clicking the nameplate's "?". Mixed rather than grouped
 // upright-then-inverted, so clicking through it doesn't telegraph a
@@ -261,6 +265,7 @@ export function renderMachine(
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
   const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
   const wallTapeGroup = mustFind<HTMLDivElement>(root, ".wall-tape-group");
+  const wallPanel = mustFind<HTMLDivElement>(root, ".wall-panel");
   const wallPanelImg = mustFind<HTMLImageElement>(root, ".wall-panel-img");
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
@@ -492,7 +497,7 @@ export function renderMachine(
   // z-index/DOM-order comment above .wall-tape-group in style.css), so
   // there's nothing extra to gate here: a closed plate already sits on top
   // of it and swallows the pointer events.
-  const currentMechanism = 0;
+  let currentMechanism = 0;
 
   function renderWallLabel(peeled: boolean): void {
     wallTapeGroup.classList.toggle("peeled", peeled);
@@ -542,6 +547,40 @@ export function renderMachine(
   }
   wallTapeGroup.addEventListener("pointerup", endWallDrag);
   wallTapeGroup.addEventListener("pointercancel", endWallDrag);
+
+  // Once peeled, a horizontal swipe on the revealed panel cycles to the
+  // next mechanism photo. Direction doesn't matter — any swipe past the
+  // threshold just advances, looping forever, never dead-ending.
+  let panelDragPointerId: number | undefined;
+  let panelDragStartX = 0;
+
+  wallPanel.addEventListener("pointerdown", (event) => {
+    if (!wallTapeGroup.classList.contains("peeled")) return; // nothing to see yet
+    panelDragPointerId = event.pointerId;
+    wallPanel.setPointerCapture(event.pointerId);
+    wallPanel.classList.add("grabbed");
+    panelDragStartX = event.clientX;
+  });
+  wallPanel.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== panelDragPointerId) return;
+    wallPanel.style.setProperty(
+      "--panel-drag-x",
+      `${event.clientX - panelDragStartX}px`,
+    );
+  });
+  function endPanelDrag(event: PointerEvent): void {
+    if (event.pointerId !== panelDragPointerId) return;
+    panelDragPointerId = undefined;
+    wallPanel.classList.remove("grabbed");
+    const dx = event.clientX - panelDragStartX;
+    wallPanel.style.removeProperty("--panel-drag-x");
+    if (Math.abs(dx) >= PANEL_SWIPE_THRESHOLD_PX) {
+      currentMechanism = (currentMechanism + 1) % mechanisms.length;
+      renderWallLabel(true);
+    }
+  }
+  wallPanel.addEventListener("pointerup", endPanelDrag);
+  wallPanel.addEventListener("pointercancel", endPanelDrag);
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 
