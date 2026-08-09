@@ -46,6 +46,28 @@ export async function dragOnto(
   await page.waitForTimeout(350);
 }
 
+/** Drags an element by a fixed pixel offset from its own center and
+ * releases — for gestures measured by distance travelled rather than by
+ * landing on another element (the wall label's peel, the mechanism swipe). */
+export async function dragBy(
+  page: Page,
+  locator: Locator,
+  dx: number,
+  dy: number,
+): Promise<void> {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("missing bounding box");
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + dx, startY + dy, { steps: 10 });
+  await page.mouse.up();
+  // let the dragged element's spring-back (or lock-in) transition finish
+  // before anyone reads its position or class list again
+  await page.waitForTimeout(350);
+}
+
 /** Presses down in the open gap between the antenna's current tip and the
  * switch, without landing on the antenna itself. */
 export async function beginPathBlock(
