@@ -49,7 +49,7 @@ test.describe("useless machine — wall label", () => {
     // egg — wait out its toast before the rest of the loop, since it's a
     // full-screen overlay that would otherwise swallow the next drag
     await dragBy(page, panel, 80, 0);
-    await expect(img).toHaveAttribute("data-mechanism", "gears");
+    await expect(img).toHaveAttribute("data-mechanism", "circuit");
     await expect(page.locator(".egg-toast")).toHaveAttribute(
       "data-egg-id",
       "inner-workings",
@@ -57,7 +57,6 @@ test.describe("useless machine — wall label", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     for (const id of [
-      "circuit",
       "pipes",
       "levers",
       "conveyor",
@@ -83,7 +82,7 @@ test.describe("useless machine — wall label", () => {
     const panel = page.locator(".wall-panel");
     const img = page.locator(".wall-panel-img");
     await dragBy(page, panel, 80, 0);
-    await expect(img).toHaveAttribute("data-mechanism", "gears");
+    await expect(img).toHaveAttribute("data-mechanism", "circuit");
 
     await page.reload();
 
@@ -91,7 +90,7 @@ test.describe("useless machine — wall label", () => {
     await expect(page.locator(".wall-tape-group")).toHaveClass(/peeled/);
     await expect(page.locator(".wall-panel-img")).toHaveAttribute(
       "data-mechanism",
-      "gears",
+      "circuit",
     );
   });
 });
