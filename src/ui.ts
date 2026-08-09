@@ -538,7 +538,6 @@ export function renderMachine(
     wallPanelImg.src = mechanism.url;
     wallPanelImg.dataset.mechanism = mechanism.id;
     saveWallLabel(wallLabel);
-    if (wallLabel.peeled) unlockEasterEgg("trade-secret");
   }
   renderWallLabel(); // reflect whatever was loaded before any interaction
 
@@ -633,6 +632,7 @@ export function renderMachine(
       wallPanelImg.style.removeProperty("--img-drag-x");
       wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
       renderWallLabel();
+      unlockEasterEgg("inner-workings");
       return;
     }
     // Finish the drag's own slide the rest of the way off-frame; once
@@ -645,6 +645,7 @@ export function renderMachine(
       mechanismSlideHandler = undefined;
       wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
       renderWallLabel();
+      unlockEasterEgg("inner-workings");
       wallPanelImg.style.transition = "none";
       wallPanelImg.style.setProperty("--img-drag-x", `${-direction * 100}%`);
       void wallPanelImg.offsetWidth; // force reflow so the jump above isn't itself animated

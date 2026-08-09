@@ -57,9 +57,9 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
     description: "You tried to travel in time.",
   },
   {
-    id: "trade-secret",
-    title: "Trade secret",
-    description: "You found what's inside. It won't be the same thing twice.",
+    id: "inner-workings",
+    title: "Inner Workings",
+    description: "You've discovered the universal useless machine.",
   },
 ];
 
