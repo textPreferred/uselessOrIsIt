@@ -14,17 +14,14 @@ test.describe("useless machine — wall label", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
   });
 
-  test("dragging the wall label past the threshold peels it, reveals the panel, and unlocks an easter egg", async ({
+  test("dragging the wall label past the threshold peels it and reveals the panel — no egg yet", async ({
     page,
   }) => {
     const wallLabel = page.locator(".wall-tape-group");
     await dragBy(page, wallLabel, 100, -100);
     await expect(wallLabel).toHaveClass(/peeled/);
     await expect(page.locator(".wall-panel-img")).toBeVisible();
-    await expect(page.locator(".egg-toast")).toHaveAttribute(
-      "data-egg-id",
-      "trade-secret",
-    );
+    await expect(page.locator(".egg-toast")).toBeHidden();
   });
 
   test("dragging it only a short distance springs it back — no panel, no egg, no permanent class", async ({
@@ -36,19 +33,30 @@ test.describe("useless machine — wall label", () => {
     await expect(page.locator(".egg-toast")).toBeHidden();
   });
 
-  test("swiping the revealed panel cycles the mechanism image forward and loops back to the first", async ({
+  test("swiping the revealed panel cycles the mechanism image forward, unlocks an easter egg on the first swipe, and loops back to the first", async ({
     page,
   }) => {
     const wallLabel = page.locator(".wall-tape-group");
     await dragBy(page, wallLabel, 100, -100);
     await expect(wallLabel).toHaveClass(/peeled/);
-    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+    await expect(page.locator(".egg-toast")).toBeHidden();
 
     const panel = page.locator(".wall-panel");
     const img = page.locator(".wall-panel-img");
     await expect(img).toHaveAttribute("data-mechanism", "cables");
+
+    // first swipe both advances the photo and unlocks the "inner-workings"
+    // egg — wait out its toast before the rest of the loop, since it's a
+    // full-screen overlay that would otherwise swallow the next drag
+    await dragBy(page, panel, 80, 0);
+    await expect(img).toHaveAttribute("data-mechanism", "gears");
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "inner-workings",
+    );
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
     for (const id of [
-      "gears",
       "circuit",
       "pipes",
       "levers",
