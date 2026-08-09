@@ -5,6 +5,16 @@ import {
 } from "./easter-eggs";
 import type { Machine } from "./machine";
 
+/** One mechanism photo behind the peeled wall label. Images themselves are
+ * wired in from main.ts, not imported here — e2e specs import named exports
+ * straight from this module under plain Node/ESM, which has no loader for
+ * raw `.jpg` files the way Vite's build does; keeping this module free of
+ * asset imports keeps it importable there. */
+export interface Mechanism {
+  id: string;
+  url: string;
+}
+
 /** Dashes between letter/digit runs so the build's commit SHA reads like a
  * stamped serial number instead of a hex hash. */
 function serialize(sha: string): string {
@@ -167,9 +177,16 @@ export function currentContactDelayMs(): number {
   return contactDelayMs;
 }
 
-export function renderMachine(root: HTMLElement, machine: Machine): void {
+export function renderMachine(
+  root: HTMLElement,
+  machine: Machine,
+  mechanisms: readonly Mechanism[],
+): void {
   root.innerHTML = `
     <div class="stage">
+      <div class="wall-panel" aria-hidden="true">
+        <img class="wall-panel-img" alt="" src="${mechanisms[0].url}" data-mechanism="${mechanisms[0].id}" />
+      </div>
       <div class="wall-tape-group" aria-hidden="true">
         <div class="wall-tape">USELESS MACHINE,</div>
         <div class="wall-tape wall-tape-2">ISN'T IT?</div>
@@ -235,6 +252,8 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   const topArm = mustFind<HTMLDivElement>(root, ".top-arm");
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
   const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
+  const wallTapeGroup = mustFind<HTMLDivElement>(root, ".wall-tape-group");
+  const wallPanelImg = mustFind<HTMLImageElement>(root, ".wall-panel-img");
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
   mountEggCollectionButton(stage);
@@ -458,6 +477,56 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   }
   offLabel.addEventListener("pointerup", endLabelDrag);
   offLabel.addEventListener("pointercancel", endLabelDrag);
+
+  // The wall tape itself peels the same way — dragged, following the
+  // pointer via its own CSS custom properties — but it's covered by the
+  // closed plate the same way the screws and front labels are (see the
+  // z-index/DOM-order comment above .wall-tape-group in style.css), so
+  // there's nothing extra to gate here: a closed plate already sits on top
+  // of it and swallows the pointer events.
+  const currentMechanism = 0;
+
+  function renderWallLabel(peeled: boolean): void {
+    wallTapeGroup.classList.toggle("peeled", peeled);
+    const mechanism = mechanisms[currentMechanism] ?? mechanisms[0];
+    wallPanelImg.src = mechanism.url;
+    wallPanelImg.dataset.mechanism = mechanism.id;
+    if (peeled) unlockEasterEgg("trade-secret");
+  }
+
+  let wallDragPointerId: number | undefined;
+  let wallDragStartX = 0;
+  let wallDragStartY = 0;
+
+  wallTapeGroup.addEventListener("pointerdown", (event) => {
+    if (wallTapeGroup.classList.contains("peeled")) return; // already locked
+    wallDragPointerId = event.pointerId;
+    wallTapeGroup.setPointerCapture(event.pointerId);
+    wallTapeGroup.classList.add("grabbed");
+    wallDragStartX = event.clientX;
+    wallDragStartY = event.clientY;
+  });
+  wallTapeGroup.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== wallDragPointerId) return;
+    wallTapeGroup.style.setProperty(
+      "--wall-drag-x",
+      `${event.clientX - wallDragStartX}px`,
+    );
+    wallTapeGroup.style.setProperty(
+      "--wall-drag-y",
+      `${event.clientY - wallDragStartY}px`,
+    );
+  });
+  function endWallDrag(event: PointerEvent): void {
+    if (event.pointerId !== wallDragPointerId) return;
+    wallDragPointerId = undefined;
+    wallTapeGroup.classList.remove("grabbed");
+    wallTapeGroup.style.removeProperty("--wall-drag-x");
+    wallTapeGroup.style.removeProperty("--wall-drag-y");
+    renderWallLabel(true);
+  }
+  wallTapeGroup.addEventListener("pointerup", endWallDrag);
+  wallTapeGroup.addEventListener("pointercancel", endWallDrag);
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 
