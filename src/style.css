@@ -219,24 +219,57 @@ body {
    the drag hit target *and* the metal rim, sized a bit larger than the
    glass it frames. Same --bezel trio the machine's own bezel uses (see
    .plate-mount), so the "hole in the wall" reads as the same brushed
-   metal as the machine itself, not a separate material. */
+   metal as the machine itself, not a separate material.
+   Sized close to .plate/.wall-mount's own 14x25rem footprint — big enough
+   to feel like most of the wall behind the plate has been cut open —
+   while staying inside the 1.5rem margin the wall-mount screw holes sit
+   within, so those still peek out at the corners. Rivet positions are
+   fixed rem offsets from each corner/edge rather than percentages, since
+   a percentage grid would bunch the top/bottom pair together on a box
+   this much taller than it is wide. */
 .wall-panel {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 9rem;
-  height: 6rem;
+  width: 11rem;
+  height: 20rem;
   transform: translate(calc(-50% + var(--panel-drag-x, 0px)), -50%);
   transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
-  border-radius: 50%;
+  border-radius: 1rem;
   z-index: 0;
   touch-action: none;
   cursor: grab;
   background-image:
-    radial-gradient(circle 3px at 12% 18%, var(--bezel-hi), var(--bezel-lo) 70%),
-    radial-gradient(circle 3px at 88% 18%, var(--bezel-hi), var(--bezel-lo) 70%),
-    radial-gradient(circle 3px at 12% 82%, var(--bezel-hi), var(--bezel-lo) 70%),
-    radial-gradient(circle 3px at 88% 82%, var(--bezel-hi), var(--bezel-lo) 70%),
+    radial-gradient(
+      circle 3px at 0.75rem 0.75rem,
+      var(--bezel-hi),
+      var(--bezel-lo) 70%
+    ),
+    radial-gradient(
+      circle 3px at calc(100% - 0.75rem) 0.75rem,
+      var(--bezel-hi),
+      var(--bezel-lo) 70%
+    ),
+    radial-gradient(
+      circle 3px at 0.75rem calc(100% - 0.75rem),
+      var(--bezel-hi),
+      var(--bezel-lo) 70%
+    ),
+    radial-gradient(
+      circle 3px at calc(100% - 0.75rem) calc(100% - 0.75rem),
+      var(--bezel-hi),
+      var(--bezel-lo) 70%
+    ),
+    radial-gradient(
+      circle 3px at 0.75rem 50%,
+      var(--bezel-hi),
+      var(--bezel-lo) 70%
+    ),
+    radial-gradient(
+      circle 3px at calc(100% - 0.75rem) 50%,
+      var(--bezel-hi),
+      var(--bezel-lo) 70%
+    ),
     linear-gradient(160deg, var(--bezel-hi), var(--bezel) 45%, var(--bezel-lo));
   box-shadow:
     inset 0 0.15rem 0.2rem rgb(255 255 255 / 12%),
@@ -250,12 +283,12 @@ body {
 }
 
 /* The recessed opening itself: sits inside the rim above, cropping the
-   photo to an oval so it reads as something seen *through* the port
+   photo to fill it so it reads as something seen *through* the port
    rather than a photo pinned to the wall. */
 .wall-panel-glass {
   position: absolute;
-  inset: 0.55rem;
-  border-radius: 50%;
+  inset: 0.6rem;
+  border-radius: 0.65rem;
   overflow: hidden;
   box-shadow:
     inset 0 0.35rem 0.6rem rgb(0 0 0 / 70%),
