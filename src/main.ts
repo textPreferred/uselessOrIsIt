@@ -6,9 +6,9 @@ import { createMachine } from "./machine";
 import "./style.css";
 import { currentContactDelayMs, type Mechanism, renderMachine } from "./ui";
 
-// Stock photos behind the peeled wall label, credited though the Pexels
-// license doesn't require it: cables by pipop kunachon, gears by George
-// Piskov, circuit by Sergei Starostin, pipes by Markus Winkler.
+// Stock photos behind the peeled wall label. gears is a Pexels photo,
+// credited though the license doesn't require it: George Piskov. cables,
+// circuit, and pipes were swapped in from user-supplied images.
 const mechanisms: readonly Mechanism[] = [
   { id: "cables", url: cablesUrl },
   { id: "gears", url: gearsUrl },
