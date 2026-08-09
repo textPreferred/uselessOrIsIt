@@ -35,4 +35,25 @@ test.describe("useless machine — wall label", () => {
     await expect(wallLabel).not.toHaveClass(/peeled/);
     await expect(page.locator(".egg-toast")).toBeHidden();
   });
+
+  test("swiping the revealed panel cycles the mechanism image forward and loops back to the first", async ({
+    page,
+  }) => {
+    const wallLabel = page.locator(".wall-tape-group");
+    await dragBy(page, wallLabel, 100, -100);
+    await expect(wallLabel).toHaveClass(/peeled/);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const panel = page.locator(".wall-panel");
+    const img = page.locator(".wall-panel-img");
+    await expect(img).toHaveAttribute("data-mechanism", "cables");
+    await dragBy(page, panel, 80, 0);
+    await expect(img).toHaveAttribute("data-mechanism", "gears");
+    await dragBy(page, panel, 80, 0);
+    await expect(img).toHaveAttribute("data-mechanism", "circuit");
+    await dragBy(page, panel, 80, 0);
+    await expect(img).toHaveAttribute("data-mechanism", "pipes");
+    await dragBy(page, panel, 80, 0); // loops back around
+    await expect(img).toHaveAttribute("data-mechanism", "cables");
+  });
 });
