@@ -587,13 +587,26 @@ export function renderMachine(
   wallTapeGroup.addEventListener("pointercancel", endWallDrag);
 
   // Once peeled, a horizontal swipe on the revealed panel cycles to the
-  // next mechanism photo. Direction doesn't matter — any swipe past the
-  // threshold just advances, looping forever, never dead-ending.
+  // next mechanism photo — like a carousel: the port frame itself never
+  // moves, only the photo does, dragged 1:1 with the pointer via
+  // --img-drag-x on .wall-panel-img (not .wall-panel — that stays put).
+  // Direction doesn't matter for *which* photo comes next — any swipe
+  // past the threshold just advances, looping forever — but it does
+  // decide which way the photo slides out and the next one slides in
+  // from, so the motion still tracks the swipe.
   let panelDragPointerId: number | undefined;
   let panelDragStartX = 0;
+  // Set while a completed swipe's slide-out is still animating, so a
+  // fresh grab before it finishes can cancel the stale callback instead
+  // of leaving it to fire later with an outdated direction.
+  let mechanismSlideHandler: (() => void) | undefined;
 
   wallPanel.addEventListener("pointerdown", (event) => {
     if (!wallLabel.peeled) return; // nothing to see yet
+    if (mechanismSlideHandler) {
+      wallPanelImg.removeEventListener("transitionend", mechanismSlideHandler);
+      mechanismSlideHandler = undefined;
+    }
     panelDragPointerId = event.pointerId;
     wallPanel.setPointerCapture(event.pointerId);
     wallPanel.classList.add("grabbed");
@@ -601,8 +614,8 @@ export function renderMachine(
   });
   wallPanel.addEventListener("pointermove", (event) => {
     if (event.pointerId !== panelDragPointerId) return;
-    wallPanel.style.setProperty(
-      "--panel-drag-x",
+    wallPanelImg.style.setProperty(
+      "--img-drag-x",
       `${event.clientX - panelDragStartX}px`,
     );
   });
@@ -611,11 +624,36 @@ export function renderMachine(
     panelDragPointerId = undefined;
     wallPanel.classList.remove("grabbed");
     const dx = event.clientX - panelDragStartX;
-    wallPanel.style.removeProperty("--panel-drag-x");
-    if (Math.abs(dx) >= PANEL_SWIPE_THRESHOLD_PX) {
+    if (Math.abs(dx) < PANEL_SWIPE_THRESHOLD_PX) {
+      wallPanelImg.style.removeProperty("--img-drag-x"); // spring back to center
+      return;
+    }
+    const direction = dx > 0 ? 1 : -1;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      wallPanelImg.style.removeProperty("--img-drag-x");
       wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
       renderWallLabel();
+      return;
     }
+    // Finish the drag's own slide the rest of the way off-frame; once
+    // that transition lands, swap in the next photo positioned just off
+    // the opposite edge and transition it back to center — the same
+    // "reset off-screen, then animate in" trick a carousel uses to loop
+    // a single element rather than keeping every slide in the DOM.
+    wallPanelImg.style.setProperty("--img-drag-x", `${direction * 100}%`);
+    mechanismSlideHandler = () => {
+      mechanismSlideHandler = undefined;
+      wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
+      renderWallLabel();
+      wallPanelImg.style.transition = "none";
+      wallPanelImg.style.setProperty("--img-drag-x", `${-direction * 100}%`);
+      void wallPanelImg.offsetWidth; // force reflow so the jump above isn't itself animated
+      wallPanelImg.style.transition = "";
+      wallPanelImg.style.setProperty("--img-drag-x", "0px");
+    };
+    wallPanelImg.addEventListener("transitionend", mechanismSlideHandler, {
+      once: true,
+    });
   }
   wallPanel.addEventListener("pointerup", endPanelDrag);
   wallPanel.addEventListener("pointercancel", endPanelDrag);

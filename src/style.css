@@ -170,9 +170,14 @@ body {
 /* Dragged past WALL_LABEL_PEEL_THRESHOLD_PX and released: locks permanently
    out of the way instead of springing back, uncovering .wall-panel beneath
    it — a toggle like the screws, not an always-elastic pull like the OFF
-   label it otherwise mirrors. */
+   label it otherwise mirrors. Now that .wall-panel is sized close to the
+   full plate footprint, clearing it entirely means clearing its 11rem
+   width outright (the tape's own rotated bounding box is roughly 9x8rem)
+   rather than just nudging aside — this lands the tape past the port's
+   right edge and onto the surrounding wall, the same way it would if
+   stuck down just outside a real cut-open hole. */
 .wall-tape-group.peeled {
-  transform: translate(calc(-50% + 6.5rem), calc(-50% - 6.5rem)) rotate(-35deg);
+  transform: translate(calc(-50% + 11rem), calc(-50% - 11rem)) rotate(-35deg);
   cursor: default;
 }
 
@@ -213,8 +218,10 @@ body {
 /* Sits directly behind the wall tape, in the same z:0 wall layer and
    earlier in the DOM — so the tape covers it (until peeled) the same way
    the closed plate covers the whole wall layer, no visibility toggling
-   needed either time. Once peeled it's swiped left/right to cycle the
-   mechanism photo; --panel-drag-x is purely visual feedback while held.
+   needed either time. This frame itself never moves — it's the metal
+   rim of a fixed port, not a slide. Once peeled, swiping cycles the
+   mechanism photo *inside* it (see .wall-panel-img's own --img-drag-x),
+   the way a carousel's frame stays put while its reel turns.
    No overflow/crop here — that's .wall-panel-glass below — so this stays
    the drag hit target *and* the metal rim, sized a bit larger than the
    glass it frames. Same --bezel trio the machine's own bezel uses (see
@@ -233,8 +240,7 @@ body {
   left: 50%;
   width: 11rem;
   height: 20rem;
-  transform: translate(calc(-50% + var(--panel-drag-x, 0px)), -50%);
-  transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
+  transform: translate(-50%, -50%);
   border-radius: 1rem;
   z-index: 0;
   touch-action: none;
@@ -278,7 +284,6 @@ body {
 }
 
 .wall-panel.grabbed {
-  transition: none;
   cursor: grabbing;
 }
 
@@ -309,17 +314,30 @@ body {
   );
 }
 
+/* The carousel reel: this is what actually moves on a swipe, not
+   .wall-panel-glass or .wall-panel above it — --img-drag-x follows the
+   pointer 1:1 while held (see .grabbed below), then either springs back
+   to 0 or, past the swipe threshold, finishes sliding off-frame before
+   ui.ts swaps the source and slides the next photo in from the other
+   edge. .wall-panel-glass's own overflow:hidden is what actually crops
+   this to the port instead of letting it slide across the whole wall. */
 .wall-panel-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   pointer-events: none; /* the panel wrapper handles the drag, not the img */
+  transform: translateX(var(--img-drag-x, 0px));
+  transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+
+.wall-panel.grabbed .wall-panel-img {
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .wall-tape-group,
-  .wall-panel {
+  .wall-panel-img {
     transition: none;
   }
 }
