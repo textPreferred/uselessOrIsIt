@@ -106,6 +106,14 @@ const SCREW_TOUCH_RADIUS_TOUCHSCREEN_PX = 40;
 // fast enough to see it as an interruption.
 const LABEL_PEEK_DELAY_MS = 3200;
 
+// The wall tape peels the same general way the OFF label does — dragged,
+// following the pointer — but its outcome is a permanent toggle rather than
+// an always-elastic pull: short of this distance it springs back like an
+// unfinished OFF-label drag; past it, release locks the tape peeled for
+// good, more like backing out a screw. Same order of magnitude as the
+// screw catch radii above.
+const WALL_LABEL_PEEL_THRESHOLD_PX = 70;
+
 // Cycled by clicking the nameplate's "?". Mixed rather than grouped
 // upright-then-inverted, so clicking through it doesn't telegraph a
 // pattern. The percontation point (a mirrored "?", used historically for
@@ -521,9 +529,16 @@ export function renderMachine(
     if (event.pointerId !== wallDragPointerId) return;
     wallDragPointerId = undefined;
     wallTapeGroup.classList.remove("grabbed");
+    const distance = Math.hypot(
+      event.clientX - wallDragStartX,
+      event.clientY - wallDragStartY,
+    );
     wallTapeGroup.style.removeProperty("--wall-drag-x");
     wallTapeGroup.style.removeProperty("--wall-drag-y");
-    renderWallLabel(true);
+    if (distance >= WALL_LABEL_PEEL_THRESHOLD_PX) renderWallLabel(true);
+    // short of the threshold: clearing the drag vars above is enough to
+    // spring it back to rest — same as releasing an unfinished OFF-label
+    // drag, no separate "not peeled" render needed
   }
   wallTapeGroup.addEventListener("pointerup", endWallDrag);
   wallTapeGroup.addEventListener("pointercancel", endWallDrag);
