@@ -56,4 +56,30 @@ test.describe("useless machine — wall label", () => {
     await dragBy(page, panel, 80, 0); // loops back around
     await expect(img).toHaveAttribute("data-mechanism", "cables");
   });
+
+  test("the peeled state and current mechanism persist across a reload", async ({
+    page,
+  }) => {
+    // more drags than the other cases here, plus a reload — comfortably
+    // past the default 30s on a slow sandboxed browser
+    test.setTimeout(60000);
+    const wallLabel = page.locator(".wall-tape-group");
+    await dragBy(page, wallLabel, 100, -100);
+    await expect(wallLabel).toHaveClass(/peeled/);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const panel = page.locator(".wall-panel");
+    const img = page.locator(".wall-panel-img");
+    await dragBy(page, panel, 80, 0);
+    await expect(img).toHaveAttribute("data-mechanism", "gears");
+
+    await page.reload();
+
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".wall-tape-group")).toHaveClass(/peeled/);
+    await expect(page.locator(".wall-panel-img")).toHaveAttribute(
+      "data-mechanism",
+      "gears",
+    );
+  });
 });
