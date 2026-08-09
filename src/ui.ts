@@ -163,6 +163,35 @@ function saveFastened(state: Record<Corner, boolean>): void {
   }
 }
 
+const WALL_LABEL_STORAGE_KEY = "uselessMachine.wallLabel";
+interface WallLabelState {
+  peeled: boolean;
+  mechanism: number;
+}
+const DEFAULT_WALL_LABEL_STATE: WallLabelState = {
+  peeled: false,
+  mechanism: 0,
+};
+
+function loadWallLabel(): WallLabelState {
+  try {
+    const raw = localStorage.getItem(WALL_LABEL_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_WALL_LABEL_STATE };
+    const saved = JSON.parse(raw) as Partial<WallLabelState>;
+    return { ...DEFAULT_WALL_LABEL_STATE, ...saved };
+  } catch {
+    return { ...DEFAULT_WALL_LABEL_STATE }; // storage unavailable — wall label just won't persist
+  }
+}
+
+function saveWallLabel(state: WallLabelState): void {
+  try {
+    localStorage.setItem(WALL_LABEL_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* storage unavailable — still works for this session */
+  }
+}
+
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
 let idleResetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -496,23 +525,27 @@ export function renderMachine(
   // closed plate the same way the screws and front labels are (see the
   // z-index/DOM-order comment above .wall-tape-group in style.css), so
   // there's nothing extra to gate here: a closed plate already sits on top
-  // of it and swallows the pointer events.
-  let currentMechanism = 0;
+  // of it and swallows the pointer events. Persisted so a peeled label (and
+  // whichever mechanism it's showing) stays that way across a reload, like
+  // the screws it otherwise mirrors.
+  const wallLabel: WallLabelState = loadWallLabel();
 
-  function renderWallLabel(peeled: boolean): void {
-    wallTapeGroup.classList.toggle("peeled", peeled);
-    const mechanism = mechanisms[currentMechanism] ?? mechanisms[0];
+  function renderWallLabel(): void {
+    wallTapeGroup.classList.toggle("peeled", wallLabel.peeled);
+    const mechanism = mechanisms[wallLabel.mechanism] ?? mechanisms[0];
     wallPanelImg.src = mechanism.url;
     wallPanelImg.dataset.mechanism = mechanism.id;
-    if (peeled) unlockEasterEgg("trade-secret");
+    saveWallLabel(wallLabel);
+    if (wallLabel.peeled) unlockEasterEgg("trade-secret");
   }
+  renderWallLabel(); // reflect whatever was loaded before any interaction
 
   let wallDragPointerId: number | undefined;
   let wallDragStartX = 0;
   let wallDragStartY = 0;
 
   wallTapeGroup.addEventListener("pointerdown", (event) => {
-    if (wallTapeGroup.classList.contains("peeled")) return; // already locked
+    if (wallLabel.peeled) return; // already locked open — nothing left to drag
     wallDragPointerId = event.pointerId;
     wallTapeGroup.setPointerCapture(event.pointerId);
     wallTapeGroup.classList.add("grabbed");
@@ -540,7 +573,10 @@ export function renderMachine(
     );
     wallTapeGroup.style.removeProperty("--wall-drag-x");
     wallTapeGroup.style.removeProperty("--wall-drag-y");
-    if (distance >= WALL_LABEL_PEEL_THRESHOLD_PX) renderWallLabel(true);
+    if (distance >= WALL_LABEL_PEEL_THRESHOLD_PX) {
+      wallLabel.peeled = true;
+      renderWallLabel();
+    }
     // short of the threshold: clearing the drag vars above is enough to
     // spring it back to rest — same as releasing an unfinished OFF-label
     // drag, no separate "not peeled" render needed
@@ -555,7 +591,7 @@ export function renderMachine(
   let panelDragStartX = 0;
 
   wallPanel.addEventListener("pointerdown", (event) => {
-    if (!wallTapeGroup.classList.contains("peeled")) return; // nothing to see yet
+    if (!wallLabel.peeled) return; // nothing to see yet
     panelDragPointerId = event.pointerId;
     wallPanel.setPointerCapture(event.pointerId);
     wallPanel.classList.add("grabbed");
@@ -575,8 +611,8 @@ export function renderMachine(
     const dx = event.clientX - panelDragStartX;
     wallPanel.style.removeProperty("--panel-drag-x");
     if (Math.abs(dx) >= PANEL_SWIPE_THRESHOLD_PX) {
-      currentMechanism = (currentMechanism + 1) % mechanisms.length;
-      renderWallLabel(true);
+      wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
+      renderWallLabel();
     }
   }
   wallPanel.addEventListener("pointerup", endPanelDrag);
