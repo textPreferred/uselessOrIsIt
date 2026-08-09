@@ -26,4 +26,13 @@ test.describe("useless machine — wall label", () => {
       "trade-secret",
     );
   });
+
+  test("dragging it only a short distance springs it back — no panel, no egg, no permanent class", async ({
+    page,
+  }) => {
+    const wallLabel = page.locator(".wall-tape-group");
+    await dragBy(page, wallLabel, 20, -10);
+    await expect(wallLabel).not.toHaveClass(/peeled/);
+    await expect(page.locator(".egg-toast")).toBeHidden();
+  });
 });
