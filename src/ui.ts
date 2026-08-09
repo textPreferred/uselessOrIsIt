@@ -5,6 +5,16 @@ import {
 } from "./easter-eggs";
 import type { Machine } from "./machine";
 
+/** One mechanism photo behind the peeled wall label. Images themselves are
+ * wired in from main.ts, not imported here — e2e specs import named exports
+ * straight from this module under plain Node/ESM, which has no loader for
+ * raw `.jpg` files the way Vite's build does; keeping this module free of
+ * asset imports keeps it importable there. */
+export interface Mechanism {
+  id: string;
+  url: string;
+}
+
 /** Dashes between letter/digit runs so the build's commit SHA reads like a
  * stamped serial number instead of a hex hash. */
 function serialize(sha: string): string {
@@ -96,6 +106,18 @@ const SCREW_TOUCH_RADIUS_TOUCHSCREEN_PX = 40;
 // fast enough to see it as an interruption.
 const LABEL_PEEK_DELAY_MS = 3200;
 
+// The wall tape peels the same general way the OFF label does — dragged,
+// following the pointer — but its outcome is a permanent toggle rather than
+// an always-elastic pull: short of this distance it springs back like an
+// unfinished OFF-label drag; past it, release locks the tape peeled for
+// good, more like backing out a screw. Same order of magnitude as the
+// screw catch radii above.
+const WALL_LABEL_PEEL_THRESHOLD_PX = 70;
+// Once peeled, swiping the revealed panel just cycles to the next mechanism
+// photo — a much smaller ask than fully peeling the tape, since there's
+// nothing left to spring back to either way a swipe goes.
+const PANEL_SWIPE_THRESHOLD_PX = 40;
+
 // Cycled by clicking the nameplate's "?". Mixed rather than grouped
 // upright-then-inverted, so clicking through it doesn't telegraph a
 // pattern. The percontation point (a mirrored "?", used historically for
@@ -141,6 +163,35 @@ function saveFastened(state: Record<Corner, boolean>): void {
   }
 }
 
+const WALL_LABEL_STORAGE_KEY = "uselessMachine.wallLabel";
+interface WallLabelState {
+  peeled: boolean;
+  mechanism: number;
+}
+const DEFAULT_WALL_LABEL_STATE: WallLabelState = {
+  peeled: false,
+  mechanism: 0,
+};
+
+function loadWallLabel(): WallLabelState {
+  try {
+    const raw = localStorage.getItem(WALL_LABEL_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_WALL_LABEL_STATE };
+    const saved = JSON.parse(raw) as Partial<WallLabelState>;
+    return { ...DEFAULT_WALL_LABEL_STATE, ...saved };
+  } catch {
+    return { ...DEFAULT_WALL_LABEL_STATE }; // storage unavailable — wall label just won't persist
+  }
+}
+
+function saveWallLabel(state: WallLabelState): void {
+  try {
+    localStorage.setItem(WALL_LABEL_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* storage unavailable — still works for this session */
+  }
+}
+
 let moveCount = 0;
 let contactDelayMs = BASE_CONTACT_DELAY_MS;
 let idleResetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -167,9 +218,18 @@ export function currentContactDelayMs(): number {
   return contactDelayMs;
 }
 
-export function renderMachine(root: HTMLElement, machine: Machine): void {
+export function renderMachine(
+  root: HTMLElement,
+  machine: Machine,
+  mechanisms: readonly Mechanism[],
+): void {
   root.innerHTML = `
     <div class="stage">
+      <div class="wall-panel" aria-hidden="true">
+        <div class="wall-panel-glass">
+          <img class="wall-panel-img" alt="" src="${mechanisms[0].url}" data-mechanism="${mechanisms[0].id}" />
+        </div>
+      </div>
       <div class="wall-tape-group" aria-hidden="true">
         <div class="wall-tape">USELESS MACHINE,</div>
         <div class="wall-tape wall-tape-2">ISN'T IT?</div>
@@ -235,6 +295,9 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   const topArm = mustFind<HTMLDivElement>(root, ".top-arm");
   const onLabel = mustFind<HTMLDivElement>(root, ".label-tape-on");
   const offLabel = mustFind<HTMLDivElement>(root, ".label-tape-off");
+  const wallTapeGroup = mustFind<HTMLDivElement>(root, ".wall-tape-group");
+  const wallPanel = mustFind<HTMLDivElement>(root, ".wall-panel");
+  const wallPanelImg = mustFind<HTMLImageElement>(root, ".wall-panel-img");
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
   mountEggCollectionButton(stage);
@@ -458,6 +521,143 @@ export function renderMachine(root: HTMLElement, machine: Machine): void {
   }
   offLabel.addEventListener("pointerup", endLabelDrag);
   offLabel.addEventListener("pointercancel", endLabelDrag);
+
+  // The wall tape itself peels the same way — dragged, following the
+  // pointer via its own CSS custom properties — but it's covered by the
+  // closed plate the same way the screws and front labels are (see the
+  // z-index/DOM-order comment above .wall-tape-group in style.css), so
+  // there's nothing extra to gate here: a closed plate already sits on top
+  // of it and swallows the pointer events. Persisted so a peeled label (and
+  // whichever mechanism it's showing) stays that way across a reload, like
+  // the screws it otherwise mirrors.
+  const wallLabel: WallLabelState = loadWallLabel();
+
+  function renderWallLabel(): void {
+    wallTapeGroup.classList.toggle("peeled", wallLabel.peeled);
+    const mechanism = mechanisms[wallLabel.mechanism] ?? mechanisms[0];
+    wallPanelImg.src = mechanism.url;
+    wallPanelImg.dataset.mechanism = mechanism.id;
+    saveWallLabel(wallLabel);
+  }
+  renderWallLabel(); // reflect whatever was loaded before any interaction
+
+  let wallDragPointerId: number | undefined;
+  let wallDragStartX = 0;
+  let wallDragStartY = 0;
+
+  wallTapeGroup.addEventListener("pointerdown", (event) => {
+    if (wallLabel.peeled) return; // already locked open — nothing left to drag
+    wallDragPointerId = event.pointerId;
+    wallTapeGroup.setPointerCapture(event.pointerId);
+    wallTapeGroup.classList.add("grabbed");
+    wallDragStartX = event.clientX;
+    wallDragStartY = event.clientY;
+  });
+  wallTapeGroup.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== wallDragPointerId) return;
+    wallTapeGroup.style.setProperty(
+      "--wall-drag-x",
+      `${event.clientX - wallDragStartX}px`,
+    );
+    wallTapeGroup.style.setProperty(
+      "--wall-drag-y",
+      `${event.clientY - wallDragStartY}px`,
+    );
+  });
+  function endWallDrag(event: PointerEvent): void {
+    if (event.pointerId !== wallDragPointerId) return;
+    wallDragPointerId = undefined;
+    wallTapeGroup.classList.remove("grabbed");
+    const distance = Math.hypot(
+      event.clientX - wallDragStartX,
+      event.clientY - wallDragStartY,
+    );
+    wallTapeGroup.style.removeProperty("--wall-drag-x");
+    wallTapeGroup.style.removeProperty("--wall-drag-y");
+    if (distance >= WALL_LABEL_PEEL_THRESHOLD_PX) {
+      wallLabel.peeled = true;
+      renderWallLabel();
+    }
+    // short of the threshold: clearing the drag vars above is enough to
+    // spring it back to rest — same as releasing an unfinished OFF-label
+    // drag, no separate "not peeled" render needed
+  }
+  wallTapeGroup.addEventListener("pointerup", endWallDrag);
+  wallTapeGroup.addEventListener("pointercancel", endWallDrag);
+
+  // Once peeled, a horizontal swipe on the revealed panel cycles to the
+  // next mechanism photo — like a carousel: the port frame itself never
+  // moves, only the photo does, dragged 1:1 with the pointer via
+  // --img-drag-x on .wall-panel-img (not .wall-panel — that stays put).
+  // Direction doesn't matter for *which* photo comes next — any swipe
+  // past the threshold just advances, looping forever — but it does
+  // decide which way the photo slides out and the next one slides in
+  // from, so the motion still tracks the swipe.
+  let panelDragPointerId: number | undefined;
+  let panelDragStartX = 0;
+  // Set while a completed swipe's slide-out is still animating, so a
+  // fresh grab before it finishes can cancel the stale callback instead
+  // of leaving it to fire later with an outdated direction.
+  let mechanismSlideHandler: (() => void) | undefined;
+
+  wallPanel.addEventListener("pointerdown", (event) => {
+    if (!wallLabel.peeled) return; // nothing to see yet
+    if (mechanismSlideHandler) {
+      wallPanelImg.removeEventListener("transitionend", mechanismSlideHandler);
+      mechanismSlideHandler = undefined;
+    }
+    panelDragPointerId = event.pointerId;
+    wallPanel.setPointerCapture(event.pointerId);
+    wallPanel.classList.add("grabbed");
+    panelDragStartX = event.clientX;
+  });
+  wallPanel.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== panelDragPointerId) return;
+    wallPanelImg.style.setProperty(
+      "--img-drag-x",
+      `${event.clientX - panelDragStartX}px`,
+    );
+  });
+  function endPanelDrag(event: PointerEvent): void {
+    if (event.pointerId !== panelDragPointerId) return;
+    panelDragPointerId = undefined;
+    wallPanel.classList.remove("grabbed");
+    const dx = event.clientX - panelDragStartX;
+    if (Math.abs(dx) < PANEL_SWIPE_THRESHOLD_PX) {
+      wallPanelImg.style.removeProperty("--img-drag-x"); // spring back to center
+      return;
+    }
+    const direction = dx > 0 ? 1 : -1;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      wallPanelImg.style.removeProperty("--img-drag-x");
+      wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
+      renderWallLabel();
+      unlockEasterEgg("inner-workings");
+      return;
+    }
+    // Finish the drag's own slide the rest of the way off-frame; once
+    // that transition lands, swap in the next photo positioned just off
+    // the opposite edge and transition it back to center — the same
+    // "reset off-screen, then animate in" trick a carousel uses to loop
+    // a single element rather than keeping every slide in the DOM.
+    wallPanelImg.style.setProperty("--img-drag-x", `${direction * 100}%`);
+    mechanismSlideHandler = () => {
+      mechanismSlideHandler = undefined;
+      wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
+      renderWallLabel();
+      unlockEasterEgg("inner-workings");
+      wallPanelImg.style.transition = "none";
+      wallPanelImg.style.setProperty("--img-drag-x", `${-direction * 100}%`);
+      void wallPanelImg.offsetWidth; // force reflow so the jump above isn't itself animated
+      wallPanelImg.style.transition = "";
+      wallPanelImg.style.setProperty("--img-drag-x", "0px");
+    };
+    wallPanelImg.addEventListener("transitionend", mechanismSlideHandler, {
+      once: true,
+    });
+  }
+  wallPanel.addEventListener("pointerup", endPanelDrag);
+  wallPanel.addEventListener("pointercancel", endPanelDrag);
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 
