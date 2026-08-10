@@ -640,17 +640,35 @@ export function renderMachine(
     // the opposite edge and transition it back to center — the same
     // "reset off-screen, then animate in" trick a carousel uses to loop
     // a single element rather than keeping every slide in the DOM.
+    //
+    // The next photo is preloaded in parallel with the slide-out below so
+    // it's decoded and cache-ready by the time the swap happens — without
+    // this, setting wallPanelImg.src at swap time paints the still-loading
+    // old bitmap for a frame or two, which reads as the old photo briefly
+    // reappearing before the new one pops in mid-animation.
+    const nextIndex = (wallLabel.mechanism + 1) % mechanisms.length;
+    const nextMechanism = mechanisms[nextIndex] ?? mechanisms[0];
+    const preload = new Image();
+    preload.src = nextMechanism.url;
+
     wallPanelImg.style.setProperty("--img-drag-x", `${direction * 100}%`);
     mechanismSlideHandler = () => {
       mechanismSlideHandler = undefined;
-      wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
-      renderWallLabel();
-      unlockEasterEgg("inner-workings");
-      wallPanelImg.style.transition = "none";
-      wallPanelImg.style.setProperty("--img-drag-x", `${-direction * 100}%`);
-      void wallPanelImg.offsetWidth; // force reflow so the jump above isn't itself animated
-      wallPanelImg.style.transition = "";
-      wallPanelImg.style.setProperty("--img-drag-x", "0px");
+      const slideIn = () => {
+        wallLabel.mechanism = nextIndex;
+        renderWallLabel();
+        unlockEasterEgg("inner-workings");
+        wallPanelImg.style.transition = "none";
+        wallPanelImg.style.setProperty("--img-drag-x", `${-direction * 100}%`);
+        void wallPanelImg.offsetWidth; // force reflow so the jump above isn't itself animated
+        wallPanelImg.style.transition = "";
+        wallPanelImg.style.setProperty("--img-drag-x", "0px");
+      };
+      if (preload.complete) {
+        slideIn();
+      } else {
+        preload.addEventListener("load", slideIn, { once: true });
+      }
     };
     wallPanelImg.addEventListener("transitionend", mechanismSlideHandler, {
       once: true,
