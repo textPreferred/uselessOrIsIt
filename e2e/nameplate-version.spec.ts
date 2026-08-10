@@ -48,4 +48,21 @@ test.describe("useless machine — nameplate version drag", () => {
     await version.click();
     await expect(page.locator(".egg-toast")).toBeHidden();
   });
+
+  test("starting the drag just above the visible text still registers, thanks to the padded hit target", async ({
+    page,
+  }) => {
+    const version = page.locator(".nameplate-version");
+    const originalText = await version.textContent();
+    const box = await version.boundingBox();
+    if (!box || !originalText) throw new Error("version has no bounding box");
+
+    // 8px above the text's own box: outside the tiny glyph row itself, but
+    // meant to still land on the element's enlarged hit target.
+    await page.mouse.move(box.x + box.width / 2, box.y - 8);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 60, box.y - 8);
+    await expect(version).not.toHaveText(originalText);
+    await page.mouse.up();
+  });
 });
