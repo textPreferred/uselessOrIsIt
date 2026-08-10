@@ -858,19 +858,50 @@ export function renderMachine(
   let blockedViaPath = false;
   let pathBlockGiveUpTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function beginBlock(pointerId: number, viaPath: boolean): void {
+  function beginBlock(
+    pointerId: number,
+    viaPath: boolean,
+    blockClientY?: number,
+  ): void {
     blockedPointerId = pointerId;
     blockedViaPath = viaPath;
     machine.hold();
     cancelSequence(); // cancel whatever retreat/hit-back was scheduled next
+    if (viaPath && blockClientY !== undefined) {
+      awaitPathArrival(pointerId, blockClientY);
+    } else {
+      freezeIntoBlocked();
+    }
+  }
+
+  function freezeIntoBlocked(): void {
     settleThenTransition("blocked", (frozenTransform) => {
       const { x, y } = translationOf(frozenTransform);
       antenna.style.setProperty("--block-x", `${x}px`);
       antenna.style.setProperty("--block-y", `${y}px`);
     });
-    if (viaPath) {
+    if (blockedViaPath) {
       pathBlockGiveUpTimer = setTimeout(pathBlockGiveUp, PATH_BLOCK_GIVEUP_MS);
     }
+  }
+
+  // A path block lands in the open gap ahead of the tip, not on the antenna
+  // itself — so rather than yanking it to a stop right where the finger
+  // first touched down, let its existing approach keep gliding until the
+  // tip actually reaches the finger's height, then freeze it there. Polled
+  // per frame against the antenna's own live position rather than computed
+  // once up front, since it's already mid-transition and its exact path is
+  // easiest to read straight off the DOM.
+  function awaitPathArrival(pointerId: number, blockClientY: number): void {
+    const check = () => {
+      if (blockedPointerId !== pointerId) return; // released before arrival
+      if (antenna.getBoundingClientRect().top <= blockClientY) {
+        freezeIntoBlocked();
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
   }
 
   function hitBack(): void {
@@ -1099,7 +1130,7 @@ export function renderMachine(
     if (antenna.contains(event.target as Node)) return;
     if (rocker.contains(event.target as Node)) return;
     if (!withinPathGap(event.clientX, event.clientY)) return;
-    beginBlock(event.pointerId, true);
+    beginBlock(event.pointerId, true, event.clientY);
   });
   window.addEventListener("pointerup", (event) => {
     if (event.pointerId === blockedPointerId) endBlock();
