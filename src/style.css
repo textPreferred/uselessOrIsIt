@@ -595,6 +595,7 @@ body {
 /* Draggable: scrubs its own patch digits left/right, always snapping back
    to the real version on release — see the pointer handlers in ui.ts. */
 .nameplate-version {
+  position: relative;
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 0.8rem;
   letter-spacing: 0.04em;
@@ -604,6 +605,16 @@ body {
   transition:
     opacity 0.15s,
     color 0.15s;
+}
+
+/* The text itself is a tiny target — this pads the actual grab area out to
+   a thumb-sized hit region without shifting layout or the nameplate's other
+   rows: the pseudo-element overflows the box it's drawn on, but pointer
+   events landing in that overflow still resolve to the real element. */
+.nameplate-version::before {
+  content: "";
+  position: absolute;
+  inset: -0.9rem -1rem;
 }
 
 /* While scrubbed, the digits burn brighter and redder — a dial spinning
