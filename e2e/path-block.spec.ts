@@ -77,6 +77,31 @@ test.describe("useless machine — blocking the antenna's path", () => {
     await expect(page.locator(".top-arm")).not.toHaveClass(/reach/);
   });
 
+  test("blocking the antenna's path lets it keep approaching the finger instead of freezing where it started", async ({
+    page,
+  }) => {
+    const machineSwitch = page.getByRole("switch");
+    const arm = page.getByTestId("arm");
+    await clickTop(machineSwitch);
+
+    // early in its approach — plenty of path still ahead of the tip for it
+    // to keep closing before it reaches the finger
+    await page.waitForTimeout(200);
+    await beginPathBlock(page, arm, machineSwitch);
+
+    const startTop = (await arm.boundingBox())?.y;
+    if (startTop === undefined) throw new Error("arm has no bounding box");
+
+    // still gliding toward the finger, not pinned at the press position —
+    // a frozen antenna would never clear this margin (the shiver-in-place
+    // jitter alone is under 3px)
+    await expect
+      .poll(async () => (await arm.boundingBox())?.y, { timeout: 1000 })
+      .toBeLessThan(startTop - 10);
+
+    await page.mouse.up();
+  });
+
   test("provoking the antenna by blocking it unlocks an easter egg", async ({
     page,
   }) => {
