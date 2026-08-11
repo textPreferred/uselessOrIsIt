@@ -1013,20 +1013,20 @@ body {
    --block-x/--block-y (the arrival point ui.ts froze), the same way
    .blocked is. */
 .antenna.path-struggle {
-  animation: antenna-path-struggle 0.32s ease-in-out infinite;
+  animation: antenna-path-struggle 0.4s ease-in-out infinite;
 }
 
 @keyframes antenna-path-struggle {
   0%,
-  35%,
+  30%,
   100% {
     transform: translate(var(--block-x, 0), var(--block-y, -4.1rem));
   }
 
-  18% {
+  15% {
     transform: translate(
-      calc(var(--block-x, 0) + 0.08rem),
-      calc(var(--block-y, -4.1rem) - 0.8rem)
+      calc(var(--block-x, 0) + 0.1rem),
+      calc(var(--block-y, -4.1rem) - 2.2rem)
     );
   }
 }
