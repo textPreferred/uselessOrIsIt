@@ -902,7 +902,8 @@ body {
 .antenna.reach,
 .antenna.retreat,
 .antenna.struggle,
-.antenna.blocked {
+.antenna.blocked,
+.antenna.path-struggle {
   visibility: visible;
 }
 
@@ -992,6 +993,51 @@ body {
     transform: translate(
       calc(var(--block-x, 0) - 0.25rem),
       calc(var(--block-y, -4.1rem) + 0.05rem)
+    );
+  }
+
+  80% {
+    transform: translate(
+      calc(var(--block-x, 0) + 0.35rem),
+      var(--block-y, -4.1rem)
+    );
+  }
+}
+
+/* A blocked path, once it's actually reached the finger, reads as a repeated
+   push rather than the single dead stop .blocked gives a direct grab — the
+   same shape .struggle uses for a held switch (see antenna-struggle above),
+   just anchored to --block-x/--block-y (the arrival point ui.ts froze) the
+   way .blocked is, instead of the fixed contact point .struggle pushes
+   against. */
+.antenna.path-struggle {
+  animation: antenna-path-struggle 0.18s ease-in-out infinite;
+}
+
+@keyframes antenna-path-struggle {
+  0%,
+  100% {
+    transform: translate(var(--block-x, 0), var(--block-y, -4.1rem));
+  }
+
+  20% {
+    transform: translate(
+      calc(var(--block-x, 0) - 0.35rem),
+      calc(var(--block-y, -4.1rem) + 0.1rem)
+    );
+  }
+
+  40% {
+    transform: translate(
+      calc(var(--block-x, 0) + 0.3rem),
+      calc(var(--block-y, -4.1rem) - 0.05rem)
+    );
+  }
+
+  60% {
+    transform: translate(
+      calc(var(--block-x, 0) - 0.25rem),
+      calc(var(--block-y, -4.1rem) + 0.15rem)
     );
   }
 
@@ -1113,7 +1159,8 @@ body {
   }
 
   .antenna.struggle,
-  .antenna.blocked {
+  .antenna.blocked,
+  .antenna.path-struggle {
     animation: none;
   }
 }
