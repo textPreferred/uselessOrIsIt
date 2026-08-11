@@ -32,4 +32,19 @@ test.describe("useless machine — party lights", () => {
     await expect(feedbackButton).not.toHaveClass(/party/);
     await expect(page.locator(".egg-toast")).toBeHidden();
   });
+
+  test("the party lights are a ring of bulbs around the bubble, and fade out on their own after a beat", async ({
+    page,
+  }) => {
+    const onLabel = page.locator(".label-tape-on");
+    const feedbackButton = page.locator(".feedback-button");
+    await dragOnto(page, onLabel, feedbackButton);
+
+    await expect(feedbackButton).toHaveClass(/party/);
+    const bulbCount = await feedbackButton.locator(".party-bulb").count();
+    expect(bulbCount).toBeGreaterThan(0);
+
+    await expect(feedbackButton).not.toHaveClass(/party/, { timeout: 4000 });
+    await expect(feedbackButton.locator(".party-bulb")).toHaveCount(0);
+  });
 });
