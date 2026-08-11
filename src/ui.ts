@@ -113,6 +113,11 @@ const LABEL_PEEK_DELAY_MS = 3200;
 // good, more like backing out a screw. Same order of magnitude as the
 // screw catch radii above.
 const WALL_LABEL_PEEL_THRESHOLD_PX = 70;
+// Ring of bulbs dropped around the feedback bubble once the ON label lands
+// on it — purely decorative, CSS positions and colors each one via
+// :nth-of-type, the same technique the egg toast's confetti uses.
+const PARTY_LIGHT_COUNT = 10;
+const PARTY_LIGHTS_DURATION_MS = 2400;
 // Once peeled, swiping the revealed panel just cycles to the next mechanism
 // photo — a much smaller ask than fully peeling the tape, since there's
 // nothing left to spring back to either way a swipe goes.
@@ -398,6 +403,32 @@ export function renderMachine(
     return onLabelSpins % 4 === 0;
   }
 
+  // Wraps the feedback bubble in a ring of blinking bulbs for a beat, then
+  // clears itself back to normal. Skipped under reduced motion, same as the
+  // label's own unprompted peek — the egg still unlocks either way.
+  let partyTimer: ReturnType<typeof setTimeout> | undefined;
+  function removePartyBulbs(): void {
+    for (const bulb of feedbackButton.querySelectorAll(".party-bulb")) {
+      bulb.remove();
+    }
+  }
+  function triggerPartyLights(): void {
+    clearTimeout(partyTimer);
+    removePartyBulbs();
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      for (let i = 0; i < PARTY_LIGHT_COUNT; i++) {
+        const bulb = document.createElement("span");
+        bulb.className = "party-bulb";
+        feedbackButton.appendChild(bulb);
+      }
+    }
+    feedbackButton.classList.add("party");
+    partyTimer = setTimeout(() => {
+      feedbackButton.classList.remove("party");
+      removePartyBulbs();
+    }, PARTY_LIGHTS_DURATION_MS);
+  }
+
   function overlapsFeedbackButton(el: HTMLElement): boolean {
     const a = el.getBoundingClientRect();
     const b = feedbackButton.getBoundingClientRect();
@@ -435,7 +466,7 @@ export function renderMachine(
     onLabel.style.removeProperty("--on-drag-y");
     if (onLabelWasDragged && overlapsFeedbackButton(onLabel)) {
       unlockEasterEgg("lets-party");
-      feedbackButton.classList.add("party");
+      triggerPartyLights();
     }
   }
   onLabel.addEventListener("pointerup", endOnLabelDrag);

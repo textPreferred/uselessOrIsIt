@@ -1440,8 +1440,10 @@ body {
   background: rgb(0 0 0 / 45%);
 }
 
-/* Dropping the unspun ON label here "turns the bubble on" — a quick color
-   pulse for now; the ring of circus bulbs comes with the fade-out cycle. */
+/* Dropping the unspun ON label here "turns the bubble on": a color pulse
+   plus a ring of ten bulbs (ui.ts adds/removes both together, and clears
+   them again once PARTY_LIGHTS_DURATION_MS is up) — a little circus marquee
+   wrapped around the button. */
 .feedback-button.party {
   animation: feedback-party-pulse 0.6s ease-in-out infinite;
 }
@@ -1454,6 +1456,103 @@ body {
 
   50% {
     background: rgb(255 60 120 / 55%);
+  }
+}
+
+.party-bulb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.34rem;
+  height: 0.34rem;
+  margin: -0.17rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0.35rem 0.05rem currentColor;
+  animation: party-bulb-blink 0.9s ease-in-out infinite;
+}
+
+/* Ten bulbs at 36deg increments around a 1.65rem radius, just outside the
+   button's own 1.1rem edge. */
+.party-bulb:nth-of-type(1) {
+  --bulb-x: 0rem;
+  --bulb-y: -1.65rem;
+  color: #ff3b6b;
+  animation-delay: 0s;
+}
+
+.party-bulb:nth-of-type(2) {
+  --bulb-x: 0.97rem;
+  --bulb-y: -1.33rem;
+  color: #ffd23f;
+  animation-delay: 0.09s;
+}
+
+.party-bulb:nth-of-type(3) {
+  --bulb-x: 1.57rem;
+  --bulb-y: -0.51rem;
+  color: #3fd67f;
+  animation-delay: 0.18s;
+}
+
+.party-bulb:nth-of-type(4) {
+  --bulb-x: 1.57rem;
+  --bulb-y: 0.51rem;
+  color: #3fbfff;
+  animation-delay: 0.27s;
+}
+
+.party-bulb:nth-of-type(5) {
+  --bulb-x: 0.97rem;
+  --bulb-y: 1.33rem;
+  color: #ff3b6b;
+  animation-delay: 0.36s;
+}
+
+.party-bulb:nth-of-type(6) {
+  --bulb-x: 0rem;
+  --bulb-y: 1.65rem;
+  color: #ffd23f;
+  animation-delay: 0.45s;
+}
+
+.party-bulb:nth-of-type(7) {
+  --bulb-x: -0.97rem;
+  --bulb-y: 1.33rem;
+  color: #3fd67f;
+  animation-delay: 0.54s;
+}
+
+.party-bulb:nth-of-type(8) {
+  --bulb-x: -1.57rem;
+  --bulb-y: 0.51rem;
+  color: #3fbfff;
+  animation-delay: 0.63s;
+}
+
+.party-bulb:nth-of-type(9) {
+  --bulb-x: -1.57rem;
+  --bulb-y: -0.51rem;
+  color: #ff3b6b;
+  animation-delay: 0.72s;
+}
+
+.party-bulb:nth-of-type(10) {
+  --bulb-x: -0.97rem;
+  --bulb-y: -1.33rem;
+  color: #ffd23f;
+  animation-delay: 0.81s;
+}
+
+@keyframes party-bulb-blink {
+  0%,
+  100% {
+    transform: translate(var(--bulb-x), var(--bulb-y)) scale(1);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: translate(var(--bulb-x), var(--bulb-y)) scale(1.35);
+    opacity: 1;
   }
 }
 
@@ -1611,7 +1710,9 @@ body {
   .egg-toast,
   .egg-card,
   .egg-confetti-piece,
-  .egg-collection-count-pending {
+  .egg-collection-count-pending,
+  .feedback-button.party,
+  .party-bulb {
     animation: none;
   }
 
