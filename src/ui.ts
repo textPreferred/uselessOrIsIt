@@ -322,46 +322,39 @@ export function renderMachine(
   );
   const VERSION_PATCH_PATTERN = /^(v\d+\.\d+\.)(\d+)(.*)$/;
   const VERSION_DRAG_STEP_PX = 5;
-  let versionDragPointerId: number | undefined;
   let versionDragStartX = 0;
   let versionOriginalText = "";
   let versionPrefix = "";
   let versionSuffix = "";
   let versionOriginalPatch = 0;
   let versionChanged = false;
-  nameplateVersion.addEventListener("pointerdown", (event) => {
-    const match = nameplateVersion.textContent?.match(VERSION_PATCH_PATTERN);
-    if (!match) return;
-    versionDragPointerId = event.pointerId;
-    versionDragStartX = event.clientX;
-    versionOriginalText = nameplateVersion.textContent ?? "";
-    versionPrefix = match[1];
-    versionOriginalPatch = Number(match[2]);
-    versionSuffix = match[3];
-    versionChanged = false;
-    nameplateVersion.setPointerCapture(event.pointerId);
-    nameplateVersion.classList.add("grabbed");
+  trackDrag(nameplateVersion, {
+    canStart: (event) => {
+      const match = nameplateVersion.textContent?.match(VERSION_PATCH_PATTERN);
+      if (!match) return false;
+      versionDragStartX = event.clientX;
+      versionOriginalText = nameplateVersion.textContent ?? "";
+      versionPrefix = match[1];
+      versionOriginalPatch = Number(match[2]);
+      versionSuffix = match[3];
+      versionChanged = false;
+      return true;
+    },
+    onMove: (event) => {
+      const steps = Math.trunc(
+        (event.clientX - versionDragStartX) / VERSION_DRAG_STEP_PX,
+      );
+      if (steps !== 0) versionChanged = true;
+      const patch = Math.max(0, versionOriginalPatch + steps);
+      nameplateVersion.textContent = `${versionPrefix}${patch}${versionSuffix}`;
+    },
+    onEnd: () => {
+      if (versionChanged) {
+        nameplateVersion.textContent = versionOriginalText;
+        unlockEasterEgg("no-bending-of-space-time");
+      }
+    },
   });
-  nameplateVersion.addEventListener("pointermove", (event) => {
-    if (event.pointerId !== versionDragPointerId) return;
-    const steps = Math.trunc(
-      (event.clientX - versionDragStartX) / VERSION_DRAG_STEP_PX,
-    );
-    if (steps !== 0) versionChanged = true;
-    const patch = Math.max(0, versionOriginalPatch + steps);
-    nameplateVersion.textContent = `${versionPrefix}${patch}${versionSuffix}`;
-  });
-  function endVersionDrag(event: PointerEvent): void {
-    if (event.pointerId !== versionDragPointerId) return;
-    versionDragPointerId = undefined;
-    nameplateVersion.classList.remove("grabbed");
-    if (versionChanged) {
-      nameplateVersion.textContent = versionOriginalText;
-      unlockEasterEgg("no-bending-of-space-time");
-    }
-  }
-  nameplateVersion.addEventListener("pointerup", endVersionDrag);
-  nameplateVersion.addEventListener("pointercancel", endVersionDrag);
 
   // Each click spins the ON label 90deg counter-clockwise. Since O and N are
   // both symmetric under a 180deg rotation, two clicks (180deg) reads as NO
@@ -459,7 +452,6 @@ export function renderMachine(
   // Dragging the peeled OFF label across a screw backs it out — the label
   // itself just follows the pointer via CSS custom properties, and every
   // move checks proximity to each still-fastened screw.
-  let dragPointerId: number | undefined;
   let dragStartX = 0;
   let dragStartY = 0;
   let toggledThisDrag = new Set<Corner>();
@@ -496,31 +488,24 @@ export function renderMachine(
     }
   }
 
-  offLabel.addEventListener("pointerdown", (event) => {
-    everGrabbed = true;
-    offLabel.classList.remove("peek");
-    dragPointerId = event.pointerId;
-    toggledThisDrag = new Set();
-    offLabel.setPointerCapture(event.pointerId);
-    offLabel.classList.add("grabbed");
-    dragStartX = event.clientX;
-    dragStartY = event.clientY;
+  trackDrag(offLabel, {
+    onStart: (event) => {
+      everGrabbed = true;
+      offLabel.classList.remove("peek");
+      toggledThisDrag = new Set();
+      dragStartX = event.clientX;
+      dragStartY = event.clientY;
+    },
+    onMove: (event) => {
+      offLabel.style.setProperty("--drag-x", `${event.clientX - dragStartX}px`);
+      offLabel.style.setProperty("--drag-y", `${event.clientY - dragStartY}px`);
+      checkScrewCollisions(event.pointerType);
+    },
+    onEnd: () => {
+      offLabel.style.removeProperty("--drag-x");
+      offLabel.style.removeProperty("--drag-y");
+    },
   });
-  offLabel.addEventListener("pointermove", (event) => {
-    if (event.pointerId !== dragPointerId) return;
-    offLabel.style.setProperty("--drag-x", `${event.clientX - dragStartX}px`);
-    offLabel.style.setProperty("--drag-y", `${event.clientY - dragStartY}px`);
-    checkScrewCollisions(event.pointerType);
-  });
-  function endLabelDrag(event: PointerEvent): void {
-    if (event.pointerId !== dragPointerId) return;
-    dragPointerId = undefined;
-    offLabel.classList.remove("grabbed");
-    offLabel.style.removeProperty("--drag-x");
-    offLabel.style.removeProperty("--drag-y");
-  }
-  offLabel.addEventListener("pointerup", endLabelDrag);
-  offLabel.addEventListener("pointercancel", endLabelDrag);
 
   // The wall tape itself peels the same way — dragged, following the
   // pointer via its own CSS custom properties — but it's covered by the
@@ -532,58 +517,54 @@ export function renderMachine(
   // the screws it otherwise mirrors.
   const wallLabel: WallLabelState = loadWallLabel();
 
+  function mechanismAt(index: number): Mechanism {
+    return mechanisms[index] ?? mechanisms[0];
+  }
+
   function renderWallLabel(): void {
     wallTapeGroup.classList.toggle("peeled", wallLabel.peeled);
-    const mechanism = mechanisms[wallLabel.mechanism] ?? mechanisms[0];
+    const mechanism = mechanismAt(wallLabel.mechanism);
     wallPanelImg.src = mechanism.url;
     wallPanelImg.dataset.mechanism = mechanism.id;
     saveWallLabel(wallLabel);
   }
   renderWallLabel(); // reflect whatever was loaded before any interaction
 
-  let wallDragPointerId: number | undefined;
   let wallDragStartX = 0;
   let wallDragStartY = 0;
 
-  wallTapeGroup.addEventListener("pointerdown", (event) => {
-    if (wallLabel.peeled) return; // already locked open — nothing left to drag
-    wallDragPointerId = event.pointerId;
-    wallTapeGroup.setPointerCapture(event.pointerId);
-    wallTapeGroup.classList.add("grabbed");
-    wallDragStartX = event.clientX;
-    wallDragStartY = event.clientY;
+  trackDrag(wallTapeGroup, {
+    canStart: () => !wallLabel.peeled, // already locked open — nothing left to drag
+    onStart: (event) => {
+      wallDragStartX = event.clientX;
+      wallDragStartY = event.clientY;
+    },
+    onMove: (event) => {
+      wallTapeGroup.style.setProperty(
+        "--wall-drag-x",
+        `${event.clientX - wallDragStartX}px`,
+      );
+      wallTapeGroup.style.setProperty(
+        "--wall-drag-y",
+        `${event.clientY - wallDragStartY}px`,
+      );
+    },
+    onEnd: (event) => {
+      const distance = Math.hypot(
+        event.clientX - wallDragStartX,
+        event.clientY - wallDragStartY,
+      );
+      wallTapeGroup.style.removeProperty("--wall-drag-x");
+      wallTapeGroup.style.removeProperty("--wall-drag-y");
+      if (distance >= WALL_LABEL_PEEL_THRESHOLD_PX) {
+        wallLabel.peeled = true;
+        renderWallLabel();
+      }
+      // short of the threshold: clearing the drag vars above is enough to
+      // spring it back to rest — same as releasing an unfinished OFF-label
+      // drag, no separate "not peeled" render needed
+    },
   });
-  wallTapeGroup.addEventListener("pointermove", (event) => {
-    if (event.pointerId !== wallDragPointerId) return;
-    wallTapeGroup.style.setProperty(
-      "--wall-drag-x",
-      `${event.clientX - wallDragStartX}px`,
-    );
-    wallTapeGroup.style.setProperty(
-      "--wall-drag-y",
-      `${event.clientY - wallDragStartY}px`,
-    );
-  });
-  function endWallDrag(event: PointerEvent): void {
-    if (event.pointerId !== wallDragPointerId) return;
-    wallDragPointerId = undefined;
-    wallTapeGroup.classList.remove("grabbed");
-    const distance = Math.hypot(
-      event.clientX - wallDragStartX,
-      event.clientY - wallDragStartY,
-    );
-    wallTapeGroup.style.removeProperty("--wall-drag-x");
-    wallTapeGroup.style.removeProperty("--wall-drag-y");
-    if (distance >= WALL_LABEL_PEEL_THRESHOLD_PX) {
-      wallLabel.peeled = true;
-      renderWallLabel();
-    }
-    // short of the threshold: clearing the drag vars above is enough to
-    // spring it back to rest — same as releasing an unfinished OFF-label
-    // drag, no separate "not peeled" render needed
-  }
-  wallTapeGroup.addEventListener("pointerup", endWallDrag);
-  wallTapeGroup.addEventListener("pointercancel", endWallDrag);
 
   // Once peeled, a horizontal swipe on the revealed panel cycles to the
   // next mechanism photo — like a carousel: the port frame itself never
@@ -593,89 +574,85 @@ export function renderMachine(
   // past the threshold just advances, looping forever — but it does
   // decide which way the photo slides out and the next one slides in
   // from, so the motion still tracks the swipe.
-  let panelDragPointerId: number | undefined;
   let panelDragStartX = 0;
   // Set while a completed swipe's slide-out is still animating, so a
   // fresh grab before it finishes can cancel the stale callback instead
   // of leaving it to fire later with an outdated direction.
   let mechanismSlideHandler: (() => void) | undefined;
 
-  wallPanel.addEventListener("pointerdown", (event) => {
-    if (!wallLabel.peeled) return; // nothing to see yet
-    if (mechanismSlideHandler) {
-      wallPanelImg.removeEventListener("transitionend", mechanismSlideHandler);
-      mechanismSlideHandler = undefined;
-    }
-    panelDragPointerId = event.pointerId;
-    wallPanel.setPointerCapture(event.pointerId);
-    wallPanel.classList.add("grabbed");
-    panelDragStartX = event.clientX;
-  });
-  wallPanel.addEventListener("pointermove", (event) => {
-    if (event.pointerId !== panelDragPointerId) return;
-    wallPanelImg.style.setProperty(
-      "--img-drag-x",
-      `${event.clientX - panelDragStartX}px`,
-    );
-  });
-  function endPanelDrag(event: PointerEvent): void {
-    if (event.pointerId !== panelDragPointerId) return;
-    panelDragPointerId = undefined;
-    wallPanel.classList.remove("grabbed");
-    const dx = event.clientX - panelDragStartX;
-    if (Math.abs(dx) < PANEL_SWIPE_THRESHOLD_PX) {
-      wallPanelImg.style.removeProperty("--img-drag-x"); // spring back to center
-      return;
-    }
-    const direction = dx > 0 ? 1 : -1;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      wallPanelImg.style.removeProperty("--img-drag-x");
-      wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
-      renderWallLabel();
-      unlockEasterEgg("inner-workings");
-      return;
-    }
-    // Finish the drag's own slide the rest of the way off-frame; once
-    // that transition lands, swap in the next photo positioned just off
-    // the opposite edge and transition it back to center — the same
-    // "reset off-screen, then animate in" trick a carousel uses to loop
-    // a single element rather than keeping every slide in the DOM.
-    //
-    // The next photo is preloaded in parallel with the slide-out below so
-    // it's decoded and cache-ready by the time the swap happens — without
-    // this, setting wallPanelImg.src at swap time paints the still-loading
-    // old bitmap for a frame or two, which reads as the old photo briefly
-    // reappearing before the new one pops in mid-animation.
-    const nextIndex = (wallLabel.mechanism + 1) % mechanisms.length;
-    const nextMechanism = mechanisms[nextIndex] ?? mechanisms[0];
-    const preload = new Image();
-    preload.src = nextMechanism.url;
-
-    wallPanelImg.style.setProperty("--img-drag-x", `${direction * 100}%`);
-    mechanismSlideHandler = () => {
-      mechanismSlideHandler = undefined;
-      const slideIn = () => {
-        wallLabel.mechanism = nextIndex;
+  trackDrag(wallPanel, {
+    canStart: () => wallLabel.peeled, // nothing to see yet, otherwise
+    onStart: (event) => {
+      if (mechanismSlideHandler) {
+        wallPanelImg.removeEventListener(
+          "transitionend",
+          mechanismSlideHandler,
+        );
+        mechanismSlideHandler = undefined;
+      }
+      panelDragStartX = event.clientX;
+    },
+    onMove: (event) => {
+      wallPanelImg.style.setProperty(
+        "--img-drag-x",
+        `${event.clientX - panelDragStartX}px`,
+      );
+    },
+    onEnd: (event) => {
+      const dx = event.clientX - panelDragStartX;
+      if (Math.abs(dx) < PANEL_SWIPE_THRESHOLD_PX) {
+        wallPanelImg.style.removeProperty("--img-drag-x"); // spring back to center
+        return;
+      }
+      const direction = dx > 0 ? 1 : -1;
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        wallPanelImg.style.removeProperty("--img-drag-x");
+        wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
         renderWallLabel();
         unlockEasterEgg("inner-workings");
-        wallPanelImg.style.transition = "none";
-        wallPanelImg.style.setProperty("--img-drag-x", `${-direction * 100}%`);
-        void wallPanelImg.offsetWidth; // force reflow so the jump above isn't itself animated
-        wallPanelImg.style.transition = "";
-        wallPanelImg.style.setProperty("--img-drag-x", "0px");
-      };
-      if (preload.complete) {
-        slideIn();
-      } else {
-        preload.addEventListener("load", slideIn, { once: true });
+        return;
       }
-    };
-    wallPanelImg.addEventListener("transitionend", mechanismSlideHandler, {
-      once: true,
-    });
-  }
-  wallPanel.addEventListener("pointerup", endPanelDrag);
-  wallPanel.addEventListener("pointercancel", endPanelDrag);
+      // Finish the drag's own slide the rest of the way off-frame; once
+      // that transition lands, swap in the next photo positioned just off
+      // the opposite edge and transition it back to center — the same
+      // "reset off-screen, then animate in" trick a carousel uses to loop
+      // a single element rather than keeping every slide in the DOM.
+      //
+      // The next photo is preloaded in parallel with the slide-out below so
+      // it's decoded and cache-ready by the time the swap happens — without
+      // this, setting wallPanelImg.src at swap time paints the still-loading
+      // old bitmap for a frame or two, which reads as the old photo briefly
+      // reappearing before the new one pops in mid-animation.
+      const nextIndex = (wallLabel.mechanism + 1) % mechanisms.length;
+      const preload = new Image();
+      preload.src = mechanismAt(nextIndex).url;
+
+      wallPanelImg.style.setProperty("--img-drag-x", `${direction * 100}%`);
+      mechanismSlideHandler = () => {
+        mechanismSlideHandler = undefined;
+        const slideIn = () => {
+          wallLabel.mechanism = nextIndex;
+          renderWallLabel();
+          unlockEasterEgg("inner-workings");
+          withoutTransition(wallPanelImg, () => {
+            wallPanelImg.style.setProperty(
+              "--img-drag-x",
+              `${-direction * 100}%`,
+            );
+          });
+          wallPanelImg.style.setProperty("--img-drag-x", "0px");
+        };
+        if (preload.complete) {
+          slideIn();
+        } else {
+          preload.addEventListener("load", slideIn, { once: true });
+        }
+      };
+      wallPanelImg.addEventListener("transitionend", mechanismSlideHandler, {
+        once: true,
+      });
+    },
+  });
 
   let timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -787,10 +764,9 @@ export function renderMachine(
       "blocked",
       "path-struggle",
     );
-    antenna.style.transition = "none";
-    antenna.style.transform = frozenTransform;
-    void antenna.offsetHeight;
-    antenna.style.removeProperty("transition");
+    withoutTransition(antenna, () => {
+      antenna.style.transform = frozenTransform;
+    });
     requestAnimationFrame(() => {
       antenna.style.removeProperty("transform");
       onSettled?.(frozenTransform);
@@ -877,32 +853,28 @@ export function renderMachine(
     if (viaPath && blockClientY !== undefined) {
       awaitPathArrival(pointerId, blockClientY);
     } else {
-      freezeIntoBlocked();
+      // A direct grab stops the antenna dead exactly where the finger
+      // landed — there's nowhere left to go, the finger is already on it.
+      freezeBlock("blocked", false);
     }
   }
 
-  // A direct grab stops the antenna dead exactly where the finger landed —
-  // there's nowhere left to go, the finger is already on it.
-  function freezeIntoBlocked(): void {
-    settleThenTransition("blocked", (frozenTransform) => {
+  // Freezes the antenna exactly where it is and seeds --block-x/--block-y
+  // from that frozen position, so CSS can hold it there. `arm` covers the
+  // path-block case only: once the antenna actually reaches the finger, it
+  // reads as a repeated push against it — the same shape a held switch
+  // gets, rather than the single dead stop a direct grab gets — and that
+  // push should give up on its own after PATH_BLOCK_GIVEUP_MS regardless of
+  // whether the finger is still down.
+  function freezeBlock(className: string, arm: boolean): void {
+    settleThenTransition(className, (frozenTransform) => {
       const { x, y } = translationOf(frozenTransform);
       antenna.style.setProperty("--block-x", `${x}px`);
       antenna.style.setProperty("--block-y", `${y}px`);
     });
-  }
-
-  // A path block, once the antenna actually reaches the finger, reads as a
-  // repeated push against it — the same shape a held switch gets — rather
-  // than the single dead stop a direct grab gets, since this is contact the
-  // antenna is still trying to push through, not a hand actually gripping
-  // it.
-  function freezeIntoPathStruggle(): void {
-    settleThenTransition("path-struggle", (frozenTransform) => {
-      const { x, y } = translationOf(frozenTransform);
-      antenna.style.setProperty("--block-x", `${x}px`);
-      antenna.style.setProperty("--block-y", `${y}px`);
-    });
-    pathBlockGiveUpTimer = setTimeout(pathBlockGiveUp, PATH_BLOCK_GIVEUP_MS);
+    if (arm) {
+      pathBlockGiveUpTimer = setTimeout(pathBlockGiveUp, PATH_BLOCK_GIVEUP_MS);
+    }
   }
 
   // A path block lands in the open gap ahead of the tip, not on the antenna
@@ -916,7 +888,7 @@ export function renderMachine(
     const check = () => {
       if (blockedPointerId !== pointerId) return; // released before arrival
       if (antenna.getBoundingClientRect().top <= blockClientY) {
-        freezeIntoPathStruggle();
+        freezeBlock("path-struggle", true);
         return;
       }
       requestAnimationFrame(check);
@@ -1260,4 +1232,51 @@ function mustFind<T extends Element>(root: HTMLElement, selector: string): T {
   const element = root.querySelector<T>(selector);
   if (!element) throw new Error(`missing element: ${selector}`);
   return element;
+}
+
+/** Applies a style change to `el` without animating it: kills the
+ * transition, runs `apply`, forces a reflow so the browser has nothing
+ * queued to transition from, then restores transitions for whatever comes
+ * next. */
+function withoutTransition(el: HTMLElement, apply: () => void): void {
+  el.style.transition = "none";
+  apply();
+  void el.offsetWidth; // force reflow so the change above isn't itself animated
+  el.style.removeProperty("transition");
+}
+
+/** Wires up a press-drag-release gesture on `el`: captures the pointer on
+ * down, toggles a `grabbed` class for the duration, and routes move/end
+ * events only for the pointer that started the drag. `canStart` (if given)
+ * gates whether a given pointerdown begins a drag at all — returning false
+ * leaves the pointer uncaptured and skips `onStart`. */
+function trackDrag(
+  el: HTMLElement,
+  handlers: {
+    canStart?: (event: PointerEvent) => boolean;
+    onStart?: (event: PointerEvent) => void;
+    onMove: (event: PointerEvent) => void;
+    onEnd: (event: PointerEvent) => void;
+  },
+): void {
+  let pointerId: number | undefined;
+  el.addEventListener("pointerdown", (event) => {
+    if (handlers.canStart && !handlers.canStart(event)) return;
+    pointerId = event.pointerId;
+    el.setPointerCapture(event.pointerId);
+    el.classList.add("grabbed");
+    handlers.onStart?.(event);
+  });
+  el.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId) return;
+    handlers.onMove(event);
+  });
+  function end(event: PointerEvent): void {
+    if (event.pointerId !== pointerId) return;
+    pointerId = undefined;
+    el.classList.remove("grabbed");
+    handlers.onEnd(event);
+  }
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
 }
