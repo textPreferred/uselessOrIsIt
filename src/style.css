@@ -1005,37 +1005,25 @@ body {
 }
 
 /* A blocked path, once it's actually reached the finger, reads as a repeated
-   push against it rather than the single dead stop .blocked gives a direct
-   grab. Pushing further *up* the approach axis doesn't read on a touchscreen
-   — the antenna's own 1.6rem width sits squarely under the fingertip that's
-   blocking it, so any motion that stays in that same column is hidden by
-   the hand causing it. Swinging wide side to side instead moves it out from
-   under the finger on every cycle, trying one side then the other, which
-   stays visible regardless of exactly where the finger sits. Anchored to
-   --block-x/--block-y (the arrival point ui.ts froze), the same way
-   .blocked is. */
+   poke straight at it rather than the single dead stop .blocked gives a
+   direct grab: a real jab forward along the approach axis, recoiling back
+   to the arrival point between tries. Anchored to --block-x/--block-y (the
+   arrival point ui.ts froze), the same way .blocked is. */
 .antenna.path-struggle {
-  animation: antenna-path-struggle 0.36s ease-in-out infinite;
+  animation: antenna-path-struggle 0.4s ease-in-out infinite;
 }
 
 @keyframes antenna-path-struggle {
   0%,
-  50%,
+  30%,
   100% {
     transform: translate(var(--block-x, 0), var(--block-y, -4.1rem));
   }
 
-  25% {
+  15% {
     transform: translate(
-      calc(var(--block-x, 0) - 1.8rem),
-      calc(var(--block-y, -4.1rem) - 0.3rem)
-    );
-  }
-
-  75% {
-    transform: translate(
-      calc(var(--block-x, 0) + 1.8rem),
-      calc(var(--block-y, -4.1rem) - 0.3rem)
+      var(--block-x, 0),
+      calc(var(--block-y, -4.1rem) - 1.8rem)
     );
   }
 }
