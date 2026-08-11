@@ -807,11 +807,24 @@ body {
   z-index: 1;
 }
 
+/* Draggable only in its original, unspun orientation — ui.ts gates the
+   pointer handlers on that, but the label always springs back through this
+   same transition once --on-drag-x/y are cleared, whether or not the drop
+   landed on the feedback bubble. */
 .label-tape-on {
   top: calc(50% - 6.75rem - 0.7rem);
-  transform: translate(calc(-50% - 1.1rem), -100%)
+  transform: translate(
+      calc(-50% - 1.1rem + var(--on-drag-x, 0px)),
+      calc(-100% + var(--on-drag-y, 0px))
+    )
     rotate(calc(-2deg + var(--on-label-spin, 0deg)));
   transition: transform 250ms ease-out;
+  touch-action: none;
+}
+
+.label-tape-on.grabbed {
+  transition: none;
+  cursor: grabbing;
 }
 
 /* Draggable: peels loose and can be brushed against a screw to back it out.
@@ -1425,6 +1438,23 @@ body {
 
 .feedback-button:hover {
   background: rgb(0 0 0 / 45%);
+}
+
+/* Dropping the unspun ON label here "turns the bubble on" — a quick color
+   pulse for now; the ring of circus bulbs comes with the fade-out cycle. */
+.feedback-button.party {
+  animation: feedback-party-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes feedback-party-pulse {
+  0%,
+  100% {
+    background: rgb(0 0 0 / 30%);
+  }
+
+  50% {
+    background: rgb(255 60 120 / 55%);
+  }
 }
 
 /* ---- easter egg collection ---- */

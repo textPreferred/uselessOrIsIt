@@ -300,6 +300,7 @@ export function renderMachine(
   const wallPanelImg = mustFind<HTMLImageElement>(root, ".wall-panel-img");
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
+  const feedbackButton = mustFind<HTMLButtonElement>(root, ".feedback-button");
   mountEggCollectionButton(stage);
 
   const nameplateMark = mustFind<HTMLSpanElement>(root, ".nameplate-mark");
@@ -375,9 +376,70 @@ export function renderMachine(
     return onLabelSpins % 4 === 2;
   }
   onLabel.addEventListener("click", () => {
+    if (onLabelWasDragged) {
+      onLabelWasDragged = false; // a completed drag's trailing click doesn't also spin it
+      return;
+    }
     onLabelSpins++;
     onLabel.style.setProperty("--on-label-spin", `${-90 * onLabelSpins}deg`);
   });
+
+  // Only in its original, unspun orientation can the ON label itself be
+  // peeled and dragged — onto the feedback bubble, it lights the bubble up
+  // and unlocks its own egg. A spun label (mid-gag as NO, or anything short
+  // of a full 360) stays click-only, same as before.
+  const ON_LABEL_DRAG_THRESHOLD_PX = 8;
+  let onLabelDragPointerId: number | undefined;
+  let onLabelDragStartX = 0;
+  let onLabelDragStartY = 0;
+  let onLabelWasDragged = false;
+
+  function onLabelDraggable(): boolean {
+    return onLabelSpins % 4 === 0;
+  }
+
+  function overlapsFeedbackButton(el: HTMLElement): boolean {
+    const a = el.getBoundingClientRect();
+    const b = feedbackButton.getBoundingClientRect();
+    return (
+      a.left < b.right &&
+      a.right > b.left &&
+      a.top < b.bottom &&
+      a.bottom > b.top
+    );
+  }
+
+  onLabel.addEventListener("pointerdown", (event) => {
+    if (!onLabelDraggable()) return;
+    onLabelDragPointerId = event.pointerId;
+    onLabelWasDragged = false;
+    onLabel.setPointerCapture(event.pointerId);
+    onLabel.classList.add("grabbed");
+    onLabelDragStartX = event.clientX;
+    onLabelDragStartY = event.clientY;
+  });
+  onLabel.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== onLabelDragPointerId) return;
+    const dx = event.clientX - onLabelDragStartX;
+    const dy = event.clientY - onLabelDragStartY;
+    if (Math.hypot(dx, dy) > ON_LABEL_DRAG_THRESHOLD_PX)
+      onLabelWasDragged = true;
+    onLabel.style.setProperty("--on-drag-x", `${dx}px`);
+    onLabel.style.setProperty("--on-drag-y", `${dy}px`);
+  });
+  function endOnLabelDrag(event: PointerEvent): void {
+    if (event.pointerId !== onLabelDragPointerId) return;
+    onLabelDragPointerId = undefined;
+    onLabel.classList.remove("grabbed");
+    onLabel.style.removeProperty("--on-drag-x");
+    onLabel.style.removeProperty("--on-drag-y");
+    if (onLabelWasDragged && overlapsFeedbackButton(onLabel)) {
+      unlockEasterEgg("lets-party");
+      feedbackButton.classList.add("party");
+    }
+  }
+  onLabel.addEventListener("pointerup", endOnLabelDrag);
+  onLabel.addEventListener("pointercancel", endOnLabelDrag);
 
   const screwEls: Record<Corner, HTMLSpanElement> = {
     tl: mustFind(root, ".screw-tl"),
