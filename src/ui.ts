@@ -398,6 +398,7 @@ export function renderMachine(
   let onLabelDragStartX = 0;
   let onLabelDragStartY = 0;
   let onLabelWasDragged = false;
+  let onLabelPartyTriggered = false;
 
   function onLabelDraggable(): boolean {
     return onLabelSpins % 4 === 0;
@@ -444,6 +445,7 @@ export function renderMachine(
     if (!onLabelDraggable()) return;
     onLabelDragPointerId = event.pointerId;
     onLabelWasDragged = false;
+    onLabelPartyTriggered = false;
     onLabel.setPointerCapture(event.pointerId);
     onLabel.classList.add("grabbed");
     onLabelDragStartX = event.clientX;
@@ -457,6 +459,14 @@ export function renderMachine(
       onLabelWasDragged = true;
     onLabel.style.setProperty("--on-drag-x", `${dx}px`);
     onLabel.style.setProperty("--on-drag-y", `${dy}px`);
+    // The party starts the instant the label touches the bubble — dropping
+    // it there isn't required, just brushing past on the way somewhere else
+    // is enough, same as how the OFF label backs out a screw by proximity.
+    if (!onLabelPartyTriggered && overlapsFeedbackButton(onLabel)) {
+      onLabelPartyTriggered = true;
+      unlockEasterEgg("lets-party");
+      triggerPartyLights();
+    }
   });
   function endOnLabelDrag(event: PointerEvent): void {
     if (event.pointerId !== onLabelDragPointerId) return;
@@ -464,10 +474,6 @@ export function renderMachine(
     onLabel.classList.remove("grabbed");
     onLabel.style.removeProperty("--on-drag-x");
     onLabel.style.removeProperty("--on-drag-y");
-    if (onLabelWasDragged && overlapsFeedbackButton(onLabel)) {
-      unlockEasterEgg("lets-party");
-      triggerPartyLights();
-    }
   }
   onLabel.addEventListener("pointerup", endOnLabelDrag);
   onLabel.addEventListener("pointercancel", endOnLabelDrag);
