@@ -398,7 +398,9 @@ export function renderMachine(
   let onLabelDragStartX = 0;
   let onLabelDragStartY = 0;
   let onLabelWasDragged = false;
-  let onLabelPartyTriggered = false;
+  // Edge-triggered, not a one-shot latch: leaving the bubble and touching it
+  // again — even mid-drag, without releasing — restarts the party each time.
+  let onLabelOverBubble = false;
 
   function onLabelDraggable(): boolean {
     return onLabelSpins % 4 === 0;
@@ -445,7 +447,7 @@ export function renderMachine(
     if (!onLabelDraggable()) return;
     onLabelDragPointerId = event.pointerId;
     onLabelWasDragged = false;
-    onLabelPartyTriggered = false;
+    onLabelOverBubble = false;
     onLabel.setPointerCapture(event.pointerId);
     onLabel.classList.add("grabbed");
     onLabelDragStartX = event.clientX;
@@ -462,11 +464,14 @@ export function renderMachine(
     // The party starts the instant the label touches the bubble — dropping
     // it there isn't required, just brushing past on the way somewhere else
     // is enough, same as how the OFF label backs out a screw by proximity.
-    if (!onLabelPartyTriggered && overlapsFeedbackButton(onLabel)) {
-      onLabelPartyTriggered = true;
+    // Each fresh touch restarts it: leaving and coming back re-fires this,
+    // it's only the sustained overlap of a single touch that doesn't retrigger.
+    const overBubble = overlapsFeedbackButton(onLabel);
+    if (overBubble && !onLabelOverBubble) {
       unlockEasterEgg("lets-party");
       triggerPartyLights();
     }
+    onLabelOverBubble = overBubble;
   });
   function endOnLabelDrag(event: PointerEvent): void {
     if (event.pointerId !== onLabelDragPointerId) return;
