@@ -1005,46 +1005,28 @@ body {
 }
 
 /* A blocked path, once it's actually reached the finger, reads as a repeated
-   push rather than the single dead stop .blocked gives a direct grab — the
-   same shape .struggle uses for a held switch (see antenna-struggle above),
-   just anchored to --block-x/--block-y (the arrival point ui.ts froze) the
-   way .blocked is, instead of the fixed contact point .struggle pushes
-   against. */
+   push against it rather than the single dead stop .blocked gives a direct
+   grab: a real forward nudge along the approach axis, recoiling back to the
+   arrival point between tries — the small omnidirectional jitter .struggle
+   uses for a held switch reads as noise at this antenna's scale, so this
+   pushes further and mostly along one axis to actually be seen. Anchored to
+   --block-x/--block-y (the arrival point ui.ts froze), the same way
+   .blocked is. */
 .antenna.path-struggle {
-  animation: antenna-path-struggle 0.18s ease-in-out infinite;
+  animation: antenna-path-struggle 0.32s ease-in-out infinite;
 }
 
 @keyframes antenna-path-struggle {
   0%,
+  35%,
   100% {
     transform: translate(var(--block-x, 0), var(--block-y, -4.1rem));
   }
 
-  20% {
+  18% {
     transform: translate(
-      calc(var(--block-x, 0) - 0.35rem),
-      calc(var(--block-y, -4.1rem) + 0.1rem)
-    );
-  }
-
-  40% {
-    transform: translate(
-      calc(var(--block-x, 0) + 0.3rem),
-      calc(var(--block-y, -4.1rem) - 0.05rem)
-    );
-  }
-
-  60% {
-    transform: translate(
-      calc(var(--block-x, 0) - 0.25rem),
-      calc(var(--block-y, -4.1rem) + 0.15rem)
-    );
-  }
-
-  80% {
-    transform: translate(
-      calc(var(--block-x, 0) + 0.35rem),
-      var(--block-y, -4.1rem)
+      calc(var(--block-x, 0) + 0.08rem),
+      calc(var(--block-y, -4.1rem) - 0.8rem)
     );
   }
 }
