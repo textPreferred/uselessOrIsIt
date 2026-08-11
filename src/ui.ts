@@ -422,6 +422,8 @@ export function renderMachine(
       for (let i = 0; i < PARTY_LIGHT_COUNT; i++) {
         const bulb = document.createElement("span");
         bulb.className = "party-bulb";
+        bulb.setAttribute("aria-hidden", "true");
+        bulb.textContent = "💡";
         feedbackButton.appendChild(bulb);
       }
     }

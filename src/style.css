@@ -1440,12 +1440,12 @@ body {
   background: rgb(0 0 0 / 45%);
 }
 
-/* Dropping the unspun ON label here "turns the bubble on": a color pulse
-   plus a ring of ten bulbs (ui.ts adds/removes both together, and clears
-   them again once PARTY_LIGHTS_DURATION_MS is up) — a little circus marquee
-   wrapped around the button. */
+/* Dropping the unspun ON label here "turns the bubble on": a cycling
+   multi-color pulse plus a ring of ten oversized bulb emoji (ui.ts adds and
+   removes both together, and clears them again once PARTY_LIGHTS_DURATION_MS
+   is up) — a proper circus marquee wrapped around the button. */
 .feedback-button.party {
-  animation: feedback-party-pulse 0.6s ease-in-out infinite;
+  animation: feedback-party-pulse 1.1s ease-in-out infinite;
 }
 
 @keyframes feedback-party-pulse {
@@ -1454,8 +1454,20 @@ body {
     background: rgb(0 0 0 / 30%);
   }
 
-  50% {
-    background: rgb(255 60 120 / 55%);
+  20% {
+    background: #ff3b6b;
+  }
+
+  40% {
+    background: #ffd23f;
+  }
+
+  60% {
+    background: #3fd67f;
+  }
+
+  80% {
+    background: #3fbfff;
   }
 }
 
@@ -1463,95 +1475,104 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0.34rem;
-  height: 0.34rem;
-  margin: -0.17rem;
-  border-radius: 50%;
-  box-shadow: 0 0 0.35rem 0.05rem currentColor;
-  animation: party-bulb-blink 0.9s ease-in-out infinite;
+  font-size: 1.4rem;
+  line-height: 1;
+  transform-origin: center;
+  animation: party-bulb-blink 0.5s steps(1, jump-none) infinite;
 }
 
-/* Ten bulbs at 36deg increments around a 1.65rem radius, just outside the
-   button's own 1.1rem edge. */
+/* Ten bulbs at 36deg increments around a 2.05rem radius — well clear of the
+   button's own 1.1rem edge, big enough to actually read as bulbs. Each gets
+   a hue-rotate (the glyph itself is a fixed yellow) plus a matching glow, so
+   the ring reads as colored bulbs, not ten identical yellow ones. */
 .party-bulb:nth-of-type(1) {
   --bulb-x: 0rem;
-  --bulb-y: -1.65rem;
-  color: #ff3b6b;
+  --bulb-y: -2.05rem;
+  filter: hue-rotate(300deg) saturate(2.2) drop-shadow(0 0 0.5rem #ff3b6b);
   animation-delay: 0s;
 }
 
 .party-bulb:nth-of-type(2) {
-  --bulb-x: 0.97rem;
-  --bulb-y: -1.33rem;
-  color: #ffd23f;
-  animation-delay: 0.09s;
+  --bulb-x: 1.2rem;
+  --bulb-y: -1.66rem;
+  filter: hue-rotate(0deg) saturate(2.2) drop-shadow(0 0 0.5rem #ffd23f);
+  animation-delay: 0.1s;
 }
 
 .party-bulb:nth-of-type(3) {
-  --bulb-x: 1.57rem;
-  --bulb-y: -0.51rem;
-  color: #3fd67f;
-  animation-delay: 0.18s;
+  --bulb-x: 1.95rem;
+  --bulb-y: -0.63rem;
+  filter: hue-rotate(90deg) saturate(2.2) drop-shadow(0 0 0.5rem #3fd67f);
+  animation-delay: 0.2s;
 }
 
 .party-bulb:nth-of-type(4) {
-  --bulb-x: 1.57rem;
-  --bulb-y: 0.51rem;
-  color: #3fbfff;
-  animation-delay: 0.27s;
+  --bulb-x: 1.95rem;
+  --bulb-y: 0.63rem;
+  filter: hue-rotate(180deg) saturate(2.2) drop-shadow(0 0 0.5rem #3fbfff);
+  animation-delay: 0.3s;
 }
 
 .party-bulb:nth-of-type(5) {
-  --bulb-x: 0.97rem;
-  --bulb-y: 1.33rem;
-  color: #ff3b6b;
-  animation-delay: 0.36s;
+  --bulb-x: 1.2rem;
+  --bulb-y: 1.66rem;
+  filter: hue-rotate(260deg) saturate(2.2) drop-shadow(0 0 0.5rem #c76bff);
+  animation-delay: 0.4s;
 }
 
 .party-bulb:nth-of-type(6) {
   --bulb-x: 0rem;
-  --bulb-y: 1.65rem;
-  color: #ffd23f;
-  animation-delay: 0.45s;
+  --bulb-y: 2.05rem;
+  filter: hue-rotate(300deg) saturate(2.2) drop-shadow(0 0 0.5rem #ff3b6b);
+  animation-delay: 0.5s;
 }
 
 .party-bulb:nth-of-type(7) {
-  --bulb-x: -0.97rem;
-  --bulb-y: 1.33rem;
-  color: #3fd67f;
-  animation-delay: 0.54s;
+  --bulb-x: -1.2rem;
+  --bulb-y: 1.66rem;
+  filter: hue-rotate(0deg) saturate(2.2) drop-shadow(0 0 0.5rem #ffd23f);
+  animation-delay: 0.6s;
 }
 
 .party-bulb:nth-of-type(8) {
-  --bulb-x: -1.57rem;
-  --bulb-y: 0.51rem;
-  color: #3fbfff;
-  animation-delay: 0.63s;
+  --bulb-x: -1.95rem;
+  --bulb-y: 0.63rem;
+  filter: hue-rotate(90deg) saturate(2.2) drop-shadow(0 0 0.5rem #3fd67f);
+  animation-delay: 0.7s;
 }
 
 .party-bulb:nth-of-type(9) {
-  --bulb-x: -1.57rem;
-  --bulb-y: -0.51rem;
-  color: #ff3b6b;
-  animation-delay: 0.72s;
+  --bulb-x: -1.95rem;
+  --bulb-y: -0.63rem;
+  filter: hue-rotate(180deg) saturate(2.2) drop-shadow(0 0 0.5rem #3fbfff);
+  animation-delay: 0.8s;
 }
 
 .party-bulb:nth-of-type(10) {
-  --bulb-x: -0.97rem;
-  --bulb-y: -1.33rem;
-  color: #ffd23f;
-  animation-delay: 0.81s;
+  --bulb-x: -1.2rem;
+  --bulb-y: -1.66rem;
+  filter: hue-rotate(260deg) saturate(2.2) drop-shadow(0 0 0.5rem #c76bff);
+  animation-delay: 0.9s;
 }
 
 @keyframes party-bulb-blink {
   0%,
-  100% {
-    transform: translate(var(--bulb-x), var(--bulb-y)) scale(1);
-    opacity: 0.55;
+  45% {
+    transform: translate(calc(-50% + var(--bulb-x)), calc(-50% + var(--bulb-y)))
+      scale(1.5) rotate(-8deg);
+    opacity: 1;
   }
 
-  50% {
-    transform: translate(var(--bulb-x), var(--bulb-y)) scale(1.35);
+  50%,
+  95% {
+    transform: translate(calc(-50% + var(--bulb-x)), calc(-50% + var(--bulb-y)))
+      scale(0.75) rotate(8deg);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: translate(calc(-50% + var(--bulb-x)), calc(-50% + var(--bulb-y)))
+      scale(1.5) rotate(-8deg);
     opacity: 1;
   }
 }
