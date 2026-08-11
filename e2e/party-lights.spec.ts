@@ -47,4 +47,39 @@ test.describe("useless machine — party lights", () => {
     await expect(feedbackButton).not.toHaveClass(/party/, { timeout: 4000 });
     await expect(feedbackButton.locator(".party-bulb")).toHaveCount(0);
   });
+
+  test("touching the bubble mid-drag starts the party — releasing there isn't required", async ({
+    page,
+  }) => {
+    const onLabel = page.locator(".label-tape-on");
+    const feedbackButton = page.locator(".feedback-button");
+    const labelBox = await onLabel.boundingBox();
+    const btnBox = await feedbackButton.boundingBox();
+    if (!labelBox || !btnBox) throw new Error("missing bounding box");
+
+    await page.mouse.move(
+      labelBox.x + labelBox.width / 2,
+      labelBox.y + labelBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      btnBox.x + btnBox.width / 2,
+      btnBox.y + btnBox.height / 2,
+      { steps: 10 },
+    );
+    await expect(feedbackButton).toHaveClass(/party/);
+
+    // pull back off the bubble before releasing — the party already started
+    await page.mouse.move(
+      labelBox.x + labelBox.width / 2,
+      labelBox.y + labelBox.height / 2,
+      { steps: 5 },
+    );
+    await page.mouse.up();
+
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "lets-party",
+    );
+  });
 });
