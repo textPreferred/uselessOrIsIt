@@ -1006,24 +1006,28 @@ body {
 
 /* A blocked path, once it's actually reached the finger, reads as a repeated
    poke straight at it rather than the single dead stop .blocked gives a
-   direct grab: a real jab forward along the approach axis, recoiling back
-   to the arrival point between tries. Anchored to --block-x/--block-y (the
-   arrival point ui.ts froze), the same way .blocked is. */
+   direct grab: a slow wind-up back toward its own hidden starting edge,
+   then a fast strike back up to the arrival point — 1.8rem of jab wasn't
+   enough amplitude to register, so this borrows the antenna's full hidden
+   travel distance instead (same formula as its own rest position above),
+   scaled just short of it so it's clearly winding up rather than fully
+   leaving. Anchored to --block-x/--block-y (the arrival point ui.ts froze),
+   the same way .blocked is. */
 .antenna.path-struggle {
-  animation: antenna-path-struggle 0.4s ease-in-out infinite;
+  animation: antenna-path-struggle 0.6s ease-in-out infinite;
 }
 
 @keyframes antenna-path-struggle {
   0%,
-  30%,
+  20%,
   100% {
     transform: translate(var(--block-x, 0), var(--block-y, -4.1rem));
   }
 
-  15% {
+  70% {
     transform: translate(
       var(--block-x, 0),
-      calc(var(--block-y, -4.1rem) - 1.8rem)
+      calc((min(100dvh, 44rem) / 2 - 6.6rem + 1rem) * 0.85)
     );
   }
 }
