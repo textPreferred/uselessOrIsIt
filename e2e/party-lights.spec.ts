@@ -19,4 +19,17 @@ test.describe("useless machine — party lights", () => {
       "lets-party",
     );
   });
+
+  test("a spun ON label isn't draggable onto the bubble — only a click-spin still works on it", async ({
+    page,
+  }) => {
+    const onLabel = page.locator(".label-tape-on");
+    const feedbackButton = page.locator(".feedback-button");
+    await onLabel.click(); // one spin — no longer in its original orientation
+
+    await dragOnto(page, onLabel, feedbackButton);
+
+    await expect(feedbackButton).not.toHaveClass(/party/);
+    await expect(page.locator(".egg-toast")).toBeHidden();
+  });
 });
