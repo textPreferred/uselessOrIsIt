@@ -1471,10 +1471,14 @@ body {
   }
 }
 
+/* Fixed to the button's on-screen center (ui.ts sets --bulb-origin-x/y from
+   its live bounding rect), not positioned relative to the button itself —
+   see the note in ui.ts on why nesting inside it clips the ring. */
 .party-bulb {
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  position: fixed;
+  top: var(--bulb-origin-y);
+  left: var(--bulb-origin-x);
+  z-index: 30;
   font-size: 1.4rem;
   line-height: 1;
   transform-origin: center;

@@ -41,11 +41,17 @@ test.describe("useless machine — party lights", () => {
     await dragOnto(page, onLabel, feedbackButton);
 
     await expect(feedbackButton).toHaveClass(/party/);
-    const bulbCount = await feedbackButton.locator(".party-bulb").count();
+    const bulbCount = await page.locator(".party-bulb").count();
     expect(bulbCount).toBeGreaterThan(0);
 
+    // bulbs mount on <body>, not inside the button — .stage clips its own
+    // overflow, and the button sits right in its bottom-right corner, so a
+    // ring nested inside it would get chopped down to whatever sliver falls
+    // inside that clip
+    await expect(page.locator(".feedback-button .party-bulb")).toHaveCount(0);
+
     await expect(feedbackButton).not.toHaveClass(/party/, { timeout: 4000 });
-    await expect(feedbackButton.locator(".party-bulb")).toHaveCount(0);
+    await expect(page.locator(".party-bulb")).toHaveCount(0);
   });
 
   test("touching the bubble mid-drag starts the party — releasing there isn't required", async ({

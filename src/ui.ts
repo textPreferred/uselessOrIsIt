@@ -409,9 +409,15 @@ export function renderMachine(
   // Wraps the feedback bubble in a ring of blinking bulbs for a beat, then
   // clears itself back to normal. Skipped under reduced motion, same as the
   // label's own unprompted peek — the egg still unlocks either way.
+  //
+  // Bulbs mount on `document.body`, fixed to the button's on-screen center
+  // at creation time, rather than living inside the button itself: the
+  // button sits in `.stage`'s bottom-right corner, and `.stage` clips its
+  // own overflow, so a ring wide enough to read as bulbs would get chopped
+  // off past that edge if it were nested there.
   let partyTimer: ReturnType<typeof setTimeout> | undefined;
   function removePartyBulbs(): void {
-    for (const bulb of feedbackButton.querySelectorAll(".party-bulb")) {
+    for (const bulb of document.querySelectorAll(".party-bulb")) {
       bulb.remove();
     }
   }
@@ -419,12 +425,17 @@ export function renderMachine(
     clearTimeout(partyTimer);
     removePartyBulbs();
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const rect = feedbackButton.getBoundingClientRect();
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
       for (let i = 0; i < PARTY_LIGHT_COUNT; i++) {
         const bulb = document.createElement("span");
         bulb.className = "party-bulb";
         bulb.setAttribute("aria-hidden", "true");
         bulb.textContent = "💡";
-        feedbackButton.appendChild(bulb);
+        bulb.style.setProperty("--bulb-origin-x", `${originX}px`);
+        bulb.style.setProperty("--bulb-origin-y", `${originY}px`);
+        document.body.appendChild(bulb);
       }
     }
     feedbackButton.classList.add("party");
