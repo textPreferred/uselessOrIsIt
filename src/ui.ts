@@ -701,7 +701,8 @@ export function renderMachine(
       !antenna.classList.contains("reach") &&
       !antenna.classList.contains("retreat") &&
       !antenna.classList.contains("struggle") &&
-      !antenna.classList.contains("blocked")
+      !antenna.classList.contains("blocked") &&
+      !antenna.classList.contains("path-struggle")
     );
   }
 
@@ -779,7 +780,13 @@ export function renderMachine(
     onSettled?: (frozenTransform: string) => void,
   ): void {
     const frozenTransform = getComputedStyle(antenna).transform;
-    antenna.classList.remove("reach", "retreat", "struggle", "blocked");
+    antenna.classList.remove(
+      "reach",
+      "retreat",
+      "struggle",
+      "blocked",
+      "path-struggle",
+    );
     antenna.style.transition = "none";
     antenna.style.transform = frozenTransform;
     void antenna.offsetHeight;
@@ -858,19 +865,63 @@ export function renderMachine(
   let blockedViaPath = false;
   let pathBlockGiveUpTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function beginBlock(pointerId: number, viaPath: boolean): void {
+  function beginBlock(
+    pointerId: number,
+    viaPath: boolean,
+    blockClientY?: number,
+  ): void {
     blockedPointerId = pointerId;
     blockedViaPath = viaPath;
     machine.hold();
     cancelSequence(); // cancel whatever retreat/hit-back was scheduled next
+    if (viaPath && blockClientY !== undefined) {
+      awaitPathArrival(pointerId, blockClientY);
+    } else {
+      freezeIntoBlocked();
+    }
+  }
+
+  // A direct grab stops the antenna dead exactly where the finger landed —
+  // there's nowhere left to go, the finger is already on it.
+  function freezeIntoBlocked(): void {
     settleThenTransition("blocked", (frozenTransform) => {
       const { x, y } = translationOf(frozenTransform);
       antenna.style.setProperty("--block-x", `${x}px`);
       antenna.style.setProperty("--block-y", `${y}px`);
     });
-    if (viaPath) {
-      pathBlockGiveUpTimer = setTimeout(pathBlockGiveUp, PATH_BLOCK_GIVEUP_MS);
-    }
+  }
+
+  // A path block, once the antenna actually reaches the finger, reads as a
+  // repeated push against it — the same shape a held switch gets — rather
+  // than the single dead stop a direct grab gets, since this is contact the
+  // antenna is still trying to push through, not a hand actually gripping
+  // it.
+  function freezeIntoPathStruggle(): void {
+    settleThenTransition("path-struggle", (frozenTransform) => {
+      const { x, y } = translationOf(frozenTransform);
+      antenna.style.setProperty("--block-x", `${x}px`);
+      antenna.style.setProperty("--block-y", `${y}px`);
+    });
+    pathBlockGiveUpTimer = setTimeout(pathBlockGiveUp, PATH_BLOCK_GIVEUP_MS);
+  }
+
+  // A path block lands in the open gap ahead of the tip, not on the antenna
+  // itself — so rather than yanking it to a stop right where the finger
+  // first touched down, let its existing approach keep gliding until the
+  // tip actually reaches the finger's height, then freeze it there. Polled
+  // per frame against the antenna's own live position rather than computed
+  // once up front, since it's already mid-transition and its exact path is
+  // easiest to read straight off the DOM.
+  function awaitPathArrival(pointerId: number, blockClientY: number): void {
+    const check = () => {
+      if (blockedPointerId !== pointerId) return; // released before arrival
+      if (antenna.getBoundingClientRect().top <= blockClientY) {
+        freezeIntoPathStruggle();
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
   }
 
   function hitBack(): void {
@@ -1099,7 +1150,7 @@ export function renderMachine(
     if (antenna.contains(event.target as Node)) return;
     if (rocker.contains(event.target as Node)) return;
     if (!withinPathGap(event.clientX, event.clientY)) return;
-    beginBlock(event.pointerId, true);
+    beginBlock(event.pointerId, true, event.clientY);
   });
   window.addEventListener("pointerup", (event) => {
     if (event.pointerId === blockedPointerId) endBlock();
@@ -1150,13 +1201,17 @@ export function renderMachine(
         // position before transitioning, the way giveUp() does.
         settleThenTransition("retreat");
         unlockEasterEgg("beat-the-antenna");
-      } else if (antenna.classList.contains("blocked")) {
+      } else if (
+        antenna.classList.contains("blocked") ||
+        antenna.classList.contains("path-struggle")
+      ) {
         blockedPointerId = undefined; // its own pointerup would now no-op anyway
         clearTimeout(pathBlockGiveUpTimer); // switch is off already — no belated top-arm strike
         const durMs = currentContactDelayMs();
         antenna.style.setProperty("--dur", `${durMs}ms`);
-        settleThenTransition("retreat"); // "blocked" is an animation, not a
-        // transition — retreat() alone would leave both classes fighting
+        settleThenTransition("retreat"); // "blocked"/"path-struggle" are
+        // animations, not transitions — retreat() alone would leave both
+        // classes fighting
         schedule(() => antenna.classList.remove("retreat"), durMs);
       }
     } else if (hasGivenUp) {
