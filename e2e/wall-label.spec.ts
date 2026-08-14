@@ -98,7 +98,8 @@ test.describe("useless machine — wall label", () => {
     await page.mouse.move(centerX + 25, centerY, { steps: 5 });
 
     const dragBox = await incoming.boundingBox();
-    if (!dragBox) throw new Error("incoming photo has no bounding box mid-drag");
+    if (!dragBox)
+      throw new Error("incoming photo has no bounding box mid-drag");
     expect(dragBox.x).toBeLessThan(restBox.x);
 
     await page.mouse.up();

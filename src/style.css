@@ -318,26 +318,45 @@ body {
    .wall-panel-glass or .wall-panel above it — --img-drag-x follows the
    pointer 1:1 while held (see .grabbed below), then either springs back
    to 0 or, past the swipe threshold, finishes sliding off-frame before
-   ui.ts swaps the source and slides the next photo in from the other
-   edge. .wall-panel-glass's own overflow:hidden is what actually crops
-   this to the port instead of letting it slide across the whole wall. */
-.wall-panel-img {
+   ui.ts swaps the source and resets the layers for the next swipe.
+   .wall-panel-glass's own overflow:hidden is what actually crops this to
+   the port instead of letting it slide across the whole wall.
+   Stacked on top of .wall-panel-img-incoming below (later in the DOM
+   wins the paint order at their shared seam), both absolutely positioned
+   over the same spot so they tile edge-to-edge rather than overlap. */
+.wall-panel-img,
+.wall-panel-img-incoming {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   pointer-events: none; /* the panel wrapper handles the drag, not the img */
-  transform: translateX(var(--img-drag-x, 0px));
   transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
 }
 
-.wall-panel.grabbed .wall-panel-img {
+.wall-panel-img {
+  transform: translateX(var(--img-drag-x, 0px));
+}
+
+/* Sits just off-frame at rest (whichever side doesn't matter — both are
+   equally invisible), pre-loaded with the next mechanism photo by
+   ui.ts's renderWallLabel so it's ready to track in the instant a swipe
+   starts, rather than only appearing once the gesture completes. */
+.wall-panel-img-incoming {
+  transform: translateX(var(--img-drag-x-incoming, 100%));
+}
+
+.wall-panel.grabbed .wall-panel-img,
+.wall-panel.grabbed .wall-panel-img-incoming {
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .wall-tape-group,
-  .wall-panel-img {
+  .wall-panel-img,
+  .wall-panel-img-incoming {
     transition: none;
   }
 }
