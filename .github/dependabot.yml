@@ -3,8 +3,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: cron
-      cronjob: "0 * * * *"
+      interval: daily
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
@@ -12,8 +11,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: cron
-      cronjob: "0 * * * *"
+      interval: daily
     groups:
       actions:
         update-types: [major, minor, patch]
