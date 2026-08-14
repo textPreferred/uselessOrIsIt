@@ -227,6 +227,7 @@ export function renderMachine(
     <div class="stage">
       <div class="wall-panel" aria-hidden="true">
         <div class="wall-panel-glass">
+          <img class="wall-panel-img-incoming" alt="" data-mechanism="${mechanisms[1]?.id ?? mechanisms[0].id}" src="${(mechanisms[1] ?? mechanisms[0]).url}" />
           <img class="wall-panel-img" alt="" src="${mechanisms[0].url}" data-mechanism="${mechanisms[0].id}" />
         </div>
       </div>
@@ -298,6 +299,10 @@ export function renderMachine(
   const wallTapeGroup = mustFind<HTMLDivElement>(root, ".wall-tape-group");
   const wallPanel = mustFind<HTMLDivElement>(root, ".wall-panel");
   const wallPanelImg = mustFind<HTMLImageElement>(root, ".wall-panel-img");
+  const wallPanelImgIncoming = mustFind<HTMLImageElement>(
+    root,
+    ".wall-panel-img-incoming",
+  );
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
   mountEggCollectionButton(stage);
@@ -526,6 +531,14 @@ export function renderMachine(
     const mechanism = mechanismAt(wallLabel.mechanism);
     wallPanelImg.src = mechanism.url;
     wallPanelImg.dataset.mechanism = mechanism.id;
+    // Kept loaded and ready one photo ahead at all times, so the moment a
+    // swipe starts the next photo is already decoded and can track in
+    // alongside the current one instead of only appearing after release.
+    const nextMechanism = mechanismAt(
+      (wallLabel.mechanism + 1) % mechanisms.length,
+    );
+    wallPanelImgIncoming.src = nextMechanism.url;
+    wallPanelImgIncoming.dataset.mechanism = nextMechanism.id;
     saveWallLabel(wallLabel);
   }
   renderWallLabel(); // reflect whatever was loaded before any interaction
@@ -593,60 +606,64 @@ export function renderMachine(
       panelDragStartX = event.clientX;
     },
     onMove: (event) => {
-      wallPanelImg.style.setProperty(
-        "--img-drag-x",
-        `${event.clientX - panelDragStartX}px`,
+      const dx = event.clientX - panelDragStartX;
+      wallPanelImg.style.setProperty("--img-drag-x", `${dx}px`);
+      // Tiles immediately behind the gap the current photo is opening up:
+      // offset by a full container width in the direction *opposite* the
+      // drag, then closed by the same dx, so it always sits edge-to-edge
+      // with the current photo rather than leaving a bare gap mid-swipe.
+      const direction = dx >= 0 ? 1 : -1;
+      wallPanelImgIncoming.style.setProperty(
+        "--img-drag-x-incoming",
+        `calc(${dx}px - ${direction * 100}%)`,
       );
     },
     onEnd: (event) => {
       const dx = event.clientX - panelDragStartX;
+      const direction = dx >= 0 ? 1 : -1;
       if (Math.abs(dx) < PANEL_SWIPE_THRESHOLD_PX) {
         wallPanelImg.style.removeProperty("--img-drag-x"); // spring back to center
+        // springs back off-frame the same way it came in, not to the
+        // default's fixed side — removing the property would snap it to
+        // the wrong edge whenever it came in from the left
+        wallPanelImgIncoming.style.setProperty(
+          "--img-drag-x-incoming",
+          `${-direction * 100}%`,
+        );
         return;
       }
-      const direction = dx > 0 ? 1 : -1;
+      const nextIndex = (wallLabel.mechanism + 1) % mechanisms.length;
       if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
         wallPanelImg.style.removeProperty("--img-drag-x");
-        wallLabel.mechanism = (wallLabel.mechanism + 1) % mechanisms.length;
+        wallPanelImgIncoming.style.removeProperty("--img-drag-x-incoming");
+        wallLabel.mechanism = nextIndex;
         renderWallLabel();
         unlockEasterEgg("inner-workings");
         return;
       }
-      // Finish the drag's own slide the rest of the way off-frame; once
-      // that transition lands, swap in the next photo positioned just off
-      // the opposite edge and transition it back to center — the same
-      // "reset off-screen, then animate in" trick a carousel uses to loop
-      // a single element rather than keeping every slide in the DOM.
-      //
-      // The next photo is preloaded in parallel with the slide-out below so
-      // it's decoded and cache-ready by the time the swap happens — without
-      // this, setting wallPanelImg.src at swap time paints the still-loading
-      // old bitmap for a frame or two, which reads as the old photo briefly
-      // reappearing before the new one pops in mid-animation.
-      const nextIndex = (wallLabel.mechanism + 1) % mechanisms.length;
-      const preload = new Image();
-      preload.src = mechanismAt(nextIndex).url;
-
+      // Finish both layers' slide the rest of the way to their resting
+      // spots — the current photo off-frame, the incoming one already
+      // tracked most of the way in from the drag itself now closing the
+      // last stretch to center. Once that lands, the incoming photo (its
+      // bitmap already on screen, so no reload flash) becomes the new
+      // current, and a fresh next photo loads into the incoming layer,
+      // ready for the swipe after this one.
       wallPanelImg.style.setProperty("--img-drag-x", `${direction * 100}%`);
+      wallPanelImgIncoming.style.setProperty("--img-drag-x-incoming", "0px");
       mechanismSlideHandler = () => {
         mechanismSlideHandler = undefined;
-        const slideIn = () => {
-          wallLabel.mechanism = nextIndex;
-          renderWallLabel();
-          unlockEasterEgg("inner-workings");
-          withoutTransition(wallPanelImg, () => {
-            wallPanelImg.style.setProperty(
-              "--img-drag-x",
-              `${-direction * 100}%`,
-            );
-          });
+        wallLabel.mechanism = nextIndex;
+        renderWallLabel();
+        unlockEasterEgg("inner-workings");
+        withoutTransition(wallPanelImg, () => {
           wallPanelImg.style.setProperty("--img-drag-x", "0px");
-        };
-        if (preload.complete) {
-          slideIn();
-        } else {
-          preload.addEventListener("load", slideIn, { once: true });
-        }
+        });
+        withoutTransition(wallPanelImgIncoming, () => {
+          wallPanelImgIncoming.style.setProperty(
+            "--img-drag-x-incoming",
+            `${-direction * 100}%`,
+          );
+        });
       };
       wallPanelImg.addEventListener("transitionend", mechanismSlideHandler, {
         once: true,

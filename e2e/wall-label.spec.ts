@@ -68,6 +68,43 @@ test.describe("useless machine — wall label", () => {
     }
   });
 
+  test("the next mechanism photo already tracks into frame during the swipe, not just after release", async ({
+    page,
+  }) => {
+    const wallLabel = page.locator(".wall-tape-group");
+    await dragBy(page, wallLabel, 100, -100);
+    await expect(wallLabel).toHaveClass(/peeled/);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const panel = page.locator(".wall-panel");
+    const incoming = page.locator(".wall-panel-img-incoming");
+    await expect(incoming).toHaveAttribute("data-mechanism", "circuit");
+
+    const panelBox = await panel.boundingBox();
+    if (!panelBox) throw new Error("panel has no bounding box");
+    const centerX = panelBox.x + panelBox.width / 2;
+    const centerY = panelBox.y + panelBox.height / 2;
+
+    // at rest, the incoming photo sits fully outside the frame
+    const restBox = await incoming.boundingBox();
+    if (!restBox) throw new Error("incoming photo has no bounding box");
+    expect(restBox.x).toBeGreaterThan(panelBox.x + panelBox.width / 2);
+
+    // mid-swipe, well short of both the threshold and release — it should
+    // already be sliding into the frame from the opposite edge, not still
+    // waiting off-screen for the gesture to finish
+    await page.mouse.move(centerX, centerY);
+    await page.mouse.down();
+    await page.mouse.move(centerX + 25, centerY, { steps: 5 });
+
+    const dragBox = await incoming.boundingBox();
+    if (!dragBox)
+      throw new Error("incoming photo has no bounding box mid-drag");
+    expect(dragBox.x).toBeLessThan(restBox.x);
+
+    await page.mouse.up();
+  });
+
   test("the peeled state and current mechanism persist across a reload", async ({
     page,
   }) => {
