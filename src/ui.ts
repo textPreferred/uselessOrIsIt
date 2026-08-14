@@ -407,6 +407,13 @@ export function renderMachine(
   }
   renderScrews(); // reflect whatever was loaded before any interaction
 
+  // Set the instant the OFF button is pressed while the plate is ajar
+  // (turning the switch on via reverse psychology); not unlocked until
+  // retreat() below reports the antenna has actually made contact and
+  // started backing off again — see retreat() itself for why that's the
+  // right moment regardless of which route got it there.
+  let pendingReversePsychologyUnlock = false;
+
   function closePlate(): void {
     for (const c of SCREW_SEQUENCE) fastened[c] = true;
     renderScrews();
@@ -717,6 +724,15 @@ export function renderMachine(
   function retreat(durMs: number): void {
     antenna.classList.remove("reach");
     antenna.classList.add("retreat");
+    // Whatever got it here, the switch is already off by now — every call
+    // site arms the machine's own switch-off for the same duration it
+    // schedules this retreat, so it always lands first — making this the
+    // moment a reverse-psychology press actually counts, not the press
+    // itself.
+    if (pendingReversePsychologyUnlock) {
+      pendingReversePsychologyUnlock = false;
+      unlockEasterEgg("reverse-psychology");
+    }
     schedule(() => {
       antenna.classList.remove("retreat");
       if (closePlateOnceSettled) {
@@ -1082,7 +1098,7 @@ export function renderMachine(
       unlockEasterEgg("no-means-no");
     }
     if (turningOn && isBackside() && !rawClickedTop) {
-      unlockEasterEgg("reverse-psychology");
+      pendingReversePsychologyUnlock = true;
     }
     armIdleReset();
     machine.flip();
@@ -1179,7 +1195,7 @@ export function renderMachine(
       unlockEasterEgg("no-means-no");
     }
     if (turningOn && isBackside() && !rawClickedTop) {
-      unlockEasterEgg("reverse-psychology");
+      pendingReversePsychologyUnlock = true;
     }
     armIdleReset();
     machine.flip();
@@ -1194,6 +1210,10 @@ export function renderMachine(
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
+      // manually flipped off before the antenna ever got there on its own
+      // — the reverse-psychology attempt this press might have armed never
+      // gets the natural retreat-then-close that was going to unlock it
+      pendingReversePsychologyUnlock = false;
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
         unlockEasterEgg("beat-the-antenna");
