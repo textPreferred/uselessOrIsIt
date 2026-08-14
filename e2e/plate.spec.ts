@@ -165,7 +165,7 @@ test.describe("useless machine — plate", () => {
     expect(Math.sign(openTopZ)).toBe(-Math.sign(closedTopZ));
   });
 
-  test("pressing the OFF button turns the switch on once the plate is open, and unlocks an easter egg", async ({
+  test("pressing the OFF button turns the switch on once the plate is open, and unlocks an easter egg once it closes again", async ({
     page,
   }) => {
     const offLabel = page.locator(".label-tape-off");
@@ -184,6 +184,14 @@ test.describe("useless machine — plate", () => {
 
     await clickBottom(machineSwitch); // the OFF half turns it on instead
     await expect(machineSwitch).toBeChecked();
+    // not yet — the antenna still has to fly out, hit, and retreat, and the
+    // panel has to swing shut, before the trick actually counts
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 300 });
+
+    await expect(machineSwitch).not.toBeChecked({
+      timeout: BASE_CONTACT_DELAY_MS + 1000,
+    });
+    await expect(page.locator(".plate")).not.toHaveClass(/open/);
     await expect(page.locator(".egg-toast")).toHaveAttribute(
       "data-egg-id",
       "reverse-psychology",

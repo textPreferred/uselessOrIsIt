@@ -407,9 +407,19 @@ export function renderMachine(
   }
   renderScrews(); // reflect whatever was loaded before any interaction
 
+  // Set the instant the OFF button is pressed while the plate is ajar
+  // (turning the switch on via reverse psychology), not unlocked until the
+  // panel actually closes again below — the antenna has to fully retreat
+  // first, since that's what closePlate() itself already waits on.
+  let pendingReversePsychologyUnlock = false;
+
   function closePlate(): void {
     for (const c of SCREW_SEQUENCE) fastened[c] = true;
     renderScrews();
+    if (pendingReversePsychologyUnlock) {
+      pendingReversePsychologyUnlock = false;
+      unlockEasterEgg("reverse-psychology");
+    }
   }
 
   function popScrew(corner: Corner): void {
@@ -1082,7 +1092,7 @@ export function renderMachine(
       unlockEasterEgg("no-means-no");
     }
     if (turningOn && isBackside() && !rawClickedTop) {
-      unlockEasterEgg("reverse-psychology");
+      pendingReversePsychologyUnlock = true;
     }
     armIdleReset();
     machine.flip();
@@ -1179,7 +1189,7 @@ export function renderMachine(
       unlockEasterEgg("no-means-no");
     }
     if (turningOn && isBackside() && !rawClickedTop) {
-      unlockEasterEgg("reverse-psychology");
+      pendingReversePsychologyUnlock = true;
     }
     armIdleReset();
     machine.flip();
@@ -1194,6 +1204,10 @@ export function renderMachine(
       startSequence();
     } else if (event.by === "user") {
       cancelSequence();
+      // manually flipped off before the antenna ever got there on its own
+      // — the reverse-psychology attempt this press might have armed never
+      // gets the natural retreat-then-close that was going to unlock it
+      pendingReversePsychologyUnlock = false;
       if (antenna.classList.contains("reach")) {
         retreat(currentContactDelayMs());
         unlockEasterEgg("beat-the-antenna");
