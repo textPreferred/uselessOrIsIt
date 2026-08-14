@@ -165,7 +165,7 @@ test.describe("useless machine — plate", () => {
     expect(Math.sign(openTopZ)).toBe(-Math.sign(closedTopZ));
   });
 
-  test("pressing the OFF button turns the switch on once the plate is open, and unlocks an easter egg once it closes again", async ({
+  test("pressing the OFF button turns the switch on once the plate is open, and unlocks an easter egg as soon as the antenna starts retreating", async ({
     page,
   }) => {
     const offLabel = page.locator(".label-tape-off");
@@ -184,18 +184,28 @@ test.describe("useless machine — plate", () => {
 
     await clickBottom(machineSwitch); // the OFF half turns it on instead
     await expect(machineSwitch).toBeChecked();
-    // not yet — the antenna still has to fly out, hit, and retreat, and the
-    // panel has to swing shut, before the trick actually counts
+    // not yet — the antenna still has to fly out and actually make contact
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 300 });
+
+    // unlocked the instant it starts backing off — well before the panel
+    // has swung shut behind it. A short timeout on the egg check matters
+    // here: it must already be showing right as retreat starts, not just
+    // show up eventually once the panel gets around to closing.
+    const arm = page.getByTestId("arm");
+    await expect(arm).toHaveClass(/retreat/, {
+      timeout: BASE_CONTACT_DELAY_MS + 500,
+    });
+    await expect(page.locator(".plate")).toHaveClass(/open/);
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "reverse-psychology",
+      { timeout: 200 },
+    );
 
     await expect(machineSwitch).not.toBeChecked({
       timeout: BASE_CONTACT_DELAY_MS + 1000,
     });
     await expect(page.locator(".plate")).not.toHaveClass(/open/);
-    await expect(page.locator(".egg-toast")).toHaveAttribute(
-      "data-egg-id",
-      "reverse-psychology",
-    );
   });
 
   test("the antenna reaches toward the switch's shifted position, on its ON side, once the plate is open", async ({

@@ -408,18 +408,15 @@ export function renderMachine(
   renderScrews(); // reflect whatever was loaded before any interaction
 
   // Set the instant the OFF button is pressed while the plate is ajar
-  // (turning the switch on via reverse psychology), not unlocked until the
-  // panel actually closes again below — the antenna has to fully retreat
-  // first, since that's what closePlate() itself already waits on.
+  // (turning the switch on via reverse psychology); not unlocked until
+  // retreat() below reports the antenna has actually made contact and
+  // started backing off again — see retreat() itself for why that's the
+  // right moment regardless of which route got it there.
   let pendingReversePsychologyUnlock = false;
 
   function closePlate(): void {
     for (const c of SCREW_SEQUENCE) fastened[c] = true;
     renderScrews();
-    if (pendingReversePsychologyUnlock) {
-      pendingReversePsychologyUnlock = false;
-      unlockEasterEgg("reverse-psychology");
-    }
   }
 
   function popScrew(corner: Corner): void {
@@ -727,6 +724,15 @@ export function renderMachine(
   function retreat(durMs: number): void {
     antenna.classList.remove("reach");
     antenna.classList.add("retreat");
+    // Whatever got it here, the switch is already off by now — every call
+    // site arms the machine's own switch-off for the same duration it
+    // schedules this retreat, so it always lands first — making this the
+    // moment a reverse-psychology press actually counts, not the press
+    // itself.
+    if (pendingReversePsychologyUnlock) {
+      pendingReversePsychologyUnlock = false;
+      unlockEasterEgg("reverse-psychology");
+    }
     schedule(() => {
       antenna.classList.remove("retreat");
       if (closePlateOnceSettled) {
