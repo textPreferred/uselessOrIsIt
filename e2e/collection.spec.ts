@@ -19,6 +19,9 @@ test.describe("useless machine — easter egg collection", () => {
   test("resetting wipes previously found easter eggs so they can be found again", async ({
     page,
   }) => {
+    // confirming the reset reloads the page — comfortably past the default
+    // 30s on a slow sandboxed browser (see plate.spec.ts's own reload tests)
+    test.setTimeout(60000);
     const machineSwitch = page.getByRole("switch");
     await clickTop(machineSwitch);
     await clickBottom(machineSwitch); // unlock "beat-the-antenna"
@@ -32,9 +35,11 @@ test.describe("useless machine — easter egg collection", () => {
     await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
 
     await clickScrewsClockwise(page);
-    await page
-      .getByRole("button", { name: "Yes, reset my easter eggs" })
-      .click();
+    await page.getByRole("button", { name: "Yes, reset the app" }).click();
+
+    // confirming reloads the page — Playwright's own auto-retrying locators
+    // ride out the navigation, so there's nothing to explicitly await here
+    await expect(machineSwitch).toBeVisible({ timeout: 30000 });
     await expect(page.locator(".egg-toast")).toBeHidden();
 
     await clickTop(machineSwitch);

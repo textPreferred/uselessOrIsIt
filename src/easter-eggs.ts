@@ -67,7 +67,7 @@ export const EASTER_EGGS: readonly EasterEgg[] = [
  * — the offer is UI chrome, not a collectible, so it stays out of
  * `EASTER_EGGS` and never touches the unlocked/seen sets. */
 const RESET_OFFER = {
-  description: "Set or reset — your choice.",
+  description: "Reset the app — your choice.",
 };
 
 export const STORAGE_KEY = "uselessMachine.easterEggs";
@@ -285,9 +285,15 @@ export function unlockedEggCount(): number {
 }
 
 /** Found by clicking all four screws clockwise from the top-left. Offers to
- * wipe every unlocked egg so they're all up for grabs again. Neither button
- * unlocks anything — this offer is UI chrome, not an egg of its own. */
-export function offerEasterEggReset(): void {
+ * reset the whole app — every unlocked egg, plus every other piece of
+ * persisted state (screws, wall tape, mechanism photo) and any in-session
+ * UI state (the ON label's spin, the OFF label's peek nudge) — back to how
+ * it looked on a first visit. `onReset`, if given, runs after the eggs
+ * themselves are cleared; ui.ts uses it to wipe its own persisted state and
+ * reload, which is also what puts the in-session state back to its
+ * defaults for free. Neither button unlocks anything — this offer is UI
+ * chrome, not an egg of its own. */
+export function offerEasterEggReset(onReset?: () => void): void {
   const overlay = document.createElement("div");
   overlay.className = "egg-toast egg-toast-confirm";
 
@@ -299,7 +305,7 @@ export function offerEasterEggReset(): void {
   const resetButton = document.createElement("button");
   resetButton.type = "button";
   resetButton.className = "egg-button egg-button-reset";
-  resetButton.textContent = "Yes, reset my easter eggs";
+  resetButton.textContent = "Yes, reset the app";
   resetButton.addEventListener("click", () => {
     unlocked.clear();
     seen.clear();
@@ -307,12 +313,13 @@ export function offerEasterEggReset(): void {
     saveIds(SEEN_STORAGE_KEY, seen);
     notifyChanged();
     overlay.remove();
+    onReset?.();
   });
 
   const keepButton = document.createElement("button");
   keepButton.type = "button";
   keepButton.className = "egg-button egg-button-keep";
-  keepButton.textContent = "Don't reset my easter eggs.";
+  keepButton.textContent = "Don't reset the app.";
   keepButton.addEventListener("click", () => {
     overlay.remove();
   });

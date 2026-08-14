@@ -7,19 +7,19 @@ test.describe("useless machine — screw reset offer", () => {
     await page.goto("./");
   });
 
-  test("clicking the four screws clockwise from the top-left offers to reset easter eggs", async ({
+  test("clicking the four screws clockwise from the top-left offers to reset the app", async ({
     page,
   }) => {
     await clickScrewsClockwise(page);
     await expect(page.locator(".egg-toast-confirm .egg-desc")).toHaveText(
-      /set or reset/i,
+      /reset the app/i,
     );
     await expect(
-      page.getByRole("button", { name: "Yes, reset my easter eggs" }),
+      page.getByRole("button", { name: "Yes, reset the app" }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", {
-        name: "Don't reset my easter eggs.",
+        name: "Don't reset the app.",
       }),
     ).toBeVisible();
   });
@@ -50,7 +50,7 @@ test.describe("useless machine — screw reset offer", () => {
     await clickScrewsClockwise(page);
     await page
       .getByRole("button", {
-        name: "Don't reset my easter eggs.",
+        name: "Don't reset the app.",
       })
       .click();
     await expect(page.locator(".egg-toast")).toBeHidden();
@@ -60,7 +60,7 @@ test.describe("useless machine — screw reset offer", () => {
   test("the reset offer isn't part of the collection's total or list", () => {
     expect(
       EASTER_EGGS.find(
-        (egg) => egg.description === "Set or reset — your choice.",
+        (egg) => egg.description === "Reset the app — your choice.",
       ),
     ).toBeUndefined();
   });

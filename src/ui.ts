@@ -431,7 +431,15 @@ export function renderMachine(
       }
       if (screwStep === SCREW_SEQUENCE.length) {
         screwStep = 0;
-        offerEasterEggReset();
+        // A full reload puts every other piece of in-session state (the ON
+        // label's spin, the OFF label's peek nudge, any in-flight antenna
+        // move) back to its default for free, on top of the persisted state
+        // localStorage.clear() wipes — cheaper and more reliably complete
+        // than hand-resetting each mechanism's own variables here.
+        offerEasterEggReset(() => {
+          localStorage.clear();
+          location.reload();
+        });
         return;
       }
       screwStepTimer = setTimeout(() => {
