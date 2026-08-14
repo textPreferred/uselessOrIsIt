@@ -278,9 +278,6 @@ export function renderMachine(
         class="feedback-button"
         data-tally-open="0Qz2gP"
         data-version-number="${__APP_VERSION__}"
-        data-browser-string="${navigator.userAgent}"
-        data-operating-system="${detectOperatingSystem(navigator.userAgent)}"
-        data-language-preferences="${navigator.languages.join(", ")}"
         data-tally-hide-title="1"
         data-tally-emoji-text="💬"
         data-tally-emoji-animation="wave"
@@ -306,6 +303,15 @@ export function renderMachine(
   const plate = mustFind<HTMLDivElement>(root, ".plate");
   const stage = mustFind<HTMLDivElement>(root, ".stage");
   mountEggCollectionButton(stage);
+
+  // Set via dataset (not interpolated into the innerHTML template above) so
+  // the user agent string can't be read as HTML — it's just data.
+  const feedbackButton = mustFind<HTMLButtonElement>(root, ".feedback-button");
+  feedbackButton.dataset.browserString = navigator.userAgent;
+  feedbackButton.dataset.operatingSystem = detectOperatingSystem(
+    navigator.userAgent,
+  );
+  feedbackButton.dataset.languagePreferences = navigator.languages.join(", ");
 
   const nameplateMark = mustFind<HTMLSpanElement>(root, ".nameplate-mark");
   let markClicks = 0;
