@@ -38,17 +38,33 @@ just behave accordingly.
    source of truth for overall green, and it's free where local runs
    cost the user tokens.
 
-   Once the behavior is implemented, draft one `CHANGELOG.md` line for
-   it, written for non-technical readers — plain language, no code
-   terms, no PR/commit/file references. If the change touches an
-   easter egg, describe only that something was tweaked or improved;
-   never name the egg, its trigger, or its payoff — see
-   `.agents/skills/easter-eggs/SKILL.md` for what counts as a spoiler.
-   Show the drafted line and ask the user to confirm it or supply their
-   own wording via `AskUserQuestion` ("Use this text (recommended)" /
-   "Let me write it"). Add the confirmed line under the `Unreleased`
-   heading at the top of `CHANGELOG.md` (create that heading if it's
-   missing) in the same commit that finishes the behavior.
+   Once the behavior is implemented, draft one `CHANGELOG.md` entry for
+   it — every commit that lands on `main` gets its own entry, even a
+   change with no user-visible effect (internal tooling, docs, a
+   dependency bump). Write it for non-technical readers — plain
+   language, no code terms, no PR/commit/file references — but still
+   say something concrete about what was actually done, even for
+   internal-only changes (e.g. "Improved internal documentation for
+   how easter eggs get designed" rather than a generic "routine
+   maintenance"). If the change touches an easter egg, describe only
+   that something was tweaked or improved; never name the egg, its
+   trigger, or its payoff — see `.agents/skills/easter-eggs/SKILL.md`
+   for what counts as a spoiler.
+
+   Head the entry with the version this commit will land as:
+   `major.minor` from `package.json` (bumped in this same commit first,
+   per `scripts/version.mjs`'s convention, if this change warrants it)
+   plus `.patch`, where patch is one more than
+   `git rev-list --count origin/main` — i.e. this commit's position
+   once it's the next one merged. Label the entry with a one-word
+   category (**New**, **Improved**, **Fixed**, **Security**, or
+   **Behind the scenes**).
+
+   Show the drafted entry and ask the user to confirm it or supply
+   their own wording via `AskUserQuestion` ("Use this text
+   (recommended)" / "Let me write it"). Add the confirmed entry at the
+   top of `CHANGELOG.md`, above the previous newest entry, in the same
+   commit that finishes the behavior.
 
    Push, then immediately open a PR (check for a PR template first) —
    automatically, no confirmation prompt, as soon as the first
