@@ -1,7 +1,7 @@
 {
   "name": "useless-machine",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.6.0",
   "type": "module",
   "packageManager": "bun@1.3.11",
   "scripts": {
