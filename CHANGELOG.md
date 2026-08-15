@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+**Behind the scenes**
+- Added an internal guideline for designing future easter eggs, based on a suggestion from a user.
+
 ## 1.7.0 — 2026-08-15
 
 **New**
