@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0 — 2026-08-15
+
+**New**
+- Added this changelog, so you can see what's changed in the app over time.
+
+**Behind the scenes**
+- Routine maintenance to the project's build pipeline.
+
 ## 1.6.0 — 2026-08-15
 
 **Improved**
