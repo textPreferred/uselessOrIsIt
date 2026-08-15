@@ -50,7 +50,7 @@ racing something else that's still playing out. Windows like that are
 unreliable to hit, especially on a phone screen, and turn discovery into
 retry-until-you-land-it grinding — exactly what rule 2 rules out.
 
-*(Added based on feedback from an anonymous user — thank you.)*
+*(Added based on feedback from an anonymous user - Thank you!)*
 
 ## Applying this
 
