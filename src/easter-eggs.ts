@@ -463,3 +463,24 @@ export function mountEggCollectionButton(parent: HTMLElement): void {
   wrapper.append(button, count);
   parent.append(wrapper);
 }
+
+/** Eggs found before the feedback button reveals itself — asking for
+ * feedback is the last rung of the complexity ladder, after the switch
+ * itself and then the egg counter, not something a first-time visitor
+ * should see. */
+const FEEDBACK_BUTTON_REVEAL_THRESHOLD = 3;
+
+/** Keeps `button`'s revealed state in sync with the found count: hidden
+ * below `FEEDBACK_BUTTON_REVEAL_THRESHOLD`, shown at or above it — and
+ * hidden again if a reset drops the count back down, same as the
+ * collection button above. */
+export function bindFeedbackButtonVisibility(button: HTMLElement): void {
+  function update(): void {
+    button.classList.toggle(
+      "feedback-button-revealed",
+      unlockedEggCount() >= FEEDBACK_BUTTON_REVEAL_THRESHOLD,
+    );
+  }
+  update();
+  onEggsChanged(update);
+}

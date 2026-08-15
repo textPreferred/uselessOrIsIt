@@ -1422,6 +1422,9 @@ body {
 
 /* ---- feedback button ---- */
 
+/* Stays laid out (never `display:none`) from the start, same as
+   .egg-collection-widget below — only opacity/visibility hide it until the
+   third easter egg is found. */
 .feedback-button {
   position: absolute;
   bottom: 0.9rem;
@@ -1440,10 +1443,23 @@ body {
   color: #fff;
   background: rgb(0 0 0 / 30%);
   cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.6);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.3, 1.4, 0.4, 1),
+    visibility 0.25s;
 }
 
 .feedback-button:hover {
   background: rgb(0 0 0 / 45%);
+}
+
+.feedback-button-revealed {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
 }
 
 /* ---- easter egg collection ---- */

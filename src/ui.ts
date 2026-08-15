@@ -1,4 +1,5 @@
 import {
+  bindFeedbackButtonVisibility,
   mountEggCollectionButton,
   offerEasterEggReset,
   unlockEasterEgg,
@@ -312,6 +313,7 @@ export function renderMachine(
     navigator.userAgent,
   );
   feedbackButton.dataset.languagePreferences = navigator.languages.join(", ");
+  bindFeedbackButtonVisibility(feedbackButton);
 
   const nameplateMark = mustFind<HTMLSpanElement>(root, ".nameplate-mark");
   let markClicks = 0;
