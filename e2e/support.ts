@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { EASTER_EGGS, SEEN_STORAGE_KEY, STORAGE_KEY } from "../src/easter-eggs";
 
 /** Only the top half of the rocker turns it on, only the bottom half off. */
 export async function clickTop(locator: Locator): Promise<void> {
@@ -66,6 +67,24 @@ export async function dragBy(
   // let the dragged element's spring-back (or lock-in) transition finish
   // before anyone reads its position or class list again
   await page.waitForTimeout(350);
+}
+
+/** Seeds localStorage so the first `count` known eggs are already found and
+ * marked seen, before the page ever loads — for tests about behavior gated
+ * on the found count (like the feedback button's reveal threshold), not
+ * about finding the eggs themselves. Must be called before `page.goto`.
+ * Uses `addInitScript`, which reapplies on every navigation — including a
+ * later reload — so don't use this in a test that resets state and then
+ * checks what survives the reload. */
+export async function seedFoundEggs(page: Page, count: number): Promise<void> {
+  const ids = EASTER_EGGS.slice(0, count).map((egg) => egg.id);
+  await page.addInitScript(
+    ({ storageKey, seenKey, ids }) => {
+      localStorage.setItem(storageKey, JSON.stringify(ids));
+      localStorage.setItem(seenKey, JSON.stringify(ids));
+    },
+    { storageKey: STORAGE_KEY, seenKey: SEEN_STORAGE_KEY, ids },
+  );
 }
 
 /** Presses down in the open gap between the antenna's current tip and the

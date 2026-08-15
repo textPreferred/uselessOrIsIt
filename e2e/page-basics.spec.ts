@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { seedFoundEggs } from "./support";
 
 test.describe("useless machine — page basics", () => {
   test.beforeEach(async ({ page }) => {
@@ -27,6 +28,8 @@ test.describe("useless machine — page basics", () => {
   });
 
   test("shows a feedback button wired to the Tally form", async ({ page }) => {
+    await seedFoundEggs(page, 3);
+    await page.goto("./");
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     await expect(feedbackButton).toBeVisible();
     await expect(feedbackButton).toHaveAttribute("data-tally-open", "0Qz2gP");
@@ -35,6 +38,8 @@ test.describe("useless machine — page basics", () => {
   test("prefills the Tally form's version-number field with the app version", async ({
     page,
   }) => {
+    await seedFoundEggs(page, 3);
+    await page.goto("./");
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     await expect(feedbackButton).toHaveAttribute(
       "data-version-number",
@@ -45,6 +50,8 @@ test.describe("useless machine — page basics", () => {
   test("prefills the Tally form's browser-string field with the user agent", async ({
     page,
   }) => {
+    await seedFoundEggs(page, 3);
+    await page.goto("./");
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     const userAgent = await page.evaluate(() => navigator.userAgent);
     await expect(feedbackButton).toHaveAttribute(
@@ -54,6 +61,8 @@ test.describe("useless machine — page basics", () => {
   });
 
   test("prefills the Tally form's operating-system field", async ({ page }) => {
+    await seedFoundEggs(page, 3);
+    await page.goto("./");
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     const userAgent = await page.evaluate(() => navigator.userAgent);
     const expectedOs = /Android/.test(userAgent)
@@ -76,6 +85,8 @@ test.describe("useless machine — page basics", () => {
   test("prefills the Tally form's language-preferences field", async ({
     page,
   }) => {
+    await seedFoundEggs(page, 3);
+    await page.goto("./");
     const feedbackButton = page.getByRole("button", { name: "Give feedback" });
     const languages = await page.evaluate(() => navigator.languages.join(", "));
     await expect(feedbackButton).toHaveAttribute(

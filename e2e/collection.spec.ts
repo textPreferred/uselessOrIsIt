@@ -1,6 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
 import { EASTER_EGGS, SEEN_STORAGE_KEY, STORAGE_KEY } from "../src/easter-eggs";
-import { clickBottom, clickScrewsClockwise, clickTop } from "./support";
+import {
+  clickBottom,
+  clickScrewsClockwise,
+  clickTop,
+  seedFoundEggs,
+} from "./support";
 
 /** Double-clicks the nameplate's question mark to unlock
  * "questioning-the-question" — a second, distinct egg that's quick to
@@ -317,5 +322,68 @@ test.describe("useless machine — easter egg collection", () => {
     await expect(page.locator(".egg-collection-item").first()).not.toHaveClass(
       /egg-collection-item-new/,
     );
+  });
+
+  test("the feedback button waits for a third easter egg before appearing", async ({
+    page,
+  }) => {
+    await seedFoundEggs(page, 2);
+    await page.goto("./");
+
+    await expect(page.locator(".feedback-button")).toBeHidden();
+
+    const machineSwitch = page.getByRole("switch");
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click(); // upside down, blocks the switch
+    await clickTop(machineSwitch); // a real attempt, swallowed
+    await onLabel.click();
+    await onLabel.click(); // back to ON
+    await clickTop(machineSwitch); // succeeds — unlocks "no-means-no", the third egg
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "no-means-no",
+    );
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await expect(page.locator(".feedback-button")).toBeVisible();
+  });
+
+  test("resetting the app hides the feedback button again", async ({
+    page,
+  }) => {
+    // `seedFoundEggs` uses `addInitScript`, which reapplies on every
+    // navigation — including the reload this test triggers — so it would
+    // silently undo the very reset being tested. Unlocking three eggs live
+    // instead sidesteps that.
+    test.setTimeout(60000);
+    const machineSwitch = page.getByRole("switch");
+    await clickTop(machineSwitch);
+    await clickBottom(machineSwitch); // unlock "beat-the-antenna"
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await collectQuestioningTheQuestion(page);
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    const onLabel = page.locator(".label-tape-on");
+    await onLabel.click();
+    await onLabel.click(); // upside down, blocks the switch
+    await clickTop(machineSwitch); // a real attempt, swallowed
+    await onLabel.click();
+    await onLabel.click(); // back to ON
+    await clickTop(machineSwitch); // unlock "no-means-no", the third egg
+    await expect(page.locator(".egg-toast")).toHaveAttribute(
+      "data-egg-id",
+      "no-means-no",
+    );
+    await expect(page.locator(".egg-toast")).toBeHidden({ timeout: 1500 });
+
+    await expect(page.locator(".feedback-button")).toBeVisible();
+
+    await clickScrewsClockwise(page);
+    await page.getByRole("button", { name: "Yes, reset the app" }).click();
+
+    await expect(machineSwitch).toBeVisible({ timeout: 30000 });
+    await expect(page.locator(".feedback-button")).toBeHidden();
   });
 });
