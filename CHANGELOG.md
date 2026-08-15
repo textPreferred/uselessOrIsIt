@@ -306,7 +306,7 @@
 
 ## 0.0.62 — 2026-07-27
 
-**Behind the scenes** — Added a test tying the switch's flip speed to the arm's pace.
+**Behind the scenes** — Added a test for one of the switch's interactions.
 
 ## 0.0.61 — 2026-07-26
 
@@ -382,7 +382,7 @@
 
 ## 0.0.34 — 2026-07-26
 
-**Behind the scenes** — Wrote internal guidelines for how hidden easter eggs should be designed.
+**Behind the scenes** — Wrote internal guidelines for how easter eggs should be designed.
 
 ## 0.0.23 — 2026-07-26
 
@@ -402,11 +402,11 @@
 
 ## 0.0.19 — 2026-07-25
 
-**New** — Added new ways to interact with the switch.
+**Behind the scenes** — Laid groundwork for upcoming features.
 
 ## 0.0.18 — 2026-07-25
 
-**Improved** — The arm now moves a bit faster each time it acts.
+**Improved** — Tuned how the arm moves.
 
 ## 0.0.17 — 2026-07-25
 
