@@ -458,7 +458,7 @@
 
 ## 0.0.5 — 2026-07-25
 
-**New** — The core idea: a switch that turns itself back off after you flip it.
+**New** — The core idea: a recreation of the classic "useless machine" that questions its title even more strongly by making it an interesting toy.
 
 ## 0.0.4 — 2026-07-25
 
