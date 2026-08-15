@@ -36,9 +36,23 @@ just behave accordingly.
    Playwright's `--grep`), not the full suite. Skip a full local `npm
    run check` / `npm test` pass entirely; the PR's CI pipeline is the
    source of truth for overall green, and it's free where local runs
-   cost the user tokens. Push, then immediately open a PR (check for a
-   PR template first) — automatically, no confirmation prompt, as soon
-   as the first implementation is pushed.
+   cost the user tokens.
+
+   Once the behavior is implemented, draft one `CHANGELOG.md` line for
+   it, written for non-technical readers — plain language, no code
+   terms, no PR/commit/file references. If the change touches an
+   easter egg, describe only that something was tweaked or improved;
+   never name the egg, its trigger, or its payoff — see
+   `.agents/skills/easter-eggs/SKILL.md` for what counts as a spoiler.
+   Show the drafted line and ask the user to confirm it or supply their
+   own wording via `AskUserQuestion` ("Use this text (recommended)" /
+   "Let me write it"). Add the confirmed line under the `Unreleased`
+   heading at the top of `CHANGELOG.md` (create that heading if it's
+   missing) in the same commit that finishes the behavior.
+
+   Push, then immediately open a PR (check for a PR template first) —
+   automatically, no confirmation prompt, as soon as the first
+   implementation is pushed.
 
 4. **Auto-preview, then hand off.** Once the PR's checks (on GitHub, not
    a local rerun) are passing, don't wait to be asked — immediately run
