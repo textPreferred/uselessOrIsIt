@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.146 — 2026-08-16
+
+**Security** — Added clear instructions for privately reporting security issues, so they can be fixed before being made public.
+
 ## 1.7.304 — 2026-08-16
 
 **Improved** — Reordered the text stamped on the machine's nameplate, and adjusted font sizes.
