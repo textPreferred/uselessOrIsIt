@@ -2,7 +2,7 @@
 
 ## 1.7.304 — 2026-08-16
 
-**Improved** — Reordered the text stamped on the machine's nameplate.
+**Improved** — Reordered the text stamped on the machine's nameplate, and adjusted font sizes.
 
 ## 1.7.299 — 2026-08-16
 
