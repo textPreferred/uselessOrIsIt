@@ -2,7 +2,7 @@
 
 ## 1.7.299 — 2026-08-16
 
-**Fixed** — Removed a small visual clue that was giving away some of the app's hidden secrets before you'd found them yourself.
+**Fixed** — Removed a small visual clue that was giving away some of the app's easter eggs before you'd found them yourself.
 
 ## 1.7.291 — 2026-08-15
 
