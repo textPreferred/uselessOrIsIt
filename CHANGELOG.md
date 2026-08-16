@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.317 — 2026-08-16
+**Behind the scenes** — Added status badges to the project's README showing whether the latest checks and security scans are passing.
+
 ## 1.7.314 — 2026-08-16
 **Behind the scenes** — Corrected the version numbers shown throughout this changelog so they accurately reflect the app's real build history.
 

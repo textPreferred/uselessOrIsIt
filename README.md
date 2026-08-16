@@ -1,5 +1,8 @@
 # Useless Machine
 
+[![CI](https://github.com/textPreferred/uselessOrIsIt/actions/workflows/ci.yml/badge.svg)](https://github.com/textPreferred/uselessOrIsIt/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/textPreferred/uselessOrIsIt/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/textPreferred/uselessOrIsIt/actions/workflows/github-code-scanning/codeql)
+
 A web replica of the classic [useless machine](https://en.wikipedia.org/wiki/Useless_machine): flip the switch on, and an arm comes out of the box to flip it back off. That's it. That's the app.
 
 Live at **https://textpreferred.github.io/uselessOrIsIt/** (deployed automatically from `main`).
