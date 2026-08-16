@@ -119,7 +119,6 @@ body {
 .plate.open {
   transform: rotateY(-100deg);
   box-shadow: 0.3rem 0 1.5rem rgb(0 0 0 / 45%);
-  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -154,7 +153,6 @@ body {
     rotate(-2.5deg);
   transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
   touch-action: none;
-  cursor: grab;
   z-index: 0;
   display: flex;
   flex-direction: column;
@@ -244,7 +242,6 @@ body {
   border-radius: 1rem;
   z-index: 0;
   touch-action: none;
-  cursor: grab;
   background-image:
     radial-gradient(
       circle 3px at 0.75rem 0.75rem,
@@ -431,7 +428,6 @@ body {
     inset 0 -1px 1px rgb(0 0 0 / 40%),
     0 1px 2px rgb(0 0 0 / 55%);
   transition: transform 0.35s cubic-bezier(0.3, 0.8, 0.3, 1.2);
-  cursor: pointer;
 }
 
 .screw::after {
@@ -620,7 +616,6 @@ body {
   letter-spacing: 0.04em;
   opacity: 0.75;
   touch-action: none;
-  cursor: grab;
   transition:
     opacity 0.15s,
     color 0.15s;
@@ -845,7 +840,6 @@ body {
     rotate(var(--off-label-rot, 1.5deg));
   transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
   touch-action: none;
-  cursor: grab;
 }
 
 .label-tape-off.grabbed {
