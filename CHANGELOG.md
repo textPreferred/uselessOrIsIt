@@ -2,7 +2,7 @@
 
 ## 1.7.304 — 2026-08-16
 
-**Improved** — Reordered the text stamped on the machine's nameplate: name first, then version number, then serial number.
+**Improved** — Reordered the text stamped on the machine's nameplate.
 
 ## 1.7.299 — 2026-08-16
 
