@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.314 — 2026-08-16
+**Behind the scenes** — Corrected the version numbers shown throughout this changelog so they accurately reflect the app's real build history.
+
 ## 1.7.313 — 2026-08-16
 **Security** — Added clear instructions for privately reporting security issues, so they can be fixed before being made public.
 
