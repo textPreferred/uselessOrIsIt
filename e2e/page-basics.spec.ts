@@ -95,12 +95,25 @@ test.describe("useless machine — page basics", () => {
     );
   });
 
-  test("shows a build version on the nameplate below the serial number", async ({
-    page,
-  }) => {
+  test("shows a build version on the nameplate", async ({ page }) => {
     const version = page.locator(".nameplate-version");
     await expect(version).toBeVisible();
     await expect(version).toHaveText(/^v\d+\.\d+\.\d+ \(\d{8}\)$/);
+  });
+
+  test("orders the nameplate rows title, then version, then serial number", async ({
+    page,
+  }) => {
+    const rowClasses = await page
+      .locator(".nameplate")
+      .evaluate((el) =>
+        Array.from(el.children).map((child) => child.className),
+      );
+    expect(rowClasses).toEqual([
+      "nameplate-model",
+      "nameplate-version",
+      "nameplate-serial",
+    ]);
   });
 
   test("clicking the nameplate's question mark twice cycles it and unlocks an easter egg", async ({
