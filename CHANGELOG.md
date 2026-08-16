@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.304 — 2026-08-16
+
+**Improved** — Reordered the text stamped on the machine's nameplate, and adjusted font sizes.
+
 ## 1.7.299 — 2026-08-16
 
 **Fixed** — Removed a small visual clue that was giving away some of the app's easter eggs before you'd found them yourself.
