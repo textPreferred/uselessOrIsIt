@@ -4,9 +4,15 @@ import { defineConfig, devices } from "@playwright/test";
 // Some sandboxed dev environments pre-install Chromium at a fixed path
 // instead of the per-version browser cache; use it when present.
 const preinstalledChromium = "/opt/pw-browsers/chromium";
-const executablePath = existsSync(preinstalledChromium)
-  ? preinstalledChromium
-  : undefined;
+const executablePath =
+  !process.env.CI && existsSync(preinstalledChromium)
+    ? preinstalledChromium
+    : undefined;
+
+// GitHub-hosted runners ship Google Chrome preinstalled; using it via
+// Playwright's "chrome" channel skips downloading/caching a Chromium build
+// in CI entirely.
+const channel = process.env.CI ? "chrome" : undefined;
 
 // SMOKE_URL switches the suite to run the @smoke tests against a deployed
 // site (no local server). Without it, the full suite runs against a local
@@ -33,7 +39,11 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], launchOptions: { executablePath } },
+      use: {
+        ...devices["Desktop Chrome"],
+        channel,
+        launchOptions: { executablePath },
+      },
     },
   ],
   webServer: smokeUrl
