@@ -13,6 +13,12 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Single source of truth for e2e shard count — read by plan-shards (script
+  # arg + matrix generation) and test (fallback --shard flag). Change only
+  # here.
+  SHARD_COUNT: 6
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -111,7 +117,13 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
+    outputs:
+      shard_matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
+      # Runs first, before any step that could fail, so the matrix output is
+      # always set even if this job's continue-on-error masks a later failure.
+      - id: matrix
+        run: echo "matrix=$(jq -nc --argjson n "$SHARD_COUNT" '[range(1;$n+1)]')" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
@@ -123,7 +135,7 @@ jobs:
           key: playwright-timings-${{ github.run_id }}
           restore-keys: playwright-timings-
       - run: bunx playwright test --list --reporter=json > current-tests.json
-      - run: bun scripts/plan-test-shards.mjs current-tests.json playwright-timings.json 6 shard-plan.json
+      - run: bun scripts/plan-test-shards.mjs current-tests.json playwright-timings.json "$SHARD_COUNT" shard-plan.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: shard-plan
@@ -137,7 +149,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: ${{ fromJson(needs.plan-shards.outputs.shard_matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -155,7 +167,7 @@ jobs:
           path: .
       - name: Run e2e tests
         run: |
-          if [ -s shard-plan.json ] && [ "$(jq 'length' shard-plan.json)" = "6" ]; then
+          if [ -s shard-plan.json ] && [ "$(jq 'length' shard-plan.json)" = "$SHARD_COUNT" ]; then
             tests=$(jq -r --argjson i "$(( ${{ matrix.shard }} - 1 ))" '.[$i] | join(" ")' shard-plan.json)
             if [ -z "$tests" ]; then
               echo "No tests assigned to this shard by the duration plan; skipping."
@@ -163,7 +175,7 @@ jobs:
               bunx playwright test $tests
             fi
           else
-            bunx playwright test --shard=${{ matrix.shard }}/6
+            bunx playwright test --shard=${{ matrix.shard }}/$SHARD_COUNT
           fi
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
