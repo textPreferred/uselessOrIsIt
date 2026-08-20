@@ -1,0 +1,21 @@
+name: Send CI Telemetry
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  actions: read
+
+jobs:
+  send-telemetry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: paper2/github-actions-opentelemetry@78864c8924bb6f6507a2a5b1ed264697404588ca # v1.0.0
+        env:
+          OTEL_SERVICE_NAME: uselessOrIsIt-ci
+          OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

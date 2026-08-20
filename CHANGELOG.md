@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.323 — 2026-08-20
+**Behind the scenes** — Started tracking how long automated checks take to run, to help spot slowdowns early.
+
 ## 1.7.319 — 2026-08-20
 **Behind the scenes** — Sped up the automated test pipeline by using the web browser already built into the testing computers instead of downloading a fresh copy every run.
 
