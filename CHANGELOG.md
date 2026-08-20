@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.326 — 2026-08-20
+**Behind the scenes** — Simplified how the test pipeline splits work across machines, making it easier to adjust in the future.
+
 ## 1.7.323 — 2026-08-20
 **Behind the scenes** — Started tracking how long automated checks take to run, to help spot slowdowns early.
 
