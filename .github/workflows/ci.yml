@@ -106,37 +106,6 @@ jobs:
           path: dist/
           retention-days: 1
 
-  # Primes the Playwright browser cache and the apt fonts cache once, before
-  # the 6 parallel `test` shards below start reading them. Without this, all
-  # 6 shards hit the same cache keys at once on a cold/evicted cache, and
-  # GitHub's cache backend has been observed to serve an inconsistent
-  # hit/miss across concurrent readers of the same key - one shard eats a
-  # ~50s uncached apt install while its siblings finish in ~15s, and since
-  # `deploy` waits on every shard, that one straggler becomes the critical
-  # path. Warming here settles both caches before the matrix fans out.
-  warm-test-cache:
-    needs: changes
-    if: needs.changes.outputs.docs_only != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: "1.3.11"
-      - run: bun install --frozen-lockfile
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
-      - uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
-        with:
-          packages: fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable xfonts-utils
-          version: playwright-chromium-fonts-noble-1
-          execute_install_scripts: true
-      - run: bunx playwright install chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-
   plan-shards:
     needs: [changes]
     if: needs.changes.outputs.docs_only != 'true'
@@ -162,7 +131,7 @@ jobs:
           retention-days: 1
 
   test:
-    needs: [changes, build, warm-test-cache, plan-shards]
+    needs: [changes, build, plan-shards]
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -184,18 +153,6 @@ jobs:
         with:
           name: shard-plan
           path: .
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
-      - uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
-        with:
-          packages: fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable xfonts-utils
-          version: playwright-chromium-fonts-noble-1
-          execute_install_scripts: true
-      - run: bunx playwright install chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Run e2e tests
         run: |
           if [ -s shard-plan.json ] && [ "$(jq 'length' shard-plan.json)" = "6" ]; then
@@ -304,18 +261,6 @@ jobs:
         with:
           bun-version: "1.3.11"
       - run: bun install --frozen-lockfile
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
-      - uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
-        with:
-          packages: fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable xfonts-utils
-          version: playwright-chromium-fonts-noble-1
-          execute_install_scripts: true
-      - run: bunx playwright install chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: bun run test
         env:
           SMOKE_URL: ${{ needs.deploy.outputs.page_url }}

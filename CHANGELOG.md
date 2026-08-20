@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.319 — 2026-08-20
+**Behind the scenes** — Sped up the automated test pipeline by using the web browser already built into the testing computers instead of downloading a fresh copy every run.
+
 ## 1.7.317 — 2026-08-16
 **Behind the scenes** — Added status badges to the project's README showing whether the latest checks and security scans are passing.
 
