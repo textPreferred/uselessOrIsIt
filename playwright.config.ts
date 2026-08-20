@@ -22,6 +22,10 @@ const smokeUrl = process.env.SMOKE_URL;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // Playwright's default (half the CPU cores) leaves capacity unused on
+  // GitHub's 4-core runners; use all cores per shard since each shard already
+  // gets a dedicated runner.
+  workers: process.env.CI ? 4 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI
