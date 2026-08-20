@@ -17,5 +17,6 @@ jobs:
           OTEL_SERVICE_NAME: uselessOrIsIt-ci
           OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
           OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+          OTEL_RESOURCE_ATTRIBUTES: ${{ github.event.workflow_run.pull_requests[0] && format('vcs.repository.ref.name={0},vcs.change.id={1}', github.event.workflow_run.head_branch, github.event.workflow_run.pull_requests[0].number) || format('vcs.repository.ref.name={0}', github.event.workflow_run.head_branch) }}
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

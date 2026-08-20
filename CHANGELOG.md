@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.333 — 2026-08-20
+**Behind the scenes** — Tagged the pipeline monitoring data with the branch and pull request it came from, so results are easier to trace back.
+
 ## 1.7.329 — 2026-08-20
 **Behind the scenes** — Tried using more of each testing computer's processing power at once, to see if it speeds up the tests.
 
