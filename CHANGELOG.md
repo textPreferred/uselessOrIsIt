@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.329 — 2026-08-20
+**Behind the scenes** — Tried using more of each testing computer's processing power at once, to see if it speeds up the tests.
+
 ## 1.7.326 — 2026-08-20
 **Behind the scenes** — Simplified how the test pipeline splits work across machines, making it easier to adjust in the future.
 
