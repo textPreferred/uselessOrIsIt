@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.326 — 2026-08-20
+**Behind the scenes** — Tried using more of each testing computer's processing power at once, to see if it speeds up the tests.
+
 ## 1.7.323 — 2026-08-20
 **Behind the scenes** — Started tracking how long automated checks take to run, to help spot slowdowns early.
 
